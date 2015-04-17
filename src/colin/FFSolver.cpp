@@ -5414,7 +5414,7 @@ Solution FF::search(bool & reachedGoal)
     set<int> goals;
     set<int> numericGoals;
     ExtendedMinimalState initialState;
-
+    //Setup initial state
     {
         LiteralSet tinitialState;
         vector<double> tinitialFluents;
@@ -5434,7 +5434,8 @@ Solution FF::search(bool & reachedGoal)
         
     }
 
-
+    // I think this does some simple relaxed goal checking to determine if the problem is solveable
+    // It also adds the logic goals to a list for tracking
     {
         list<Literal*>::iterator gsItr = RPGBuilder::getLiteralGoals().begin();
         const list<Literal*>::iterator gsEnd = RPGBuilder::getLiteralGoals().end();
@@ -5454,6 +5455,7 @@ Solution FF::search(bool & reachedGoal)
         }
 
     }
+    // Adds the numeric goals to a list for tracking
     {
         list<pair<int, int> >::iterator gsItr = RPGBuilder::getNumericRPGGoals().begin();
         const list<pair<int, int> >::iterator gsEnd = RPGBuilder::getNumericRPGGoals().end();
@@ -5483,7 +5485,7 @@ Solution FF::search(bool & reachedGoal)
 
     HTrio bestHeuristic;
     HTrio initialHeuristic;
-
+    // Initialise the initial state search node and calculate its heuristic. Why, well I guess thats how you get the initial helpful actions
     {
         SearchQueueItem * const initialSQI = new SearchQueueItem(&initialState, false);
         list<FFEvent> tEvent;
@@ -5503,11 +5505,13 @@ Solution FF::search(bool & reachedGoal)
 
     if (ffDebug || true) cout << "Initial heuristic = " << bestHeuristic.heuristicValue << "\n";
 
+    // If the problem is unsolveable in the relaxed sense then it is unsolveable
     if (bestHeuristic.heuristicValue == -1.0) {
         reachedGoal = false;
         return workingBestSolution;
     }
 
+    // If the inital state is the goal
     if (bestHeuristic.heuristicValue == 0.0) {
         reachedGoal = true;
         workingBestSolution.update(list<FFEvent>(), 0, evaluateMetric(initialState.getInnerState(), list<FFEvent>(), false));
@@ -5521,6 +5525,7 @@ Solution FF::search(bool & reachedGoal)
 
         toHash->timeStamp = 0.0;
 
+        //Add initial state to the visited list
         auto_ptr<StateHash::InsertIterator> itr(visitedStates->insertState(toHash));
         itr->setTimestampOfThisState(toHash);
 
@@ -5546,12 +5551,14 @@ Solution FF::search(bool & reachedGoal)
     if (skipEHC) searchQueue.pop_front();
 
 
-
+    // Actually search
     while (!searchQueue.empty()) {
         if (Globals::globalVerbosity & 2) cout << "\n--\n";
+        // Get next search state
         auto_ptr<SearchQueueItem> currSQI(searchQueue.pop_front());
         currSQI->printPlan();
         
+
         if (currSQI->state()->hasBeenDominated) {
             continue;
         }
@@ -5566,6 +5573,7 @@ Solution FF::search(bool & reachedGoal)
 
         if (!foundBetter) {
             if (helpfulActions) {
+            	// If using helpful actions
                 //cout << "(( " << currSQI->helpfulActions.size() << "))";
                 RPGBuilder::getHeuristic()->filterApplicableActions(currSQI->state()->getInnerState(), currSQI->state()->timeStamp, currSQI->helpfulActions);
                 //printASList(currSQI->helpfulActions);
@@ -5580,7 +5588,7 @@ Solution FF::search(bool & reachedGoal)
                 //cout << "(( " << currSQI->helpfulActions.size() << "))";
                 //cout.flush();
                 FFonly_one_successor = (currSQI->helpfulActions.size() == 1);
-            } else {
+            } else { // Otherwise get all the actions
                 RPGBuilder::getHeuristic()->findApplicableActions(currSQI->state()->getInnerState(), currSQI->state()->timeStamp, maybeApplicableActions);
                 reorderStartsBeforeEnds(maybeApplicableActions);
                 if (nonDeletorsFirst) {
@@ -5603,13 +5611,14 @@ Solution FF::search(bool & reachedGoal)
                 currSQI->state()->startEventQueue));
 
 
-
+        // Cycle through all the actions for this state
         for (; helpfulActsItr != helpfulActsEnd; ++helpfulActsItr) {
 
             auto_ptr<SearchQueueItem> succ;
             bool tsSound = false;
             const int oldTIL = currSQI->state()->getInnerState().nextTIL;
 
+            // If the action is a TIL
             if (helpfulActsItr->second == VAL::E_AT) {
                 set<int> needToFinish;// = RPGBuilder::TILneedsToHaveFinished(oldTIL, succ->state);
                 // TODO: Does this need revisiting?
@@ -5627,7 +5636,7 @@ Solution FF::search(bool & reachedGoal)
                     succ->heuristicValue.makespan = currSQI->heuristicValue.makespan;
                 }
                 
-            } else {
+            } else { //Action is a start/end snap or instantaneous action
                 //registerFinished(*(succ->state), helpfulActsItr->needToFinish);
                 succ = auto_ptr<SearchQueueItem>(new SearchQueueItem(applyActionToState(*helpfulActsItr, *(currSQI->state()), currSQI->plan), true));
                 if (succ->state()) {
@@ -5654,7 +5663,8 @@ Solution FF::search(bool & reachedGoal)
                 bool TILfailure = false;
                 bool incrementalIsDead = false;
 
-
+                // If the new state is temporally sound and the action was a TIL
+                // then there seems to be a whole bunch of housekeeping to do
                 if (helpfulActsItr->second == VAL::E_AT) {
 
                     bool visitTheState = false;
@@ -5814,7 +5824,8 @@ Solution FF::search(bool & reachedGoal)
                             reachedGoal = true;
                             
                             if (!carryOnSearching(succ->state()->getInnerState(), succ->plan)) {
-                                return workingBestSolution;
+                            	cout << "EHC Success!!!!\n";
+                            	return workingBestSolution;
                             }
                             searchQueue.clear();
                             foundBetter = true;
@@ -5869,6 +5880,7 @@ Solution FF::search(bool & reachedGoal)
         FFonly_one_successor = false;
     }
 
+    // EHC Failed, switch to BFS
     if (!bestFirstSearch) {
         cout << "\nProblem unsolvable by EHC, and best-first search has been disabled\n";
 
@@ -5900,7 +5912,7 @@ Solution FF::search(bool & reachedGoal)
             initialHeuristic.qbreak = 0;
         }
 
-
+        // Setup initial BFS state
         SearchQueueItem * const initialSQI = new SearchQueueItem(&initialState, false);
         initialSQI->heuristicValue = initialHeuristic;
         bestHeuristic = initialHeuristic;
@@ -5923,7 +5935,9 @@ Solution FF::search(bool & reachedGoal)
 #endif
         }
     }
-
+    //List for remembering visited search queue items
+    list<SearchQueueItem *> visitedSearchNodes;
+    // Begine BFS search
     while (!searchQueue.empty()) {
 
         auto_ptr<SearchQueueItem> currSQI(searchQueue.pop_front());
@@ -5973,7 +5987,7 @@ Solution FF::search(bool & reachedGoal)
         //currSQI->printPlan();
 
         list<ActionSegment > applicableActions;
-
+        // Get actions for state
         if (!foundBetter) RPGBuilder::getHeuristic()->findApplicableActions(currSQI->state()->getInnerState(), currSQI->state()->timeStamp, applicableActions);
 
         reorderStartsBeforeEnds(applicableActions);
@@ -6016,6 +6030,7 @@ Solution FF::search(bool & reachedGoal)
         const auto_ptr<ParentData> incrementalData(FF::allowCompressionSafeScheduler ? 0 : LPScheduler::prime(currSQI->plan, currSQI->state()->getInnerState().temporalConstraints,
                 currSQI->state()->startEventQueue));
 
+        // Cycle through actions
         for (; helpfulActsItr != helpfulActsEnd; ++helpfulActsItr) {
             auto_ptr<SearchQueueItem> succ;
 
@@ -6024,11 +6039,13 @@ Solution FF::search(bool & reachedGoal)
 
             list<ActionSegment> nowList;
 
+            // Apply TIL action to state
             if (helpfulActsItr->second == VAL::E_AT) {
 
                 ActionSegment tempSeg(0, VAL::E_AT, oldTIL, RPGHeuristic::emptyIntList);
-                succ = auto_ptr<SearchQueueItem>(new SearchQueueItem(applyActionToState(tempSeg, *(currSQI->state()), currSQI->plan), true));
-
+                SearchQueueItem * item = new SearchQueueItem(applyActionToState(tempSeg, *(currSQI->state()), currSQI->plan), true);
+                succ = auto_ptr<SearchQueueItem>(item);
+                visitedSearchNodes.push_back(item);
                 if (!succ->state()) {
                     tsSound = false;
                 } else {
@@ -6038,11 +6055,12 @@ Solution FF::search(bool & reachedGoal)
                 if (tsSound) {
                     succ->heuristicValue.makespan = currSQI->heuristicValue.makespan;
                 }
-            } else {
+            } else { // Apply start/end snap action or instantaneous action to state
 
                 //registerFinished(*(succ->state), helpfulActsItr->needToFinish);
-                succ = auto_ptr<SearchQueueItem>(new SearchQueueItem(applyActionToState(*helpfulActsItr, *(currSQI->state()), currSQI->plan), true));
-
+            	SearchQueueItem * item = new SearchQueueItem(applyActionToState(*helpfulActsItr, *(currSQI->state()), currSQI->plan), true);
+                succ = auto_ptr<SearchQueueItem>(item);
+                visitedSearchNodes.push_back(item);
                 if (!succ->state()) {
                     tsSound = false;
                 } else {
@@ -6244,7 +6262,14 @@ Solution FF::search(bool & reachedGoal)
                             reachedGoal = true;                            
                             
                             if (!carryOnSearching(succ->state()->getInnerState(), succ->plan)) {
-                                return workingBestSolution;
+                            	//TODO: cycle through visited states here
+                            	cout << "BFS Success!!!!\n";
+                            	std::list<SearchQueueItem *>::iterator it = visitedSearchNodes.begin();
+								std::list<SearchQueueItem *>::iterator end = visitedSearchNodes.end();
+                            	for (; it != end; ++it) {
+                            		cout << "State: " << (*it)->state() << "\n";
+                            	}
+                            	return workingBestSolution;
                             }
                             
                             //return make_pair(new list<FFEvent>(succ->plan), new TemporalConstraints(*(succ->state()->getInnerState().temporalConstraints)));
@@ -6300,6 +6325,7 @@ Solution FF::search(bool & reachedGoal)
     }
 
     visitedStates->clear();
+
 
     cout << "\nProblem Unsolvable\n";
 

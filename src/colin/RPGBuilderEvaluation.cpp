@@ -10517,12 +10517,13 @@ void RPGHeuristic::Private::filterApplicableActions(const MinimalState & theStat
     applicableActions.push_back(currAct);
     }
     }*/
-
+    // This loop just considers the logical preconditions
     for (; tfItr != tfEnd; ++tfItr) {
 
 
         bool isApplicable = true;
 
+        // If the action is a Start snap action or instantaeneous action
         if (tfItr->second == VAL::E_AT_START) {
 
             if (!RPGBuilder::noSelfOverlaps || theState.startedActions.find(tfItr->first->getID()) == theState.startedActions.end()) {
@@ -10541,7 +10542,7 @@ void RPGHeuristic::Private::filterApplicableActions(const MinimalState & theStat
                 isApplicable = false;
             }
 
-        } else if (tfItr->second == VAL::E_AT_END) {
+        } else if (tfItr->second == VAL::E_AT_END) { //If end snap action
             const map<int, set<int> >::const_iterator saItr = theState.startedActions.find(tfItr->first->getID());
             if (saItr != theState.startedActions.end() && TemporalAnalysis::okayToEnd(tfItr->first->getID(), stateTime)) {
                 isApplicable = RPGBuilder::stepNeedsToHaveFinished(*tfItr, theState, tfItr->needToFinish);
@@ -10550,7 +10551,7 @@ void RPGHeuristic::Private::filterApplicableActions(const MinimalState & theStat
             }
             if (isApplicable) isApplicable = negativesAreOkay(RPGBuilder::getEndNegativePropositionalPreconditions()[tfItr->first->getID()], theState.first);
 
-        } else if (tfItr->second != VAL::E_AT) {
+        } else if (tfItr->second != VAL::E_AT) { // not a TIL action
 
             assert(false);
         } else if (tfItr->second == VAL::E_AT) { // TIL action
@@ -10607,7 +10608,7 @@ void RPGHeuristic::Private::filterApplicableActions(const MinimalState & theStat
 
     list<ActionSegment>::iterator tnfItr = toNumericFilter.begin();
     const list<ActionSegment>::iterator tnfEnd = toNumericFilter.end();
-
+//     Consider numeric conditions, does it not consider numeric conditions on the end snap actions?
     for (; tnfItr != tnfEnd; ++tnfItr) {
         bool isApplicable = true;
 
