@@ -7,7 +7,7 @@ project(buildroot)
 
 set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
 
-set(CMAKE_CXX_FLAGS_PROFILE "-g3 -pg -O -fprofile-arcs")
+set(CMAKE_CXX_FLAGS_PROFILE "-std=c++0x -g3 -pg -O -fprofile-arcs")
 set(CMAKE_CXX_LINK_FLAGS_PROFILE "-pg")
 
 add_subdirectory(VALfiles)

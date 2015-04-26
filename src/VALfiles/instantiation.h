@@ -609,10 +609,16 @@ public:
     static const instantiatedOp * opBeforeFiltering;
     #endif
     
+    static LiteralStore & getLiterals() {
+    	return literals;
+    }
+
     instantiatedOp(const VAL::operator_ * o,VAL::FastEnvironment * e)
         : id(0), op(o), env(e) {
     }
     
+
+
     static void instantiate(const VAL::operator_ * op, const VAL::problem * p,VAL::TypeChecker & tc);
     
     ~instantiatedOp() {

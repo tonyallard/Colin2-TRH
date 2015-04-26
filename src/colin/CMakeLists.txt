@@ -17,7 +17,7 @@ find_package(Cgl)
 find_package(OSI)
 
 
-set(CMAKE_CXX_FLAGS "-Wall -pg -ggdb ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-pg -ggdb ${CMAKE_CXX_FLAGS}")
 
 if(STATIC_COLIN)
 set(CMAKE_CXX_LINK_FLAGS "-static ${CMAKE_CXX_LINK_FLAGS}")
