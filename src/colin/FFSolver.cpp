@@ -6282,12 +6282,13 @@ Solution FF::search(bool & reachedGoal)
 										if (&(searchNode->state()->getInnerState()) == 0) {
 											continue;
 										}
-										const StateFacts & stateFacts = searchNode->state()->getInnerState().first;
+										const MinimalState & theState = searchNode->state()->getInnerState();
+										//Print Literal Facts
+										const StateFacts & stateFacts = theState.first;
 
 										std::set<int>::const_iterator factIt = stateFacts.begin();
 										std::set<int>::const_iterator factEnd = stateFacts.end();
 										for (; factIt != factEnd; ++factIt) {
-
 											if (*factIt == 0) {
 												continue;
 											}
@@ -6303,12 +6304,18 @@ Solution FF::search(bool & reachedGoal)
 												cout << "\n";
 											}
 										}
+										//Print Fluents
+										const int pneCount = RPGBuilder::getPNECount();
+										for (int i = 0; i < pneCount; i++) {
+											Inst::PNE* pne = RPGBuilder::getPNE(i);
+											cout << "(= "<< *pne << " ";
+											cout << theState.secondMin[i] << ")\n";
+										}
 										cout << "Finished iterating through state facts\n";
 									}
 	                            	cout << "Finished iterating through visited Search Nodes\n";
                             	}
                             	return workingBestSolution;
-
                             }
 
                             //return make_pair(new list<FFEvent>(succ->plan), new TemporalConstraints(*(succ->state()->getInnerState().temporalConstraints)));
