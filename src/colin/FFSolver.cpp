@@ -1521,7 +1521,7 @@ void populateTimestamps(vector<double> & minTimestamps, double & makespan, list<
 }
 
 
-FF::HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const incrementalData, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, bool considerCache, map<double, list<pair<int, int> > > * justApplied, double tilFrom)
+HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const incrementalData, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, bool considerCache, map<double, list<pair<int, int> > > * justApplied, double tilFrom)
 {
 
     //cout << "Evaluating a state reached by " << header.size() + now.size() << " snap actions\n";
@@ -1648,7 +1648,7 @@ FF::HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Ext
 }
 
 
-FF::HTrio FF::calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, map<double, list<pair<int, int> > > * justApplied, double tilFrom)
+HTrio FF::calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, map<double, list<pair<int, int> > > * justApplied, double tilFrom)
 {
     assert(!scheduleToMetric);
     //cout << "Evaluating a state reached by " << header.size() + now.size() << " snap actions\n";
@@ -6176,11 +6176,11 @@ Solution FF::search(bool & reachedGoal)
 										if (!Planner::isSearchNodeValid(searchNode)) {
 											continue;
 										}
-										cout << "State " << (stateCount + 1) << ": " << searchNode->state() << "\n";
-										FF:HTrio heuristic = searchNode->heuristicValue;
-										cout << "Search Node: (heuristicValue " << heuristic.heuristicValue <<", makespan " << heuristic.makespan << ", makespanEstimate " << heuristic.makespanEstimate << ")\n";
+										double timeStamp = searchNode->state()->timeStamp;
+										cout << "State " << (stateCount + 1) << ": " << searchNode->state() << " at " << timeStamp << "\n";
+										Planner::printSearchNodeHeuristic(searchNode);
 										const MinimalState & theState = searchNode->state()->getInnerState();
-										Planner::printState(theState);
+										Planner::printState(theState, timeStamp);
 										cout << "Finished printing state\n";
 									}
 	                            	cout << "Finished iterating through visited Search Nodes\n";

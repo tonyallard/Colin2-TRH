@@ -10,16 +10,19 @@
 
 #include "minimalstate.h"
 #include "SearchQueueItem.h"
+#include "instantiation.h"
 
 namespace Planner {
 
 void printAllLiterals();
 
-void printState(const Planner::MinimalState & theState);
+void printState(const Planner::MinimalState & theState, double timeStamp);
+
+void printLiteral(Inst::Literal * literal);
+
+void printSearchNodeHeuristic(const SearchQueueItem * searchNode);
 
 bool isSearchNodeValid(SearchQueueItem * searchNode);
-
-//void printSearchNodeHeuristic(const SearchQueueItem * searchNode);
 
 }
 

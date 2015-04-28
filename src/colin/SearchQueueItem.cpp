@@ -7,7 +7,8 @@
 
 #include "SearchQueueItem.h"
 #include "globals.h"
-#include "FFEvent.h"
+
+using namespace Planner;
 
 ExtendedMinimalState * SearchQueueItem::releaseState() {
 	assert (ownState);

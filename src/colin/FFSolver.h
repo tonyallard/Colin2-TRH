@@ -31,6 +31,7 @@
 
 #include "FFEvent.h"
 #include "SearchQueueItem.h"
+#include "HTrio.h"
 
 #include <ptree.h>
 

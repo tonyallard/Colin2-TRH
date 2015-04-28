@@ -6,7 +6,6 @@
  */
 
 #include "Util.h"
-#include "instantiation.h"
 #include "RPGBuilder.h"
 
 #include <iostream>
@@ -37,26 +36,18 @@ void Planner::printAllLiterals() {
 	}
 }
 
-
-void Planner::printState(const Planner::MinimalState & theState) {
+void Planner::printState(const MinimalState & theState, double timeStamp) {
 
 	//Print Literal Facts
-	const Planner::StateFacts & stateFacts = theState.first;
+	const StateFacts & stateFacts = theState.first;
 	cout << "There are " << stateFacts.size() << " state facts.\n";
-	Planner::StateFacts::const_iterator cfItr = stateFacts.begin();
-	const Planner::StateFacts::const_iterator cfEnd = stateFacts.end();
+	StateFacts::const_iterator cfItr = stateFacts.begin();
+	const StateFacts::const_iterator cfEnd = stateFacts.end();
 	for (; cfItr != cfEnd; cfItr++) {
 		int stateFact = *cfItr;
-		Inst::Literal * literal = Planner::RPGBuilder::getLiteral(stateFact);
+		Inst::Literal * literal = RPGBuilder::getLiteral(stateFact);
 		if (literal->getStateID() >= 0) {
-			VAL::parameter_symbol_list::iterator itrArg =
-					literal->getProp()->args->begin();
-			VAL::parameter_symbol_list::iterator itrArgEnd =
-					literal->getProp()->args->end();
-			cout << literal->getProp()->head->getName() << ": ";
-			for (; itrArg != itrArgEnd; itrArg++) {
-				cout << (*itrArg)->getName() << " ";
-			}
+			printLiteral(literal);
 			cout << "\n";
 		}
 	}
@@ -70,33 +61,60 @@ void Planner::printState(const Planner::MinimalState & theState) {
 		cout << theState.secondMin[i] << ")\n";
 	}
 	//Print TILs
-	list<Planner::RPGBuilder::FakeTILAction> tils = Planner::RPGBuilder::getTILs();
+	list<RPGBuilder::FakeTILAction> tils = Planner::RPGBuilder::getTILs();
 	cout << "There are " << tils.size() << " TILs\n";
-	std::list<Planner::RPGBuilder::FakeTILAction>::const_iterator tilItr = tils.begin();
-	const std::list<Planner::RPGBuilder::FakeTILAction>::const_iterator tilItrEnd =
+	std::list<RPGBuilder::FakeTILAction>::const_iterator tilItr = tils.begin();
+	const std::list<RPGBuilder::FakeTILAction>::const_iterator tilItrEnd =
 			tils.end();
 	for (; tilItr != tilItrEnd; tilItr++) {
-		list<Literal*> addEffects = (*tilItr).addEffects;
-		std::list<Inst::Literal*>::const_iterator tilLitInt = addEffects.begin();
-		std::list<Inst::Literal*>::const_iterator tilLitIntEnd = addEffects.end();
-		for (; tilLitInt != tilLitIntEnd; tilLitInt++) {
-			Inst::Literal * literal = (*tilLitInt);
-			VAL::parameter_symbol_list::iterator itrArg =
-					literal->getProp()->args->begin();
-			VAL::parameter_symbol_list::iterator itrArgEnd =
-					literal->getProp()->args->end();
-			cout << literal->getProp()->head->getName() << ": ";
-			for (; itrArg != itrArgEnd; itrArg++) {
-				cout << (*itrArg)->getName() << " ";
+		if ((*tilItr).duration < timeStamp) {
+			continue;
+		}
+		cout << "(at " << (*tilItr).duration << " ";
+		if ((*tilItr).addEffects.size() > 0) {
+			list<Literal*> addEffects = (*tilItr).addEffects;
+			std::list<Inst::Literal*>::const_iterator tilAddLitInt =
+					addEffects.begin();
+			std::list<Inst::Literal*>::const_iterator tilAddLitIntEnd =
+					addEffects.end();
+			for (; tilAddLitInt != tilAddLitIntEnd; tilAddLitInt++) {
+				Inst::Literal * literal = (*tilAddLitInt);
+				printLiteral(literal);
 			}
-			cout << "\n";
+		}
+
+		if ((*tilItr).delEffects.size() > 0) {
+			cout << "(not ";
+			list<Literal*> delEffects = (*tilItr).delEffects;
+			std::list<Inst::Literal*>::const_iterator tilDelLitInt =
+					delEffects.begin();
+			std::list<Inst::Literal*>::const_iterator tilDelLitIntEnd =
+					delEffects.end();
+			for (; tilDelLitInt != tilDelLitIntEnd; tilDelLitInt++) {
+				Inst::Literal * literal = (*tilDelLitInt);
+				printLiteral(literal);
+			}
+			cout << " )\n";
 		}
 	}
 }
 
+void Planner::printLiteral(Literal * literal) {
+	VAL::parameter_symbol_list::iterator litIt =
+			literal->getProp()->args->begin();
+	VAL::parameter_symbol_list::iterator litItEnd =
+			literal->getProp()->args->end();
+	cout << "(" << literal->getProp()->head->getName() << " ";
+	for (; litIt != litItEnd; litIt++) {
+		cout << (*litIt)->getName() << " ";
+	}
+	cout << ")";
+}
+
 bool Planner::isSearchNodeValid(SearchQueueItem * searchNode) {
 	const static int TOO_MANY_VARIABLES = 10000000;
-	if (searchNode->heuristicValue.makespanEstimate != searchNode->heuristicValue.makespanEstimate) {
+	if (searchNode->heuristicValue.makespanEstimate
+			!= searchNode->heuristicValue.makespanEstimate) {
 		return false; //makespan estimate is nan
 	} else if (searchNode->heuristicValue.makespanEstimate < 1.0) {
 		return false; // makespan estimate is invalid
@@ -115,8 +133,10 @@ bool Planner::isSearchNodeValid(SearchQueueItem * searchNode) {
 	return true;
 }
 
-//void Planner::printSearchNodeHeuristic(const Planner::SearchQueueItem * searchNode) {
-//	FF:HTrio heuristic = searchNode->heuristicValue;
-//	cout << "Search Node: (heuristicValue " << heuristic.heuristicValue <<", makespan " << heuristic.makespan << ", makespanEstimate " << heuristic.makespanEstimate << ")\n";
-//}
+void Planner::printSearchNodeHeuristic(const SearchQueueItem * searchNode) {
+	HTrio heuristic = searchNode->heuristicValue;
+	cout << "Search Node: (heuristicValue " << heuristic.heuristicValue
+			<< ", makespan " << heuristic.makespan << ", makespanEstimate "
+			<< heuristic.makespanEstimate << ")\n";
+}
 

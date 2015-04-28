@@ -28,6 +28,7 @@ include_directories(${val_SOURCE_DIR} ${val_SOURCE_DIR}/parsing ${val_BINARY_DIR
 set(colin_build_srcs
     compressionsafescheduler.cpp
     colintotalordertransformer.cpp
+	HTrio.cpp
     minimalstate.cpp
 	ExtendedMinimalState.cpp
 	SearchQueueItem.cpp
