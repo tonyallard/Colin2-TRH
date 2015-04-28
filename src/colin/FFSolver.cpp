@@ -45,6 +45,8 @@
 
 #include <sys/times.h>
 
+#include "Util.h"
+
 using std::cerr;
 
 namespace Planner
@@ -1360,113 +1362,6 @@ bool ExtendedStateLessThanOnPropositionsAndNonDominatedVariables::operator()(con
 {
     return CSBase::propAndNonDominatedVariableLessThan(ae, be);
 }
-
-
-class SearchQueueItem
-{
-
-private:
-    ExtendedMinimalState * internalState;
-    bool ownState;
-
-public:
-#ifdef STATEHASHDEBUG
-    bool mustNotDeleteState;
-#endif
-
-
-#ifndef NDEBUG
-    const FFEvent* internal_matchesHeader;
-#endif
-
-    inline ExtendedMinimalState * state() {
-        return internalState;
-    }
-
-    list<FFEvent> plan;
-
-    list<ActionSegment> helpfulActions;
-    FF::HTrio heuristicValue;
-
-    SearchQueueItem()
-            : internalState(0), ownState(false) {
-#ifdef STATEHASHDEBUG
-        mustNotDeleteState = false;
-#endif
-        #ifndef NDEBUG
-        internal_matchesHeader = 0;
-        #endif
-
-    }
-
-
-
-    /**
-     *  Create a search queue item for the specified state.
-     *
-     *  @param sIn              The state to store in the search queue item
-     *  @param clearIfDeleted   If <code>true</code>, mark that <code>sIn</code> should be deleted
-     *                          if the search queue item is deleted (unless <code>releaseState()</code>
-     *                          is called first).
-     */
-    SearchQueueItem(ExtendedMinimalState * const sIn, const bool clearIfDeleted)
-            : internalState(sIn), ownState(clearIfDeleted) {
-#ifdef STATEHASHDEBUG
-        mustNotDeleteState = false;
-#endif
-        #ifndef NDEBUG
-        internal_matchesHeader = 0;
-        #endif
-
-    }
-
-    ~SearchQueueItem() {
-        if (ownState) {
-#ifdef STATEHASHDEBUG
-            assert(!mustNotDeleteState);
-#endif
-            delete internalState;
-        }
-    }
-
-
-    /**
-     *  Return the state held in this search queue item, flagging that it should not be deleted by
-     *  the search queue item's destructor.
-     *
-     *  @return The state held in this search queue item
-     */
-    ExtendedMinimalState * releaseState() {
-        assert(ownState);
-        ownState = false;
-        return internalState;
-    }
-
-
-    void printPlan() {
-        if (Globals::globalVerbosity & 2) {
-            list<FFEvent>::iterator planItr = plan.begin();
-            const list<FFEvent>::iterator planEnd = plan.end();
-
-            for (int i = 0; planItr != planEnd; ++planItr, ++i) {
-                if (!planItr->getEffects) cout << "(( ";
-                if (planItr->action) {
-                    cout << i << ": " << *(planItr->action) << ", " << (planItr->time_spec == VAL::E_AT_START ? "start" : "end");
-                } else if (planItr->time_spec == VAL::E_AT) {
-                    cout << i << ": TIL " << planItr->divisionID;
-
-                } else {
-                    cout << i << ": null node!";
-                    assert(false);
-                }
-                if (!planItr->getEffects) cout << " ))";
-                cout << " at " << planItr->lpMinTimestamp;
-                cout << "\n";
-            }
-        }
-    }
-
-};
 
 class SearchQueue
 {
@@ -6268,50 +6163,25 @@ Solution FF::search(bool & reachedGoal)
                             	//TODO: cycle through visited states here
                             	cout << "\nBFS Success!!!!\n";
                             	cout << "States Evaluated: " << visitedSearchNodes.size() << "\n";
+
+//                            	Planner::printAllLiterals();
+
                             	if (!Globals::checkingForGoodState) {
 									Globals::checkingForGoodState = true;
-                            		std::list<SearchQueueItem *>::iterator it = visitedSearchNodes.begin();
+									std::list<SearchQueueItem *>::iterator it = visitedSearchNodes.begin();
 									std::list<SearchQueueItem *>::iterator end = visitedSearchNodes.end();
-									for (; it != end; ++it) {
+									int stateCount = 0;
+									for (; it != end; ++it, ++stateCount) {
 										SearchQueueItem * searchNode = *it;
-										if (searchNode->state() == 0) {
+										if (!Planner::isSearchNodeValid(searchNode)) {
 											continue;
 										}
-										cout << "State: " << searchNode->state() << "\n";
-
-										if (&(searchNode->state()->getInnerState()) == 0) {
-											continue;
-										}
+										cout << "State " << (stateCount + 1) << ": " << searchNode->state() << "\n";
+										FF:HTrio heuristic = searchNode->heuristicValue;
+										cout << "Search Node: (heuristicValue " << heuristic.heuristicValue <<", makespan " << heuristic.makespan << ", makespanEstimate " << heuristic.makespanEstimate << ")\n";
 										const MinimalState & theState = searchNode->state()->getInnerState();
-										//Print Literal Facts
-										const StateFacts & stateFacts = theState.first;
-
-										std::set<int>::const_iterator factIt = stateFacts.begin();
-										std::set<int>::const_iterator factEnd = stateFacts.end();
-										for (; factIt != factEnd; ++factIt) {
-											if (*factIt == 0) {
-												continue;
-											}
-											int stateFact = *factIt;
-											Literal * literal = RPGBuilder::getLiteral(stateFact);
-											if (literal->getStateID() >= 0) {
-												VAL::parameter_symbol_list::iterator itrArg = literal->getProp()->args->begin();
-												VAL::parameter_symbol_list::iterator itrArgEnd = literal->getProp()->args->end();
-												cout << literal->getProp()->head->getName() << ": ";
-												for (; itrArg != itrArgEnd; itrArg++) {
-													cout << (*itrArg)->getName() << " ";
-												}
-												cout << "\n";
-											}
-										}
-										//Print Fluents
-										const int pneCount = RPGBuilder::getPNECount();
-										for (int i = 0; i < pneCount; i++) {
-											Inst::PNE* pne = RPGBuilder::getPNE(i);
-											cout << "(= "<< *pne << " ";
-											cout << theState.secondMin[i] << ")\n";
-										}
-										cout << "Finished iterating through state facts\n";
+										Planner::printState(theState);
+										cout << "Finished printing state\n";
 									}
 	                            	cout << "Finished iterating through visited Search Nodes\n";
                             	}

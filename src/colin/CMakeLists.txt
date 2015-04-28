@@ -28,6 +28,9 @@ include_directories(${val_SOURCE_DIR} ${val_SOURCE_DIR}/parsing ${val_BINARY_DIR
 set(colin_build_srcs
     compressionsafescheduler.cpp
     colintotalordertransformer.cpp
+    minimalstate.cpp
+	ExtendedMinimalState.cpp
+	SearchQueueItem.cpp
     FFSolver.cpp
     FFEvent.cpp
     globals.cpp
@@ -37,10 +40,10 @@ set(colin_build_srcs
     RPGBuilderEvaluation.cpp
     RPGBuilderNumerics.cpp
     temporalanalysis.cpp
-    minimalstate.cpp
     temporalconstraints.cpp
     numericanalysis.cpp
-    solver.cpp)
+    solver.cpp
+	Util.cpp)
 
 add_library(ColinCommon STATIC ${colin_build_srcs})
 target_link_libraries(ColinCommon ParsePDDL Inst)
