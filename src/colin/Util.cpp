@@ -40,21 +40,21 @@ void Planner::printState(const MinimalState & theState, double timeStamp) {
 
 	//Print Literal Facts
 	const StateFacts & stateFacts = theState.first;
-	cout << "There are " << stateFacts.size() << " state facts.\n";
+//	cout << "There are " << stateFacts.size() << " state facts.\n";
 	StateFacts::const_iterator cfItr = stateFacts.begin();
 	const StateFacts::const_iterator cfEnd = stateFacts.end();
 	for (; cfItr != cfEnd; cfItr++) {
 		int stateFact = *cfItr;
 		Inst::Literal * literal = RPGBuilder::getLiteral(stateFact);
-		if (literal->getStateID() >= 0) {
-			printLiteral(literal);
-			cout << "\n";
-		}
+//		if (literal->getStateID() >= 0) { //Checks if fact is non-static
+		printLiteral(literal);
+		cout << "\n";
+//		}
 	}
 
 	//Print Fluents
 	const int pneCount = theState.secondMin.size();
-	cout << "There are " << pneCount << " primitive numerical expressions.\n";
+//	cout << "There are " << pneCount << " primitive numerical expressions.\n";
 	for (int i = 0; i < pneCount; i++) {
 		Inst::PNE* pne = Planner::RPGBuilder::getPNE(i);
 		cout << "(= " << *pne << " ";
@@ -62,7 +62,7 @@ void Planner::printState(const MinimalState & theState, double timeStamp) {
 	}
 	//Print TILs
 	list<RPGBuilder::FakeTILAction> tils = Planner::RPGBuilder::getTILs();
-	cout << "There are " << tils.size() << " TILs\n";
+//	cout << "There are " << tils.size() << " TILs\n";
 	std::list<RPGBuilder::FakeTILAction>::const_iterator tilItr = tils.begin();
 	const std::list<RPGBuilder::FakeTILAction>::const_iterator tilItrEnd =
 			tils.end();
@@ -100,41 +100,89 @@ void Planner::printState(const MinimalState & theState, double timeStamp) {
 }
 
 void Planner::printLiteral(Literal * literal) {
-	VAL::parameter_symbol_list::iterator litIt =
-			literal->getProp()->args->begin();
-	VAL::parameter_symbol_list::iterator litItEnd =
-			literal->getProp()->args->end();
-	cout << "(" << literal->getProp()->head->getName() << " ";
-	for (; litIt != litItEnd; litIt++) {
-		cout << (*litIt)->getName() << " ";
-	}
-	cout << ")";
+	literal->write(cout);
 }
 
-bool Planner::isSearchNodeValid(SearchQueueItem * searchNode) {
-	const static int TOO_MANY_VARIABLES = 10000000;
-	if (searchNode->heuristicValue.makespanEstimate
-			!= searchNode->heuristicValue.makespanEstimate) {
-		return false; //makespan estimate is nan
-	} else if (searchNode->heuristicValue.makespanEstimate < 1.0) {
-		return false; // makespan estimate is invalid
-	} else if (searchNode->heuristicValue.makespan < 1.0) {
-		return false; // makespan is invalid;
-	}
-	if (searchNode->state() == 0) {
+bool Planner::isSearchNodeValid(SearchQueueItem & searchNode) {
+	if (searchNode.state() == 0) {
 		return false; //state is null
 	}
-	ExtendedMinimalState * state = searchNode->state();
-	if (state->getInnerState().first.size() > TOO_MANY_VARIABLES) {
-		return false;
-	} else if (state->getInnerState().secondMin.size() > TOO_MANY_VARIABLES) {
+	ExtendedMinimalState * state = searchNode.state();
+	if (state->timeStamp < 0) {
 		return false;
 	}
+	if ((searchNode.heuristicValue.qbreak > 0.0)
+			&& (searchNode.heuristicValue.qbreak
+					< Planner::ERRONEOUS_HEURISTIC_MIN)) {
+		return false;
+	}
+	if (state->getInnerStatePtr() == 0) {
+		return false;
+	}
+	if (searchNode.heuristicValue.makespan
+			!= searchNode.heuristicValue.makespan) {
+		return false; //makespan is nan
+	}
+	if (searchNode.state()->timeStamp != searchNode.state()->timeStamp) {
+		return false; //timestamp is nan
+	}
+
+	if (state->getInnerStatePtr()->actionsExecuting > TOO_MANY_VARIABLES) {
+		return false;
+	}
+
 	return true;
+
+//	if (searchNode.heuristicValue.makespanEstimate
+//			!= searchNode.heuristicValue.makespanEstimate) {
+//		return false; //makespan estimate is nan
+//	} else if (searchNode.heuristicValue.makespanEstimate < 1.0) {
+//		return false; // makespan estimate is invalid
+////	} else if (searchNode->heuristicValue.makespan < 1.0) {
+//		return false; // makespan is invalid;
+//	}
+//	if (searchNode.state() == 0) {
+//		return false; //state is null
+//	}
+//	ExtendedMinimalState * state = searchNode.state();
+//	if (state->getInnerState().first.size() > Planner::TOO_MANY_VARIABLES) {
+//		return false;
+//	} else if (state->getInnerState().secondMin.size()
+//			> Planner::TOO_MANY_VARIABLES) {
+//		return false;
+//	}
+//	return true;
 }
 
-void Planner::printSearchNodeHeuristic(const SearchQueueItem * searchNode) {
-	HTrio heuristic = searchNode->heuristicValue;
+void Planner::printErrorState(SearchQueueItem & searchNode, int stateNum) {
+	cout << "Error state found at number " << stateNum << "\n";
+	printSearchNodeHeuristic(searchNode);
+	if (searchNode.state() != 0) {
+		ExtendedMinimalState * state = searchNode.state();
+		double timeStamp = searchNode.state()->timeStamp;
+		cout << "Timestamp " << timeStamp << "\n";
+		if (state->getInnerStatePtr() != 0) {
+			if ((searchNode.heuristicValue.qbreak < 0.0)
+					|| (searchNode.heuristicValue.qbreak
+							> Planner::ERRONEOUS_HEURISTIC_MIN)) {
+				cout << "Makespan "
+						<< searchNode.state()->getInnerStatePtr()->planLength
+						<< "\n";
+				cout << "Actions Executing "
+						<< searchNode.state()->getInnerStatePtr()->actionsExecuting
+						<< "\n";
+				cout << "Number of Literals: "
+						<< state->getInnerState().first.size() << "\n";
+				cout << "Number of Fluents: "
+						<< state->getInnerState().secondMin.size() << "\n";
+			}
+		}
+	}
+
+}
+
+void Planner::printSearchNodeHeuristic(const SearchQueueItem & searchNode) {
+	HTrio heuristic = searchNode.heuristicValue;
 	cout << "Search Node: (heuristicValue " << heuristic.heuristicValue
 			<< ", makespan " << heuristic.makespan << ", makespanEstimate "
 			<< heuristic.makespanEstimate << ")\n";

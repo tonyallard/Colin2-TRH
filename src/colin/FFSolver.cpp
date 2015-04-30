@@ -42,12 +42,14 @@
 
 #include <cfloat>
 #include <limits>
+#include <vector>
 
 #include <sys/times.h>
 
 #include "Util.h"
 
 using std::cerr;
+using std::vector;
 
 namespace Planner
 {
@@ -5832,7 +5834,7 @@ Solution FF::search(bool & reachedGoal)
         }
     }
     //List for remembering visited search queue items
-    list<SearchQueueItem *> visitedSearchNodes;
+    list<SearchQueueItem> visitedSearchNodes;
     // Begine BFS search
     while (!searchQueue.empty()) {
 
@@ -5941,7 +5943,7 @@ Solution FF::search(bool & reachedGoal)
                 ActionSegment tempSeg(0, VAL::E_AT, oldTIL, RPGHeuristic::emptyIntList);
                 SearchQueueItem * item = new SearchQueueItem(applyActionToState(tempSeg, *(currSQI->state()), currSQI->plan), true);
                 succ = auto_ptr<SearchQueueItem>(item);
-                visitedSearchNodes.push_back(item);
+                visitedSearchNodes.push_back(*item);
                 if (!succ->state()) {
                     tsSound = false;
                 } else {
@@ -5956,7 +5958,7 @@ Solution FF::search(bool & reachedGoal)
                 //registerFinished(*(succ->state), helpfulActsItr->needToFinish);
             	SearchQueueItem * item = new SearchQueueItem(applyActionToState(*helpfulActsItr, *(currSQI->state()), currSQI->plan), true);
                 succ = auto_ptr<SearchQueueItem>(item);
-                visitedSearchNodes.push_back(item);
+                visitedSearchNodes.push_back(*item);
                 if (!succ->state()) {
                     tsSound = false;
                 } else {
@@ -6057,7 +6059,7 @@ Solution FF::search(bool & reachedGoal)
                             tempSeg = ActionSegment(0, VAL::E_AT, tn, RPGHeuristic::emptyIntList);
                             SearchQueueItem * item = new SearchQueueItem(applyActionToState(tempSeg, *(TILparent->state()), TILparent->plan), true);
                             succ = auto_ptr<SearchQueueItem>(item);
-                            visitedSearchNodes.push_back(item);
+                            visitedSearchNodes.push_back(*item);
 
                             succ->heuristicValue.makespan = TILparent->heuristicValue.makespan;
 
@@ -6168,22 +6170,31 @@ Solution FF::search(bool & reachedGoal)
 
                             	if (!Globals::checkingForGoodState) {
 									Globals::checkingForGoodState = true;
-									std::list<SearchQueueItem *>::iterator it = visitedSearchNodes.begin();
-									std::list<SearchQueueItem *>::iterator end = visitedSearchNodes.end();
+									std::list<SearchQueueItem>::iterator it = visitedSearchNodes.begin();
+									std::list<SearchQueueItem>::iterator end = visitedSearchNodes.end();
 									int stateCount = 0;
+									int errStateCount = 0;
 									for (; it != end; ++it, ++stateCount) {
-										SearchQueueItem * searchNode = *it;
+										SearchQueueItem & searchNode = *it;
 										if (!Planner::isSearchNodeValid(searchNode)) {
+											Planner::printErrorState(searchNode, stateCount+1);
+											errStateCount++;
 											continue;
 										}
-										double timeStamp = searchNode->state()->timeStamp;
-										cout << "State " << (stateCount + 1) << ": " << searchNode->state() << " at " << timeStamp << "\n";
+										double timeStamp = searchNode.state()->timeStamp;
+										int makespan = searchNode.state()->getInnerStatePtr()->planLength;
+										int actionsExecuting = searchNode.state()->getInnerStatePtr()->actionsExecuting;
+										cout << "State " << (stateCount + 1) << ": " << searchNode.state()
+												<< ", at " << timeStamp
+												<< ", with plan length of " << makespan
+												<< ", " << actionsExecuting << " actions currently executing.\n";
 										Planner::printSearchNodeHeuristic(searchNode);
-										const MinimalState & theState = searchNode->state()->getInnerState();
+										const MinimalState & theState = searchNode.state()->getInnerState();
 										Planner::printState(theState, timeStamp);
 										cout << "Finished printing state\n";
 									}
-	                            	cout << "Finished iterating through visited Search Nodes\n";
+	                            	cout << "Finished iterating through visited Search Nodes (good: " << (stateCount - errStateCount) << ", bad: " << errStateCount << ")\n";
+	                            	cout.flush();
                             	}
                             	return workingBestSolution;
                             }
