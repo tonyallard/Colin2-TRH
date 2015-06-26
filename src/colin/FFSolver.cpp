@@ -43,10 +43,12 @@
 #include <cfloat>
 #include <limits>
 #include <vector>
+#include <sstream>
 
 #include <sys/times.h>
 
 #include "Util.h"
+#include "PDDLState.h"
 
 using std::cerr;
 using std::vector;
@@ -5834,7 +5836,7 @@ Solution FF::search(bool & reachedGoal)
         }
     }
     //List for remembering visited search queue items
-    list<SearchQueueItem> visitedSearchNodes;
+    list<PDDLState> visitedPDDLStates;
     // Begine BFS search
     while (!searchQueue.empty()) {
 
@@ -5943,7 +5945,8 @@ Solution FF::search(bool & reachedGoal)
                 ActionSegment tempSeg(0, VAL::E_AT, oldTIL, RPGHeuristic::emptyIntList);
                 SearchQueueItem * item = new SearchQueueItem(applyActionToState(tempSeg, *(currSQI->state()), currSQI->plan), true);
                 succ = auto_ptr<SearchQueueItem>(item);
-                visitedSearchNodes.push_back(*item);
+                PDDLState newState (item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
+                visitedPDDLStates.push_back(newState);
                 if (!succ->state()) {
                     tsSound = false;
                 } else {
@@ -5958,7 +5961,8 @@ Solution FF::search(bool & reachedGoal)
                 //registerFinished(*(succ->state), helpfulActsItr->needToFinish);
             	SearchQueueItem * item = new SearchQueueItem(applyActionToState(*helpfulActsItr, *(currSQI->state()), currSQI->plan), true);
                 succ = auto_ptr<SearchQueueItem>(item);
-                visitedSearchNodes.push_back(*item);
+                PDDLState newState (item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
+                visitedPDDLStates.push_back(newState);
                 if (!succ->state()) {
                     tsSound = false;
                 } else {
@@ -6059,7 +6063,8 @@ Solution FF::search(bool & reachedGoal)
                             tempSeg = ActionSegment(0, VAL::E_AT, tn, RPGHeuristic::emptyIntList);
                             SearchQueueItem * item = new SearchQueueItem(applyActionToState(tempSeg, *(TILparent->state()), TILparent->plan), true);
                             succ = auto_ptr<SearchQueueItem>(item);
-                            visitedSearchNodes.push_back(*item);
+                            PDDLState newState (item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
+                            visitedPDDLStates.push_back(newState);
 
                             succ->heuristicValue.makespan = TILparent->heuristicValue.makespan;
 
@@ -6164,36 +6169,32 @@ Solution FF::search(bool & reachedGoal)
                             if (!carryOnSearching(succ->state()->getInnerState(), succ->plan)) {
                             	//TODO: cycle through visited states here
                             	cout << "\nBFS Success!!!!\n";
-                            	cout << "States Evaluated: " << visitedSearchNodes.size() << "\n";
-
-//                            	Planner::printAllLiterals();
+                            	cout << "States Evaluated: " << visitedPDDLStates.size() << "\n";
 
                             	if (!Globals::checkingForGoodState) {
 									Globals::checkingForGoodState = true;
-									std::list<SearchQueueItem>::iterator it = visitedSearchNodes.begin();
-									std::list<SearchQueueItem>::iterator end = visitedSearchNodes.end();
+									std::list<PDDLState>::iterator it = visitedPDDLStates.begin();
+									std::list<PDDLState>::iterator end = visitedPDDLStates.end();
 									int stateCount = 0;
 									int errStateCount = 0;
 									for (; it != end; ++it, ++stateCount) {
-										SearchQueueItem & searchNode = *it;
-										if (!Planner::isSearchNodeValid(searchNode)) {
-											Planner::printErrorState(searchNode, stateCount+1);
-											errStateCount++;
-											continue;
-										}
-										double timeStamp = searchNode.state()->timeStamp;
-										int makespan = searchNode.state()->getInnerStatePtr()->planLength;
-										int actionsExecuting = searchNode.state()->getInnerStatePtr()->actionsExecuting;
-										cout << "State " << (stateCount + 1) << ": " << searchNode.state()
-												<< ", at " << timeStamp
-												<< ", with plan length of " << makespan
-												<< ", " << actionsExecuting << " actions currently executing.\n";
-										Planner::printSearchNodeHeuristic(searchNode);
-										const MinimalState & theState = searchNode.state()->getInnerState();
-										Planner::printState(theState, timeStamp);
+										PDDLState & state = *it;
+										std::ostringstream fileName;
+										fileName << "states/state" << (stateCount++) << ".pddl";
+										state.writeToFile(fileName.str());
+//										cout << state.toString();
+//										int makespan = searchNode.state()->getInnerStatePtr()->planLength;
+//										int actionsExecuting = searchNode.state()->getInnerStatePtr()->actionsExecuting;
+//										cout << "State " << (stateCount + 1) << ": " << searchNode.state()
+//												<< ", at " << timeStamp
+//												<< ", with plan length of " << makespan
+//												<< ", " << actionsExecuting << " actions currently executing.\n";
+//										Planner::printSearchNodeHeuristic(searchNode);
+//										const MinimalState & theState = searchNode.state()->getInnerState();
+//										Planner::printState(theState, timeStamp);
 										cout << "Finished printing state\n";
 									}
-	                            	cout << "Finished iterating through visited Search Nodes (good: " << (stateCount - errStateCount) << ", bad: " << errStateCount << ")\n";
+//	                            	cout << "Finished iterating through visited Search Nodes (good: " << (stateCount - errStateCount) << ", bad: " << errStateCount << "), " << visitedSearchNodes.size() << " retained\n";
 	                            	cout.flush();
                             	}
                             	return workingBestSolution;

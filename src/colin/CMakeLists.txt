@@ -44,7 +44,8 @@ set(colin_build_srcs
     temporalconstraints.cpp
     numericanalysis.cpp
     solver.cpp
-	Util.cpp)
+	Util.cpp
+	PDDLState.cpp)
 
 add_library(ColinCommon STATIC ${colin_build_srcs})
 target_link_libraries(ColinCommon ParsePDDL Inst)
