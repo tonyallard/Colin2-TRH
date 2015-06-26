@@ -1445,8 +1445,15 @@ public:
     static instantiatedOp* getInstantiatedOp(const int & i) {
         return instantiatedOps[i];
     };
+
+    static vector<pair<bool, bool> > getStaticLiterals() {
+    	return staticLiterals;
+    };
     static Literal* getLiteral(const int & i) {
         return literals[i];
+    };
+    static int getLiteralCount() {
+    	return literals.size();
     };
     static list<FakeTILAction> & getTILs() {
         return timedInitialLiterals;
