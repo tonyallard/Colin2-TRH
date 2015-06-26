@@ -8,6 +8,8 @@
 #ifndef UTIL_UTIL_H_
 #define UTIL_UTIL_H_
 
+#include <string>
+
 #include "minimalstate.h"
 #include "SearchQueueItem.h"
 #include "instantiation.h"
@@ -25,11 +27,19 @@ void printState(const Planner::MinimalState & theState, double timeStamp);
 
 void printErrorState(SearchQueueItem & searchNode, int stateNum);
 
-void printLiteral(Inst::Literal * literal);
+std::string getLiteralString(Inst::Literal * literal);
+std::string getStateLiteralsString(const Planner::MinimalState & theState);
+
+std::string getStateFluentString(const MinimalState & theState);
+
+std::string getStateTILString(const MinimalState & theState, double timeStamp);
+
+std::string getMetricString();
 
 void printSearchNodeHeuristic(const SearchQueueItem & searchNode);
 
 bool isSearchNodeValid(SearchQueueItem & searchNode);
+
 
 }
 
