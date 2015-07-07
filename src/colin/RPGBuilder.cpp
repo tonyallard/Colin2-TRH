@@ -1907,7 +1907,7 @@ public:
 
     LiteralSet tilAddSet;
     LiteralSet tilDeleteSet;
-    map<double, RPGBuilder::FakeTILAction> timedInitialLiterals;
+    map<double, FakeTILAction> timedInitialLiterals;
 
 
     InitialStateCollector(const VAL::operator_ * o, FastEnvironment * f, VAL::TypeChecker * t = 0)
@@ -2001,9 +2001,9 @@ public:
         const double time_stamp = p->time_stamp;
         TIL = true;
         p->effs->visit(this);
-        const map<double, RPGBuilder::FakeTILAction>::iterator lookup = timedInitialLiterals.find(time_stamp);
+        const map<double, FakeTILAction>::iterator lookup = timedInitialLiterals.find(time_stamp);
         if (lookup == timedInitialLiterals.end()) {
-            timedInitialLiterals.insert(pair<double, RPGBuilder::FakeTILAction>(time_stamp, RPGBuilder::FakeTILAction(time_stamp, tilAddSet, tilDeleteSet)));
+            timedInitialLiterals.insert(pair<double, FakeTILAction>(time_stamp, FakeTILAction(time_stamp, tilAddSet, tilDeleteSet)));
         } else {
             lookup->second.mergeIn(tilAddSet, tilDeleteSet);
         }
@@ -2306,11 +2306,11 @@ vector<int> RPGBuilder::initialUnsatisfiedProcessedStartNumericPreconditions;
 
 vector<list<int> > RPGBuilder::mentionedInFluentInvariants;
 
-list<RPGBuilder::FakeTILAction> RPGBuilder::timedInitialLiterals;
-vector<RPGBuilder::FakeTILAction*> RPGBuilder::timedInitialLiteralsVector;
-list<RPGBuilder::FakeTILAction> RPGBuilder::optimisationTimedInitialLiterals;
-vector<RPGBuilder::FakeTILAction*> RPGBuilder::optimisationTimedInitialLiteralsVector;
-vector<RPGBuilder::FakeTILAction*> RPGBuilder::allTimedInitialLiteralsVector;
+list<FakeTILAction> RPGBuilder::timedInitialLiterals;
+vector<FakeTILAction*> RPGBuilder::timedInitialLiteralsVector;
+list<FakeTILAction> RPGBuilder::optimisationTimedInitialLiterals;
+vector<FakeTILAction*> RPGBuilder::optimisationTimedInitialLiteralsVector;
+vector<FakeTILAction*> RPGBuilder::allTimedInitialLiteralsVector;
 
 map<int, set<int> > RPGBuilder::tilsThatAddFact;
 map<int, set<int> > RPGBuilder::tilsThatDeleteFact;

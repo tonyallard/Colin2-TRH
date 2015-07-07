@@ -47,7 +47,7 @@
 
 #include <sys/times.h>
 
-#include "Util.h"
+#include "PDDLStateFactory.h"
 #include "PDDLState.h"
 
 using std::cerr;
@@ -2386,7 +2386,7 @@ bool FF::precedingActions(ExtendedMinimalState & theState, const ActionSegment &
 
     if (!haveTILstamps) {
         haveTILstamps = true;
-        vector<RPGBuilder::FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
+        vector<FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
         tilCount = tilVec.size();
         tilStamps = vector<double>(tilCount);
         tilNegativeEffects = vector<list<int> >(tilCount);
@@ -2570,7 +2570,7 @@ bool FF::checkTemporalSoundness(ExtendedMinimalState & theState, const ActionSeg
 
     if (!haveTILstamps) {
         haveTILstamps = true;
-        vector<RPGBuilder::FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
+        vector<FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
         tilCount = tilVec.size();
         tilStamps = vector<double>(tilCount);
         tilNegativeEffects = vector<list<int> >(tilCount);
@@ -3699,7 +3699,7 @@ void FF::makeJustApplied(map<double, list<pair<int, int> > > & justApplied, doub
 
     if (!haveTILstamps) {
         haveTILstamps = true;
-        vector<RPGBuilder::FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
+        vector<FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
         tilCount = tilVec.size();
         tilStamps = vector<double>(tilCount);
         for (int i = 0; i < tilCount; ++i) {
@@ -5836,7 +5836,7 @@ Solution FF::search(bool & reachedGoal)
         }
     }
     //List for remembering visited search queue items
-    list<PDDLState> visitedPDDLStates;
+    list<PDDL::PDDLState> visitedPDDLStates;
     // Begine BFS search
     while (!searchQueue.empty()) {
 
@@ -5945,7 +5945,7 @@ Solution FF::search(bool & reachedGoal)
                 ActionSegment tempSeg(0, VAL::E_AT, oldTIL, RPGHeuristic::emptyIntList);
                 SearchQueueItem * item = new SearchQueueItem(applyActionToState(tempSeg, *(currSQI->state()), currSQI->plan), true);
                 succ = auto_ptr<SearchQueueItem>(item);
-                PDDLState newState (item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
+                PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
                 visitedPDDLStates.push_back(newState);
                 if (!succ->state()) {
                     tsSound = false;
@@ -5961,7 +5961,7 @@ Solution FF::search(bool & reachedGoal)
                 //registerFinished(*(succ->state), helpfulActsItr->needToFinish);
             	SearchQueueItem * item = new SearchQueueItem(applyActionToState(*helpfulActsItr, *(currSQI->state()), currSQI->plan), true);
                 succ = auto_ptr<SearchQueueItem>(item);
-                PDDLState newState (item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
+                PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
                 visitedPDDLStates.push_back(newState);
                 if (!succ->state()) {
                     tsSound = false;
@@ -6063,7 +6063,8 @@ Solution FF::search(bool & reachedGoal)
                             tempSeg = ActionSegment(0, VAL::E_AT, tn, RPGHeuristic::emptyIntList);
                             SearchQueueItem * item = new SearchQueueItem(applyActionToState(tempSeg, *(TILparent->state()), TILparent->plan), true);
                             succ = auto_ptr<SearchQueueItem>(item);
-                            PDDLState newState (item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
+                            PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
+                            PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
                             visitedPDDLStates.push_back(newState);
 
                             succ->heuristicValue.makespan = TILparent->heuristicValue.makespan;
@@ -6173,12 +6174,12 @@ Solution FF::search(bool & reachedGoal)
 
                             	if (!Globals::checkingForGoodState) {
 									Globals::checkingForGoodState = true;
-									std::list<PDDLState>::iterator it = visitedPDDLStates.begin();
-									std::list<PDDLState>::iterator end = visitedPDDLStates.end();
+									std::list<PDDL::PDDLState>::iterator it = visitedPDDLStates.begin();
+									std::list<PDDL::PDDLState>::iterator end = visitedPDDLStates.end();
 									int stateCount = 0;
 									int errStateCount = 0;
 									for (; it != end; ++it, ++stateCount) {
-										PDDLState & state = *it;
+										PDDL::PDDLState & state = *it;
 										std::ostringstream fileName;
 										fileName << "states/state" << (stateCount++) << ".pddl";
 										state.writeToFile(fileName.str());

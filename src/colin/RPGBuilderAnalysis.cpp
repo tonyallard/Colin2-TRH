@@ -1599,10 +1599,10 @@ void RPGBuilder::findStaticLiterals()
     LiteralSet tilAdds;
     LiteralSet tilDels;
 
-    list<RPGBuilder::FakeTILAction> & tilActs = RPGBuilder::getTILs();
+    list<FakeTILAction> & tilActs = RPGBuilder::getTILs();
 
-    list<RPGBuilder::FakeTILAction>::iterator tilItr = tilActs.begin();
-    const list<RPGBuilder::FakeTILAction>::iterator tilEnd = tilActs.end();
+    list<FakeTILAction>::iterator tilItr = tilActs.begin();
+    const list<FakeTILAction>::iterator tilEnd = tilActs.end();
 
     for (; tilItr != tilEnd; ++tilItr) {
         tilAdds.insert(tilItr->addEffects.begin(), tilItr->addEffects.end());
