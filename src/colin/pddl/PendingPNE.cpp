@@ -6,17 +6,11 @@
  */
 
 #include <sstream>
-#include "PendingLiteral.h"
+#include "PendingPNE.h"
 
 namespace PDDL {
 
-std::string PendingLiteral::toTILString() {
-	std::ostringstream output;
-	output << "(at " << timestamp << *this << ")";
-	return output.str();
-}
-
-std::string PendingLiteral::toActionString() {
+std::string PendingPNE::toActionString() {
 	std::ostringstream output;
 	output << "(:durative-action " << (*this) << "\n";
 	output << "\t:parameters ()\n";
@@ -47,28 +41,22 @@ std::string PendingLiteral::toActionString() {
 	output << "\t)\n";
 	output << "\t:effect (\n";
 	output << "\t\t";
-	if (!addEffect) {
-		output << "(not ";
-	}
-	output << ((Literal) (*this));
-	if (!addEffect) {
-		output << ")";
-	}
+	output << ((PNE) (*this));
 	output << ")\n)";
 	return output.str();
 }
 
 std::ostream & operator<<(std::ostream & output,
-		const PendingLiteral & literal) {
-	output << literal.getName() << "-";
+		const PendingPNE & pne) {
+	output << pne.getName() << "-";
 	std::list<std::string>::const_iterator argItr =
-			literal.getArguments().begin();
+			pne.getArguments().begin();
 	const std::list<std::string>::const_iterator argItrEnd =
-			literal.getArguments().end();
+			pne.getArguments().end();
 	for (; argItr != argItrEnd; argItr++) {
 		output << (*argItr);
 	}
-	output << "-" << literal.timestamp;
+	output << "-" << pne.getValue() << "-" << pne.timestamp;
 	return output;
 }
 }

@@ -15,6 +15,7 @@
 #include "PNE.h"
 #include "TIL.h"
 #include "PendingLiteral.h"
+#include "PendingPNE.h"
 
 namespace PDDL {
 

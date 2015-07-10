@@ -33,7 +33,12 @@ private:
 	static PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp);
 
 	static std::list<PDDL::PendingLiteral> getPendingLiterals(const Planner::MinimalState & state, double timestamp);
-	static PDDL::PendingLiteral getPendingLiteral(const Inst::Literal * aLiteral, std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > postconditions, double timestamp, bool isPositive);
+	static PDDL::PendingLiteral getPendingLiteral(const Inst::Literal * aLiteral, std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > conditions, double timestamp, bool isPositive);
+
+	static std::list<PDDL::PendingPNE> getPendingPNEs(const Planner::MinimalState & state, double timestamp);
+	static PDDL::PendingPNE getPendingPNE(const Planner::MinimalState & state, int numeric, std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > conditions, double minDur, double maxDur);
+
+	static std::list<pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > getConditions(std::list<Inst::Literal*> conditionLiterals, VAL::time_spec timeQualifier, bool isPositive);
 };
 
 }

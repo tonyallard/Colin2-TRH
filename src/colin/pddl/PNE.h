@@ -24,7 +24,11 @@ private:
 public:
 	PNE(std::string name, std::initializer_list<std::string> arguments, double value) : name(name), arguments(arguments), value(value) {};
 	PNE(std::string name, std::list<std::string> arguments, double value) : name(name), arguments(arguments), value(value) {};
+	const std::string & getName() const { return name; };
+	const std::list<std::string> & getArguments() const {return arguments; };
+	const double & getValue() const { return value; };
 	friend std::ostream & operator<<(std::ostream & output, const PNE & pne);
+
 };
 
 }

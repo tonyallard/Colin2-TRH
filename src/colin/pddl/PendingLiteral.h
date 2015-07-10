@@ -20,13 +20,13 @@ namespace PDDL {
 class PendingLiteral: public PDDL::Literal {
 private:
 	double timestamp;
-	std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > postconditions;
+	std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > conditions;
 	bool addEffect;
 
 public:
 	PendingLiteral(std::string name, std::list<std::string> arguments,
-			std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > postconditions, double timestamp, bool addEffect) :
-			PDDL::Literal(name, arguments), postconditions(postconditions), timestamp(timestamp), addEffect(addEffect) {
+			std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > conditions, double timestamp, bool addEffect) :
+			PDDL::Literal(name, arguments), conditions(conditions), timestamp(timestamp), addEffect(addEffect) {
 	};
 	std::string toTILString();
 	std::string toActionString();
