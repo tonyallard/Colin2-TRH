@@ -62,10 +62,6 @@ std::list<PDDL::Literal> PDDLStateFactory::getLiterals(
 PDDL::Literal PDDLStateFactory::getLiteral(const Inst::Literal * aLiteral) {
 	string name = aLiteral->getProp()->head->getName();
 	std::list<string> variables;
-//	if (name == "in") {
-		cout << "\n IN Predicate";
-		((*aLiteral->getEnv())[*aLiteral->getProp()->args->begin()])->write(cout);
-//	}
 	VAL::parameter_symbol_list::const_iterator argItr =
 			aLiteral->getProp()->args->begin();
 	const VAL::parameter_symbol_list::const_iterator argItrEnd =
