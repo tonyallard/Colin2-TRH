@@ -648,7 +648,7 @@ list<FFEvent> * readPlan(char* filename)
         }
     }
 
-    const vector<RPGBuilder::FakeTILAction*> & tils = RPGBuilder::getTILVec();
+    const vector<FakeTILAction*> & tils = RPGBuilder::getTILVec();
     const int tilCount = tils.size();
 
     for (int t = 0; t < tilCount; ++t) {
