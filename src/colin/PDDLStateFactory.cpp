@@ -11,6 +11,7 @@
 
 #include "PDDLStateFactory.h"
 #include "FakeTILAction.h"
+#include "instantiation.h"
 
 using namespace Planner;
 
@@ -61,16 +62,16 @@ std::list<PDDL::Literal> PDDLStateFactory::getLiterals(
 PDDL::Literal PDDLStateFactory::getLiteral(const Inst::Literal * aLiteral) {
 	string name = aLiteral->getProp()->head->getName();
 	std::list<string> variables;
-	if (name == "in") {
-		cout << "here";
-	}
+//	if (name == "in") {
+		cout << "\n IN Predicate";
+		((*aLiteral->getEnv())[*aLiteral->getProp()->args->begin()])->write(cout);
+//	}
 	VAL::parameter_symbol_list::const_iterator argItr =
 			aLiteral->getProp()->args->begin();
 	const VAL::parameter_symbol_list::const_iterator argItrEnd =
 			aLiteral->getProp()->args->end();
 	for (; argItr != argItrEnd; argItr++) {
-		variables.push_back((*argItr)->getName());
-
+		variables.push_back(((*aLiteral->getEnv())[*argItr])->getName());
 	}
 	return PDDL::Literal(name, variables);
 }
