@@ -40,6 +40,8 @@ void printSearchNodeHeuristic(const SearchQueueItem & searchNode);
 
 bool isSearchNodeValid(SearchQueueItem & searchNode);
 
+std::string toUpper(std::string);
+
 
 }
 

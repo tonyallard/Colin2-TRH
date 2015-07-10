@@ -9,6 +9,7 @@ set( CMAKE_MODULE_PATH    ${CMAKE_MODULE_PATH}
 set(DOXYFILE_TARGET_SUFFIX colin)
 include(UseDoxygen OPTIONAL)
 
+add_subdirectory(pddl)
 
 find_package(Clp)
 find_package(CoinUtils)
@@ -17,13 +18,13 @@ find_package(Cgl)
 find_package(OSI)
 
 
-set(CMAKE_CXX_FLAGS "-pg -ggdb ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++0x -pg -ggdb ${CMAKE_CXX_FLAGS}")
 
 if(STATIC_COLIN)
 set(CMAKE_CXX_LINK_FLAGS "-static ${CMAKE_CXX_LINK_FLAGS}")
 endif(STATIC_COLIN)
 
-include_directories(${val_SOURCE_DIR} ${val_SOURCE_DIR}/parsing ${val_BINARY_DIR} ${CLP_INCLUDES}/coin ${CBC_INCLUDES}/coin ${CPLEX_INCLUDES} ${CONCERT_INCLUDES}  ${GSL_INCLUDES})
+include_directories(${val_SOURCE_DIR} ${val_SOURCE_DIR}/parsing ${val_BINARY_DIR} ${PDDL_SOURCE_DIR} ${PDDL_BINARY_DIR} ${CLP_INCLUDES}/coin ${CBC_INCLUDES}/coin ${CPLEX_INCLUDES} ${CONCERT_INCLUDES}  ${GSL_INCLUDES})
 
 set(colin_build_srcs
     compressionsafescheduler.cpp
@@ -45,10 +46,10 @@ set(colin_build_srcs
     numericanalysis.cpp
     solver.cpp
 	Util.cpp
-	PDDLState.cpp)
+	PDDLStateFactory.cpp)
 
 add_library(ColinCommon STATIC ${colin_build_srcs})
-target_link_libraries(ColinCommon ParsePDDL Inst)
+target_link_libraries(ColinCommon ParsePDDL Inst PDDL)
 SET_TARGET_PROPERTIES(ColinCommon PROPERTIES COMPILE_FLAGS "-DTOTALORDERSTATES -DPOPF3ANALYSIS")
 
 

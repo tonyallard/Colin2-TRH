@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -134,6 +135,23 @@ string Planner::getStateFluentString(const MinimalState & theState) {
 		output << theState.secondMin[i] << ")\n";
 	}
 
+	std::vector<std::list<RPGBuilder::NumericPrecondition*> >staticPNEs = RPGBuilder::getFixedDEs();
+//	cout << "Fixed DEs Size: " << staticPNEs.size() << endl;
+	std::vector<std::list<RPGBuilder::NumericPrecondition*> >::const_iterator statPNEItr = staticPNEs.begin();
+	const std::vector<std::list<RPGBuilder::NumericPrecondition*> >::const_iterator statPNEItrEnd = staticPNEs.end();
+	for (; statPNEItr != statPNEItrEnd; statPNEItr++) {
+		std::list<RPGBuilder::NumericPrecondition*> pneList = *statPNEItr;
+//		cout << "PNE List Size: " << pneList.size() << endl;
+		std::list<RPGBuilder::NumericPrecondition*>::const_iterator pneItr = pneList.begin();
+		const std::list<RPGBuilder::NumericPrecondition*>::const_iterator pneItrEnd = pneList.end();
+		for (; pneItr != pneItrEnd; pneItr++) {
+			RPGBuilder::NumericPrecondition* pne = *pneItr;
+			cout << " HERE: ";
+			pne->display(cout);
+			cout.flush();
+		}
+	}
+
 	//Get PNE differences that are coming from actions
 	ostringstream action;
 	std::map<int, std::set<int> >::const_iterator saItr =
@@ -203,9 +221,9 @@ string Planner::getStateTILString(const MinimalState & theState,
 		double timeStamp) {
 	ostringstream output;
 	//Cycle thourgh TILs
-	list<RPGBuilder::FakeTILAction> tils = Planner::RPGBuilder::getTILs();
-	std::list<RPGBuilder::FakeTILAction>::const_iterator tilItr = tils.begin();
-	const std::list<RPGBuilder::FakeTILAction>::const_iterator tilItrEnd =
+	list<FakeTILAction> tils = Planner::RPGBuilder::getTILs();
+	std::list<FakeTILAction>::const_iterator tilItr = tils.begin();
+	const std::list<FakeTILAction>::const_iterator tilItrEnd =
 			tils.end();
 	for (; tilItr != tilItrEnd; tilItr++) {
 		if ((*tilItr).duration < timeStamp) {
@@ -271,26 +289,6 @@ bool Planner::isSearchNodeValid(SearchQueueItem & searchNode) {
 	}
 
 	return true;
-
-//	if (searchNode.heuristicValue.makespanEstimate
-//			!= searchNode.heuristicValue.makespanEstimate) {
-//		return false; //makespan estimate is nan
-//	} else if (searchNode.heuristicValue.makespanEstimate < 1.0) {
-//		return false; // makespan estimate is invalid
-////	} else if (searchNode->heuristicValue.makespan < 1.0) {
-//		return false; // makespan is invalid;
-//	}
-//	if (searchNode.state() == 0) {
-//		return false; //state is null
-//	}
-//	ExtendedMinimalState * state = searchNode.state();
-//	if (state->getInnerState().first.size() > Planner::TOO_MANY_VARIABLES) {
-//		return false;
-//	} else if (state->getInnerState().secondMin.size()
-//			> Planner::TOO_MANY_VARIABLES) {
-//		return false;
-//	}
-//	return true;
 }
 
 void Planner::printErrorState(SearchQueueItem & searchNode, int stateNum) {
@@ -325,5 +323,10 @@ void Planner::printSearchNodeHeuristic(const SearchQueueItem & searchNode) {
 	cout << "Search Node: (heuristicValue " << heuristic.heuristicValue
 			<< ", makespan " << heuristic.makespan << ", makespanEstimate "
 			<< heuristic.makespanEstimate << ")\n";
+}
+
+std::string toUpper(std::string input) {
+	transform(input.begin(), input.end(), input.begin(), static_cast<int(*)(int)>(toupper));
+	return input;
 }
 

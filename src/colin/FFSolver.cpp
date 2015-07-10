@@ -6180,9 +6180,11 @@ Solution FF::search(bool & reachedGoal)
 									int errStateCount = 0;
 									for (; it != end; ++it, ++stateCount) {
 										PDDL::PDDLState & state = *it;
+										std::ostringstream filePath;
 										std::ostringstream fileName;
-										fileName << "states/state" << (stateCount++) << ".pddl";
-										state.writeToFile(fileName.str());
+										filePath << "states/";
+										fileName << "state" << (stateCount++) << ".pddl";
+										state.writeToFile(filePath.str(), fileName.str());
 //										cout << state.toString();
 //										int makespan = searchNode.state()->getInnerStatePtr()->planLength;
 //										int actionsExecuting = searchNode.state()->getInnerStatePtr()->actionsExecuting;
@@ -6193,7 +6195,7 @@ Solution FF::search(bool & reachedGoal)
 //										Planner::printSearchNodeHeuristic(searchNode);
 //										const MinimalState & theState = searchNode.state()->getInnerState();
 //										Planner::printState(theState, timeStamp);
-										cout << "Finished printing state\n";
+//										cout << "Finished printing state\n";
 									}
 //	                            	cout << "Finished iterating through visited Search Nodes (good: " << (stateCount - errStateCount) << ", bad: " << errStateCount << "), " << visitedSearchNodes.size() << " retained\n";
 	                            	cout.flush();

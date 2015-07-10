@@ -15,5 +15,3 @@ add_subdirectory(VALfiles)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/colin")
 	add_subdirectory(colin)
 endif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/colin")
-
-
