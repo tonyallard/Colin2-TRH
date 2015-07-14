@@ -6182,7 +6182,7 @@ Solution FF::search(bool & reachedGoal)
 										std::ostringstream filePath;
 										std::ostringstream fileName;
 										filePath << "states/";
-										fileName << "state" << (stateCount++) << ".pddl";
+										fileName << "state" << (stateCount++);
 										state.writeToFile(filePath.str(), fileName.str());
 //										cout << state.toString();
 //										int makespan = searchNode.state()->getInnerStatePtr()->planLength;

@@ -51,7 +51,7 @@ string PDDLState::getPlanPrefixString() {
 void PDDLState::writeToFile(string filePath, string fileName) {
 	ofstream myFile;
 	ostringstream fullFilePath;
-	fullFilePath << filePath << fileName;
+	fullFilePath << filePath << fileName << ".pddl";
 	myFile.open(fullFilePath.str());
 	myFile << ";time stamp: " << timestamp << "\n";
 	myFile << ";heuristic: " << heuristic << "\n";
