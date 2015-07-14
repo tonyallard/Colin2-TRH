@@ -38,6 +38,16 @@ string PDDLState::toString() {
 	return output.str();
 }
 
+string PDDLState::getPlanPrefixString() {
+	ostringstream output;
+	std::list<std::string>::const_iterator actionItr = planPrefix.begin();
+	const std::list<std::string>::const_iterator actionItrEnd = planPrefix.end();
+	for (; actionItr != actionItrEnd; actionItr++) {
+		output << ";" << *actionItr << "\n";
+	}
+	return output.str();
+}
+
 void PDDLState::writeToFile(string filePath, string fileName) {
 	ofstream myFile;
 	ostringstream fullFilePath;
@@ -45,6 +55,8 @@ void PDDLState::writeToFile(string filePath, string fileName) {
 	myFile.open(fullFilePath.str());
 	myFile << ";time stamp: " << timestamp << "\n";
 	myFile << ";heuristic: " << heuristic << "\n";
+	myFile << ";plan prefix\n";
+	myFile << getPlanPrefixString() << "\n";
 	myFile << "(define (problem " << fileName << ")\n";
 	myFile << "\t(:domain multi-modal-cargo-routing)\n";
 	myFile

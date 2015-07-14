@@ -5945,7 +5945,7 @@ Solution FF::search(bool & reachedGoal)
                 ActionSegment tempSeg(0, VAL::E_AT, oldTIL, RPGHeuristic::emptyIntList);
                 SearchQueueItem * item = new SearchQueueItem(applyActionToState(tempSeg, *(currSQI->state()), currSQI->plan), true);
                 succ = auto_ptr<SearchQueueItem>(item);
-                PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
+                PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), currSQI->plan, item->state()->timeStamp, item->heuristicValue.qbreak);
                 visitedPDDLStates.push_back(newState);
                 if (!succ->state()) {
                     tsSound = false;
@@ -5961,7 +5961,7 @@ Solution FF::search(bool & reachedGoal)
                 //registerFinished(*(succ->state), helpfulActsItr->needToFinish);
             	SearchQueueItem * item = new SearchQueueItem(applyActionToState(*helpfulActsItr, *(currSQI->state()), currSQI->plan), true);
                 succ = auto_ptr<SearchQueueItem>(item);
-                PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
+                PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), currSQI->plan, item->state()->timeStamp, item->heuristicValue.qbreak);
                 visitedPDDLStates.push_back(newState);
                 if (!succ->state()) {
                     tsSound = false;
@@ -6063,8 +6063,7 @@ Solution FF::search(bool & reachedGoal)
                             tempSeg = ActionSegment(0, VAL::E_AT, tn, RPGHeuristic::emptyIntList);
                             SearchQueueItem * item = new SearchQueueItem(applyActionToState(tempSeg, *(TILparent->state()), TILparent->plan), true);
                             succ = auto_ptr<SearchQueueItem>(item);
-                            PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
-                            PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), item->state()->timeStamp, item->heuristicValue.qbreak);
+                            PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), TILparent->plan, item->state()->timeStamp, item->heuristicValue.qbreak);
                             visitedPDDLStates.push_back(newState);
 
                             succ->heuristicValue.makespan = TILparent->heuristicValue.makespan;

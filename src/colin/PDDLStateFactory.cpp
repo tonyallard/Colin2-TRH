@@ -18,16 +18,14 @@ using namespace Planner;
 
 namespace PDDL {
 
-PDDLState PDDLStateFactory::getPDDLState(const MinimalState & state,
+PDDLState PDDLStateFactory::getPDDLState(const MinimalState & state, std::list<Planner::FFEvent>& plan,
 		double timestamp, double heuristic) {
 	std::list<Literal> literals = getLiterals(state);
 	std::list<PNE> pnes = getPNEs(state);
 	std::list<TIL> tils = getTILs(state, timestamp);
-//	std::list<PendingLiteral> pendingLiterals = getPendingLiterals(state,
-//			timestamp);
-//	std::list<PendingPNE> pendingPNEs = getPendingPNEs(state, timestamp);
 	std::list<PendingAction> pendingActions = getPendingActions(state, timestamp);
-	return PDDLState(literals, pnes, tils, heuristic, timestamp);
+	std::list<string> planPrefix = getPlanPrefix(plan);
+	return PDDLState(literals, pnes, tils, pendingActions, planPrefix, heuristic, timestamp);
 }
 
 std::list<PDDL::Literal> PDDLStateFactory::getLiterals(
@@ -412,11 +410,23 @@ std::list<PDDL::PendingAction> PDDLStateFactory::getPendingActions(
 			PDDL::PNE pne = PDDLStateFactory::getPNE(aPNE, result.first);
 			pneEffects.push_back(pne);
 		}
-		PendingAction pendingAction ("action" + VAL::toString(saItr->first), literalAddEffects, literalDelEffects, pneEffects, conditions, minDur);
+		std::string name = getActionName(saItr->first);
+		PendingAction pendingAction (name, literalAddEffects, literalDelEffects, pneEffects, conditions, minDur);
 		pendingActions.push_back(pendingAction);
-		cout << pendingAction;
 	}
 	return pendingActions;
+}
+
+std::list<std::string> PDDLStateFactory::getPlanPrefix(std::list<Planner::FFEvent>& plan) {
+	std::list<std::string> prefix;
+	std::list<Planner::FFEvent>::const_iterator eventItr = plan.begin();
+	const std::list<Planner::FFEvent>::const_iterator eventItrEnd = plan.end();
+	for (; eventItr != eventItrEnd; eventItr++) {
+		ostringstream name;
+		name << (*eventItr).lpTimestamp << ": " << getActionName((*eventItr).action->getID());
+		prefix.push_back(name.str());
+	}
+	return prefix;
 }
 
 std::list<pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > PDDLStateFactory::getConditions(
@@ -439,4 +449,15 @@ std::list<pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > PDDLStateFacto
 	return conditions;
 }
 
+std::string PDDLStateFactory::getActionName(int actionNum) {
+	ostringstream output;
+	Inst::instantiatedOp* action = RPGBuilder::getInstantiatedOp(actionNum);
+	output << action->getHead()->getName();
+	VAL::var_symbol_list::const_iterator paramItr = action->forOp()->parameters->begin();
+	const VAL::var_symbol_list::const_iterator paramItrEnd = action->forOp()->parameters->end();
+	for (; paramItr != paramItrEnd; paramItr++) {
+		output << "-" << ((*action->getEnv())[*paramItr])->getName();
+	}
+	return output.str();
+}
 }

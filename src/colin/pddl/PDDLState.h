@@ -14,8 +14,6 @@
 #include "Literal.h"
 #include "PNE.h"
 #include "TIL.h"
-#include "PendingLiteral.h"
-#include "PendingPNE.h"
 #include "PendingAction.h"
 
 namespace PDDL {
@@ -26,14 +24,26 @@ private:
 	std::list<Literal> literals;
 	std::list<PNE> pnes;
 	std::list<TIL> tils;
-//	string metric;
+	std::list<PendingAction> pendingActions;
+	std::list<string> planPrefix;
 	double timestamp;
 	double heuristic;
 
+	string getPlanPrefixString();
+
 public:
-	PDDLState (std::list<Literal> literals, std::list<PNE> pnes, std::list<TIL> tils, double heuristic, double timestamp) : literals(literals), pnes(pnes), tils(tils), heuristic(heuristic), timestamp(timestamp) {};
+	PDDLState(std::list<Literal> literals, std::list<PNE> pnes,
+			std::list<TIL> tils, std::list<PendingAction> pendingActions,
+			std::list<string> planPrefix, double heuristic, double timestamp) :
+			literals(literals), pnes(pnes), tils(tils), pendingActions(
+					pendingActions), planPrefix(planPrefix), heuristic(
+					heuristic), timestamp(timestamp) {
+	}
+	;
 	std::string toString();
-	inline double getTimestamp() { return timestamp; }
+	inline double getTimestamp() {
+		return timestamp;
+	}
 	void writeToFile(std::string filePath, std::string fileName);
 
 };

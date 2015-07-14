@@ -11,16 +11,19 @@
 #include <list>
 
 #include "Literal.h"
+#include "PendingLiteral.h"
+#include "PendingPNE.h"
 #include "PDDLState.h"
 #include "minimalstate.h"
 #include "RPGBuilder.h"
+#include "FFEvent.h"
 
 
 namespace PDDL {
 
 class PDDLStateFactory {
 public:
-	static PDDLState getPDDLState(const Planner::MinimalState & state, double timestamp, double heuristic);
+	static PDDLState getPDDLState(const Planner::MinimalState & state, std::list<Planner::FFEvent>& plan, double timestamp, double heuristic);
 
 private:
 	static std::list<PDDL::Literal> getLiterals(const Planner::MinimalState & state);
@@ -40,7 +43,10 @@ private:
 
 	static std::list<PDDL::PendingAction> getPendingActions(const Planner::MinimalState & state, double timestamp);
 
+	static std::list<std::string> getPlanPrefix(std::list<Planner::FFEvent>& plan);
+
 	static std::list<pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > getConditions(std::list<Inst::Literal*> conditionLiterals, VAL::time_spec timeQualifier, bool isPositive);
+	static std::string getActionName(int actionNum);
 };
 
 }
