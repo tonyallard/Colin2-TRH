@@ -12,6 +12,7 @@ set(libPDDL_SRCS
 	TIL.cpp
 	PendingLiteral.cpp    
 	PendingPNE.cpp
+	PendingAction.cpp
 	PDDLState.cpp
 )
 

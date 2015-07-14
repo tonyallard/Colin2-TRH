@@ -38,6 +38,8 @@ private:
 	static std::list<PDDL::PendingPNE> getPendingPNEs(const Planner::MinimalState & state, double timestamp);
 	static PDDL::PendingPNE getPendingPNE(const Planner::MinimalState & state, int numeric, std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > conditions, double minDur, double maxDur);
 
+	static std::list<PDDL::PendingAction> getPendingActions(const Planner::MinimalState & state, double timestamp);
+
 	static std::list<pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > getConditions(std::list<Inst::Literal*> conditionLiterals, VAL::time_spec timeQualifier, bool isPositive);
 };
 

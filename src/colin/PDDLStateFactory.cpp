@@ -12,6 +12,7 @@
 #include "PDDLStateFactory.h"
 #include "FakeTILAction.h"
 #include "instantiation.h"
+#include "Utils.h"
 
 using namespace Planner;
 
@@ -22,10 +23,10 @@ PDDLState PDDLStateFactory::getPDDLState(const MinimalState & state,
 	std::list<Literal> literals = getLiterals(state);
 	std::list<PNE> pnes = getPNEs(state);
 	std::list<TIL> tils = getTILs(state, timestamp);
-	std::list<PendingLiteral> pendingLiterals = getPendingLiterals(state,
-			timestamp);
-	std::list<PendingPNE> pendingPNEs = getPendingPNEs(state,
-			timestamp);
+//	std::list<PendingLiteral> pendingLiterals = getPendingLiterals(state,
+//			timestamp);
+//	std::list<PendingPNE> pendingPNEs = getPendingPNEs(state, timestamp);
+	std::list<PendingAction> pendingActions = getPendingActions(state, timestamp);
 	return PDDLState(literals, pnes, tils, heuristic, timestamp);
 }
 
@@ -293,7 +294,7 @@ std::list<PDDL::PendingPNE> PDDLStateFactory::getPendingPNEs(
 		double minDur = RPGBuilder::getOpMinDuration(saItr->first, 1);
 		double maxDur = RPGBuilder::getOpMaxDuration(saItr->first, 1);
 
-		// Literals Added by Action
+		// PNEs Added by Action
 		std::list<int> numerics = RPGBuilder::getEndEffNumerics()[saItr->first];
 		std::list<int>::const_iterator numItr = numerics.begin();
 		const std::list<int>::const_iterator numItrEnd = numerics.end();
@@ -322,6 +323,100 @@ PDDL::PendingPNE PDDLStateFactory::getPendingPNE(
 	PendingPNE pendingPNE(pne.getName(), pne.getArguments(), pne.getValue(),
 			conditions, minDur);
 	return pendingPNE;
+}
+
+std::list<PDDL::PendingAction> PDDLStateFactory::getPendingActions(
+		const Planner::MinimalState & state, double timestamp) {
+	std::list<PendingAction> pendingActions;
+	//Cycle through Facts held up by executing actions (these are effects coming into play)
+	std::map<int, std::set<int> >::const_iterator saItr =
+			state.startedActions.begin();
+	const std::map<int, std::set<int> >::const_iterator saItrEnd =
+			state.startedActions.end();
+	for (; saItr != saItrEnd; saItr++) {
+
+		//For each action get its conditions
+		/*Postconditions*/
+		std::list<pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > conditions;
+
+		std::list<pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > tempConditions =
+				getConditions(
+						RPGBuilder::getEndPropositionalPreconditions()[saItr->first],
+						VAL::time_spec::E_AT_END, true);
+		conditions.insert(conditions.end(), tempConditions.begin(),
+				tempConditions.end());
+
+		tempConditions =
+				getConditions(
+						RPGBuilder::getEndNegativePropositionalPreconditions()[saItr->first],
+						VAL::time_spec::E_AT_END, false);
+		conditions.insert(conditions.end(), tempConditions.begin(),
+				tempConditions.end());
+
+		/*Invariant Conditions*/
+		tempConditions =
+				getConditions(
+						RPGBuilder::getInvariantPropositionalPreconditions()[saItr->first],
+						VAL::time_spec::E_OVER_ALL, true);
+		conditions.insert(conditions.end(), tempConditions.begin(),
+				tempConditions.end());
+
+		tempConditions =
+				getConditions(
+						RPGBuilder::getInvariantNegativePropositionalPreconditions()[saItr->first],
+						VAL::time_spec::E_OVER_ALL, false);
+		conditions.insert(conditions.end(), tempConditions.begin(),
+				tempConditions.end());
+
+		// Get action duration
+		double minDur = RPGBuilder::getOpMinDuration(saItr->first, 1);
+		double maxDur = RPGBuilder::getOpMaxDuration(saItr->first, 1);
+
+		// Literals Added by Action
+		std::list<PDDL::Literal> literalAddEffects;
+		std::list<Inst::Literal*> adds =
+				RPGBuilder::getEndPropositionAdds()[saItr->first];
+		std::list<Inst::Literal*>::const_iterator addItr = adds.begin();
+		const std::list<Inst::Literal*>::const_iterator addItrEnd = adds.end();
+		for (; addItr != addItrEnd; addItr++) {
+			Literal lit = getLiteral(*addItr);
+			literalAddEffects.push_back(lit);
+		}
+
+		// Literals Deleted by Action
+		std::list<PDDL::Literal> literalDelEffects;
+		std::list<Inst::Literal*> deletes =
+				RPGBuilder::getEndPropositionDeletes()[saItr->first];
+		std::list<Inst::Literal*>::const_iterator delItr = deletes.begin();
+		const std::list<Inst::Literal*>::const_iterator delItrEnd =
+				deletes.end();
+		for (; delItr != delItrEnd; delItr++) {
+			Literal lit = getLiteral(*delItr);
+			literalDelEffects.push_back(lit);
+		}
+
+		// PNEs Added by Action
+		std::list<PDDL::PNE> pneEffects;
+		std::list<int> numerics = RPGBuilder::getEndEffNumerics()[saItr->first];
+		std::list<int>::const_iterator numItr = numerics.begin();
+		const std::list<int>::const_iterator numItrEnd = numerics.end();
+		for (; numItr != numItrEnd; numItr++) {
+			//Get the numeric effect information
+			RPGBuilder::RPGNumericEffect & effect =
+					RPGBuilder::getNumericEff()[*numItr];
+			//Apply the numeric effect to get new fluent values
+			pair<double, double> result = effect.applyEffectMinMax(
+					state.secondMin, state.secondMax, minDur, maxDur);
+			//Determine the PNE that the values belong
+			Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(effect.fluentIndex);
+			PDDL::PNE pne = PDDLStateFactory::getPNE(aPNE, result.first);
+			pneEffects.push_back(pne);
+		}
+		PendingAction pendingAction ("action" + VAL::toString(saItr->first), literalAddEffects, literalDelEffects, pneEffects, conditions, minDur);
+		pendingActions.push_back(pendingAction);
+		cout << pendingAction;
+	}
+	return pendingActions;
 }
 
 std::list<pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > PDDLStateFactory::getConditions(
