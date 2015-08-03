@@ -85,21 +85,21 @@ std::list<PDDL::PNE> PDDLStateFactory::getPNEs(
 	}
 
 	//Manually Add static PNEs
-	pnes.push_back(PNE("travel-time", { "V1", "L2", "L1" }, 2.0));
-	pnes.push_back(PNE("travel-time", { "V1", "L1", "L2" }, 2.0));
-	pnes.push_back(PNE("travel-time", { "V2", "L2", "L3" }, 2.0));
-	pnes.push_back(PNE("travel-time", { "V2", "L3", "L2" }, 2.0));
+	pnes.push_back(PNE("travel-time", { "v1", "l2", "l1" }, 2.0));
+	pnes.push_back(PNE("travel-time", { "v1", "l1", "l2" }, 2.0));
+	pnes.push_back(PNE("travel-time", { "v2", "l2", "l3" }, 2.0));
+	pnes.push_back(PNE("travel-time", { "v2", "l3", "l2" }, 2.0));
 	pnes.push_back(PNE("size", { "C1" }, 1.0));
-	pnes.push_back(PNE("load-time", { "V1", "L1" }, 1.0));
-	pnes.push_back(PNE("load-time", { "V1", "L2" }, 1.0));
-	pnes.push_back(PNE("unload-time", { "V1", "L1" }, 1.0));
-	pnes.push_back(PNE("unload-time", { "V1", "L2" }, 1.0));
-	pnes.push_back(PNE("load-time", { "V2", "L3" }, 1.0));
-	pnes.push_back(PNE("load-time", { "V2", "L2" }, 1.0));
-	pnes.push_back(PNE("unload-time", { "V2", "L3" }, 1.0));
-	pnes.push_back(PNE("unload-time", { "V2", "L2" }, 1.0));
-	pnes.push_back(PNE("cost", { "V1" }, 1.0));
-	pnes.push_back(PNE("cost", { "V2" }, 1.0));
+	pnes.push_back(PNE("load-time", { "v1", "l1" }, 1.0));
+	pnes.push_back(PNE("load-time", { "v1", "l2" }, 1.0));
+	pnes.push_back(PNE("unload-time", { "v1", "l1" }, 1.0));
+	pnes.push_back(PNE("unload-time", { "v1", "l2" }, 1.0));
+	pnes.push_back(PNE("load-time", { "v2", "l3" }, 1.0));
+	pnes.push_back(PNE("load-time", { "v2", "l2" }, 1.0));
+	pnes.push_back(PNE("unload-time", { "v2", "l3" }, 1.0));
+	pnes.push_back(PNE("unload-time", { "v2", "l2" }, 1.0));
+	pnes.push_back(PNE("cost", { "v1" }, 1.0));
+	pnes.push_back(PNE("cost", { "v2" }, 1.0));
 
 	return pnes;
 }
@@ -228,7 +228,7 @@ std::list<PendingLiteral> PDDLStateFactory::getPendingLiterals(
 				deletes.end();
 		for (; delItr != delItrEnd; delItr++) {
 			PendingLiteral pendingLiteral = PDDLStateFactory::getPendingLiteral(
-					*addItr, conditions, (*saItr->second.begin() - timestamp),
+					*delItr, conditions, (*saItr->second.begin() - timestamp),
 					false);
 			pendingLiterals.push_back(pendingLiteral);
 		}
