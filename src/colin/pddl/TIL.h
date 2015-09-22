@@ -16,17 +16,23 @@ namespace PDDL {
 
 class TIL {
 private:
-	std::list<Literal> addEffects;
-	std::list<Literal> delEffects;
+	std::list<Proposition> addEffects;
+	std::list<Proposition> delEffects;
 	double timestamp;
 
 public:
-	TIL(std::list<Literal> addEffects, std::list<Literal> delEffects,
+	TIL(std::list<Proposition> addEffects, std::list<Proposition> delEffects,
 			double timestamp) :
 			addEffects(addEffects), delEffects(delEffects), timestamp(timestamp) {
 	}
 	;
+	std::string getName() const;
+	double getTimestamp() const { return timestamp; };
+	const std::list<Proposition> & getAddEffects() const { return addEffects; };
+	const std::list<Proposition> & getDelEffects() const { return delEffects; };
 	friend std::ostream & operator<<(std::ostream & output, const TIL & til);
+	static bool TILTimestampComparator(const TIL & first, const TIL & second);
+	friend bool TILTimestampComparator(const TIL & first, const TIL & second);
 };
 
 }

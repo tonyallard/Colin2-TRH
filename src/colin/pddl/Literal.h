@@ -14,17 +14,19 @@
 
 namespace PDDL {
 
-class Literal {
+class Proposition {
 
 private:
 	std::string name;
 	std::list<std::string> arguments;
 
 public:
-	Literal(std::string name, std::list<std::string> arguments) : name(name), arguments(arguments) {};
+	Proposition(std::string name, std::list<std::string> arguments) : name(name), arguments(arguments) {};
 	const std::string & getName() const { return name; };
 	const std::list<std::string> & getArguments() const {return arguments; };
-	friend std::ostream & operator<<(std::ostream & output, const Literal & literal);
+	friend std::ostream & operator<<(std::ostream & output, const Proposition & literal);
+	static std::string getDecoratedName(const Proposition & literal);
+	friend std::string getDecoratedName(const Proposition & literal);
 };
 
 }

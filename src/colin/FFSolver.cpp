@@ -6183,7 +6183,8 @@ Solution FF::search(bool & reachedGoal)
 										std::ostringstream fileName;
 										filePath << "states/";
 										fileName << "state" << (stateCount++);
-										state.writeToFile(filePath.str(), fileName.str());
+										state.writeDeTILedStateToFile(filePath.str(), fileName.str());
+										state.writeDeTILedDomainToFile(filePath.str(), fileName.str());
 //										cout << state.toString();
 //										int makespan = searchNode.state()->getInnerStatePtr()->planLength;
 //										int actionsExecuting = searchNode.state()->getInnerStatePtr()->actionsExecuting;

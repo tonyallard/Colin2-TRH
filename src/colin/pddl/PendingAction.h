@@ -29,15 +29,15 @@ class PendingAction {
 private:
 	double timestamp;
 	std::string name;
-	std::list<Literal> literalAddEffects;
-	std::list<Literal> literalDelEffects;
+	std::list<Proposition> literalAddEffects;
+	std::list<Proposition> literalDelEffects;
 	std::list<PNE> pneEffects;
-	std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > conditions;
+	std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions;
 
 public:
-	PendingAction(std::string name, std::list<Literal> literalAddEffects, std::list<Literal> literalDelEffects,
+	PendingAction(std::string name, std::list<Proposition> literalAddEffects, std::list<Proposition> literalDelEffects,
 			std::list<PNE> pneEffects,
-			std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > conditions,
+			std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions,
 			double timestamp) :
 			name(name), literalAddEffects(literalAddEffects), literalDelEffects(literalDelEffects), pneEffects(pneEffects), conditions(
 					conditions), timestamp(timestamp) {

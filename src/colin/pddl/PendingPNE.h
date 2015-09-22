@@ -21,11 +21,11 @@ namespace PDDL {
 class PendingPNE: public PDDL::PNE {
 private:
 	double timestamp;
-	std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > conditions;
+	std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions;
 
 public:
 	PendingPNE(std::string name, std::list<std::string> arguments, double value,
-			std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > conditions, double timestamp) :
+			std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions, double timestamp) :
 			PDDL::PNE(name, arguments, value), conditions(conditions), timestamp(timestamp) {
 	};
 	std::string toActionString();

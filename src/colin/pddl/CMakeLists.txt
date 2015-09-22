@@ -13,6 +13,7 @@ set(libPDDL_SRCS
 	PendingLiteral.cpp    
 	PendingPNE.cpp
 	PendingAction.cpp
+	MMCRDomainFactory.cpp
 	PDDLState.cpp
 )
 

@@ -17,21 +17,21 @@
 
 namespace PDDL {
 
-class PendingLiteral: public PDDL::Literal {
+class PendingProposition: public PDDL::Proposition {
 private:
 	double timestamp;
-	std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > conditions;
+	std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions;
 	bool addEffect;
 
 public:
-	PendingLiteral(std::string name, std::list<std::string> arguments,
-			std::list<std::pair<PDDL::Literal, std::pair<VAL::time_spec, bool> > > conditions, double timestamp, bool addEffect) :
-			PDDL::Literal(name, arguments), conditions(conditions), timestamp(timestamp), addEffect(addEffect) {
+	PendingProposition(std::string name, std::list<std::string> arguments,
+			std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions, double timestamp, bool addEffect) :
+			PDDL::Proposition(name, arguments), conditions(conditions), timestamp(timestamp), addEffect(addEffect) {
 	};
 	std::string toTILString();
 	std::string toActionString();
 	friend std::ostream & operator<<(std::ostream & output,
-			const PendingLiteral & literal);
+			const PendingProposition & literal);
 };
 
 }

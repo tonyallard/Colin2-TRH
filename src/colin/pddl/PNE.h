@@ -27,6 +27,7 @@ public:
 	const std::string & getName() const { return name; };
 	const std::list<std::string> & getArguments() const {return arguments; };
 	const double & getValue() const { return value; };
+	std::string toActionEffectString() const;
 	friend std::ostream & operator<<(std::ostream & output, const PNE & pne);
 
 };

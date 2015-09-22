@@ -16,10 +16,10 @@ std::string PendingPNE::toActionString() {
 	output << "\t:parameters ()\n";
 	output << "\t:duration (= ?duration 1)\n"; //Need to get action duration here
 	output << "\t:condition (and \n"; //Need conditions of previous action here
-	std::list<std::pair<Literal, std::pair<VAL::time_spec, bool> > >::const_iterator condItr = conditions.begin();
-	const std::list<std::pair<Literal, std::pair<VAL::time_spec, bool> > >::const_iterator condItrEnd = conditions.end();
+	std::list<std::pair<Proposition, std::pair<VAL::time_spec, bool> > >::const_iterator condItr = conditions.begin();
+	const std::list<std::pair<Proposition, std::pair<VAL::time_spec, bool> > >::const_iterator condItrEnd = conditions.end();
 	for (; condItr != condItrEnd; condItr++) {
-		std::pair<Literal, std::pair<VAL::time_spec, bool> > cond = *condItr;
+		std::pair<Proposition, std::pair<VAL::time_spec, bool> > cond = *condItr;
 		// Check the type of condition
 		if (cond.second.first == VAL::time_spec::E_AT_END) {
 			output << "\t\t(at end ";

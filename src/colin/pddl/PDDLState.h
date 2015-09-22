@@ -21,7 +21,7 @@ namespace PDDL {
 class PDDLState {
 
 private:
-	std::list<Literal> literals;
+	std::list<Proposition> literals;
 	std::list<PNE> pnes;
 	std::list<TIL> tils;
 	std::list<PendingAction> pendingActions;
@@ -32,7 +32,7 @@ private:
 	string getPlanPrefixString();
 
 public:
-	PDDLState(std::list<Literal> literals, std::list<PNE> pnes,
+	PDDLState(std::list<Proposition> literals, std::list<PNE> pnes,
 			std::list<TIL> tils, std::list<PendingAction> pendingActions,
 			std::list<string> planPrefix, double heuristic, double timestamp) :
 			literals(literals), pnes(pnes), tils(tils), pendingActions(
@@ -41,10 +41,17 @@ public:
 	}
 	;
 	std::string toString();
+	std::string getLiteralString();
+	std::string getPNEString();
+	std::string getTILLiteralString();
+	std::string getDomainString();
+	std::string getDeTiledDomainString();
 	inline double getTimestamp() {
 		return timestamp;
 	}
-	void writeToFile(std::string filePath, std::string fileName);
+	void writeStateToFile(std::string filePath, std::string fileName);
+	void writeDeTILedStateToFile(std::string filePath, std::string fileName);
+	void writeDeTILedDomainToFile(string filePath, string fileName);
 
 };
 

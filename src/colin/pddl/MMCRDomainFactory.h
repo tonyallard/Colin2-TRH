@@ -1,0 +1,40 @@
+/*
+ * PDDLMMCRDomainFactory.h
+ *
+ *  Created on: 18 Jul 2015
+ *      Author: tony
+ */
+
+#ifndef COLIN_PDDL_MMCRDOMAINFACTORY_H_
+#define COLIN_PDDL_MMCRDOMAINFACTORY_H_
+
+#include "Literal.h"
+#include "TIL.h"
+#include "PendingAction.h"
+
+namespace PDDL {
+class MMCRDomainFactory {
+private:
+	static const std::string TIL_ACHIEVED_PROPOSITION;
+	MMCRDomainFactory() {
+	}
+	; //Private constructor
+	static std::string getHeader(bool deTILed);
+	static std::string getTypes(bool deTILed);
+	static std::string getPredicates(bool deTILed);
+	static std::string getFunctions();
+	static std::string getLoadAction();
+	static std::string getUnloadAction();
+	static std::string getMoveAction();
+	static std::string getdeTILedActions(std::list<TIL> tils);
+	static std::string getdeTILedAction(const TIL & til,
+			std::list<PDDL::Proposition> * tilActionPreconditions);
+	static std::string getPendingActions(const std::list<PendingAction> & pendingActions);
+	static std::string getTerminationString();
+public:
+	static std::string getMMCRDomain(const std::list<PendingAction> & pendingActions);
+	static std::string getDeTILedMMCRDomain(std::list<TIL> tils, const std::list<PendingAction> & pendingActions);
+};
+}
+
+#endif /* COLIN_PDDL_MMCRDOMAINFACTORY_H_ */
