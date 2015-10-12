@@ -12,7 +12,7 @@
 #include <iostream>
 #include <list>
 
-#include "Literal.h"
+#include "Proposition.h"
 #include "PNE.h"
 #include "ptree.h"
 
@@ -44,6 +44,8 @@ public:
 	}
 	;
 	const std::string & getName() const { return name; };
+	bool operator==(const PendingAction & other);
+	bool operator!=(const PendingAction & other);
 	friend std::ostream & operator<<(std::ostream & output,
 			const PendingAction & action);
 };

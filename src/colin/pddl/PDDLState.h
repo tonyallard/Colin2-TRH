@@ -11,7 +11,7 @@
 #include <string>
 #include <list>
 
-#include "Literal.h"
+#include "Proposition.h"
 #include "PNE.h"
 #include "TIL.h"
 #include "PendingAction.h"
@@ -40,6 +40,7 @@ public:
 					heuristic), timestamp(timestamp) {
 	}
 	;
+	PDDLState(){};
 	std::string toString();
 	std::string getLiteralString();
 	std::string getPNEString();
@@ -52,6 +53,7 @@ public:
 	void writeStateToFile(std::string filePath, std::string fileName);
 	void writeDeTILedStateToFile(std::string filePath, std::string fileName);
 	void writeDeTILedDomainToFile(string filePath, string fileName);
+	bool equals(const PDDLState & other);
 
 };
 

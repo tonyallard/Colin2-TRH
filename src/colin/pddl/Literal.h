@@ -1,32 +1,36 @@
 /*
  * Literal.h
  *
- *  Created on: 2 Jul 2015
+ *  Created on: 30 Aug 2015
  *      Author: tony
  */
 
 #ifndef COLIN_PDDL_LITERAL_H_
 #define COLIN_PDDL_LITERAL_H_
 
-#include <list>
 #include <string>
 #include <iostream>
 
+#include "Proposition.h"
+
 namespace PDDL {
 
-class Proposition {
-
+class Literal {
 private:
-	std::string name;
-	std::list<std::string> arguments;
+	bool positive;
+	Proposition proposition;
 
 public:
-	Proposition(std::string name, std::list<std::string> arguments) : name(name), arguments(arguments) {};
-	const std::string & getName() const { return name; };
-	const std::list<std::string> & getArguments() const {return arguments; };
-	friend std::ostream & operator<<(std::ostream & output, const Proposition & literal);
-	static std::string getDecoratedName(const Proposition & literal);
-	friend std::string getDecoratedName(const Proposition & literal);
+	Literal(PDDL::Proposition proposition, bool positive) : proposition(proposition), positive(positive) {};
+	Literal(std::string name, std::list<std::string> arguments, bool positive);
+	Literal(){};
+	inline bool isPositive() const { return positive; };
+	inline bool isNegative() const { return !positive; };
+	inline const Proposition * getProposition() const { return &proposition; };
+	bool operator==(const Literal & other);
+	bool operator!=(const Literal & other);
+	friend std::ostream & operator<<(std::ostream & output,
+			const Literal & literal);
 };
 
 }

@@ -141,4 +141,66 @@ void PDDLState::writeDeTILedDomainToFile(string filePath, string fileName) {
 	myFile.close();
 }
 
+bool PDDLState::equals(const PDDLState & other) {
+	//Check if the timestamp is the same
+	if (this->timestamp != other.timestamp) {
+		return false;
+	}
+
+	//Check if the literals are the same
+	if (this->literals.size() != other.literals.size()) {
+		return false;
+	}
+	std::list<Proposition>::const_iterator thisLitsItr = this->literals.begin();
+	std::list<Proposition>::const_iterator othrLitsItr = other.literals.begin();
+	for (; thisLitsItr != this->literals.end(); thisLitsItr++, othrLitsItr++) {
+		Proposition thisProp = *thisLitsItr;
+		Proposition othrProp = *othrLitsItr;
+		if (thisProp != othrProp) {
+			return false;
+		}
+	}
+	//Check if the PNEs are the same
+	if (this->pnes.size() != other.pnes.size()) {
+		return false;
+	}
+	std::list<PNE>::const_iterator thisPNEsItr = this->pnes.begin();
+	std::list<PNE>::const_iterator othrPNEsItr = other.pnes.begin();
+	for (; thisPNEsItr != this->pnes.end(); thisPNEsItr++, othrPNEsItr++) {
+		PNE thisPNE = *thisPNEsItr;
+		PNE othrPNE = *othrPNEsItr;
+		if (thisPNE != othrPNE) {
+			return false;
+		}
+	}
+	//Check if the TILs are the same
+	if (this->tils.size() != other.tils.size()) {
+		return false;
+	}
+	std::list<TIL>::const_iterator thisTILItr = this->tils.begin();
+	std::list<TIL>::const_iterator othrTILItr = other.tils.begin();
+	for (; thisTILItr != this->tils.end(); thisTILItr++, othrTILItr++) {
+		TIL thisTIL = *thisTILItr;
+		TIL othrTIL = *othrTILItr;
+		if (thisTIL != othrTIL) {
+			return false;
+		}
+	}
+	//Check if the Pending Actions are the same
+	if (this->pendingActions.size() != other.pendingActions.size()) {
+		return false;
+	}
+	std::list<PendingAction>::const_iterator thisPAItr = this->pendingActions.begin();
+	std::list<PendingAction>::const_iterator othrPAItr = other.pendingActions.begin();
+	for (; thisPAItr != othrPAItr; thisPAItr++, othrPAItr++) {
+		PendingAction thisPA = *thisPAItr;
+		PendingAction othrPA = *othrPAItr;
+		if (thisPA != othrPA) {
+			return false;
+		}
+	}
+	//They are the same
+	return false;
+}
+
 }

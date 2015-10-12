@@ -12,7 +12,7 @@
 #include <iostream>
 #include <list>
 
-#include "Literal.h"
+#include "Proposition.h"
 #include "PNE.h"
 #include "ptree.h"
 

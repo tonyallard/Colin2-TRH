@@ -8,7 +8,7 @@
 #ifndef COLIN_PDDL_MMCRDOMAINFACTORY_H_
 #define COLIN_PDDL_MMCRDOMAINFACTORY_H_
 
-#include "Literal.h"
+#include "Proposition.h"
 #include "TIL.h"
 #include "PendingAction.h"
 

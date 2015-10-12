@@ -28,6 +28,8 @@ public:
 	const std::list<std::string> & getArguments() const {return arguments; };
 	const double & getValue() const { return value; };
 	std::string toActionEffectString() const;
+	bool operator==(const PNE & other);
+	bool operator!=(const PNE & other);
 	friend std::ostream & operator<<(std::ostream & output, const PNE & pne);
 
 };
