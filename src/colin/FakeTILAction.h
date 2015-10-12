@@ -9,6 +9,8 @@
 #define COLIN_FAKETILACTION_H_
 
 #include <list>
+#include "instantiation.h"
+#include "globals.h"
 
 using namespace std;
 
@@ -24,10 +26,10 @@ public:
 	const double duration;
 
 	/** The facts added at the specified time */
-	list<Literal*> addEffects;
+	list<Inst::Literal*> addEffects;
 
 	/** The facts deleted at the specified time */
-	list<Literal*> delEffects;
+	list<Inst::Literal*> delEffects;
 
 	/**
 	 *   Add the specified add and delete effects to the timed initial literal action.  Is used when
@@ -36,11 +38,11 @@ public:
 	 *   @param adds  Add effects to include in this TIL action
 	 *   @param dels  Delete effects to include in this TIL action
 	 */
-	void mergeIn(const LiteralSet & adds, const LiteralSet & dels) {
+	void mergeIn(const Planner::LiteralSet & adds, const Planner::LiteralSet & dels) {
 
 		{
-			LiteralSet::iterator lsItr = adds.begin();
-			const LiteralSet::iterator lsEnd = adds.end();
+			Planner::LiteralSet::iterator lsItr = adds.begin();
+			const Planner::LiteralSet::iterator lsEnd = adds.end();
 
 			for (; lsItr != lsEnd; ++lsItr) {
 				addEffects.push_back(*lsItr);
@@ -48,8 +50,8 @@ public:
 		}
 
 		{
-			LiteralSet::iterator lsItr = dels.begin();
-			const LiteralSet::iterator lsEnd = dels.end();
+			Planner::LiteralSet::iterator lsItr = dels.begin();
+			const Planner::LiteralSet::iterator lsEnd = dels.end();
 
 			for (; lsItr != lsEnd; ++lsItr) {
 				delEffects.push_back(*lsItr);
@@ -64,8 +66,8 @@ public:
 	 *   @param adds The facts added at time <code>dur</code>
 	 *   @param dels The facts deleted at time <code>dur</code>
 	 */
-	FakeTILAction(const double & dur, const LiteralSet & adds,
-			const LiteralSet & dels) :
+	FakeTILAction(const double & dur, const Planner::LiteralSet & adds,
+			const Planner::LiteralSet & dels) :
 			duration(dur) {
 		mergeIn(adds, dels);
 	}

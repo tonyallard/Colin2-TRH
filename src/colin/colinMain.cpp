@@ -113,6 +113,12 @@ int main(int argc, char * argv[])
     FF::useDominanceConstraintsInStateHash = true;
     LPScheduler::hybridBFLP = true;
 
+    //Keep searching for all possible solutions
+	#ifdef POPF3ANALYSIS
+    Globals::optimiseSolutionQuality = true;
+    Globals::bestSolutionQuality = -DBL_MAX;
+	#endif
+
     Globals::totalOrder = true;
     RPGBuilder::modifiedRPG = false;
     FF::tsChecking = true;
