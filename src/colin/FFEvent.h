@@ -50,8 +50,10 @@ class FFEvent
 
 public:
 
+	static int count;
     static int tilLimit;
 
+    long id;
     instantiatedOp* action;
     VAL::time_spec time_spec;
     double minDuration;
@@ -63,7 +65,7 @@ public:
     double lpMinTimestamp;
     double lpMaxTimestamp;
     int divisionID;
-    set<int> needToFinish;
+//    set<int> needToFinish;
     
     #ifdef STOCHASTICDURATIONS
     StochasticTimestampData * stochasticTimestamp;
@@ -89,6 +91,22 @@ public:
         if (time_spec != VAL::E_AT_START && pairWithStep != f.pairWithStep) return false;
         return (action == f.action && time_spec == f.time_spec && minDuration == f.minDuration && maxDuration == f.maxDuration && pairWithStep == f.pairWithStep && getEffects == f.getEffects && divisionID == f.divisionID);
     }
+
+    bool operator<(const FFEvent & other) const {
+    	if (this->lpMinTimestamp < other.lpMinTimestamp) {
+    		return true;
+    	}
+    	if (other.lpMinTimestamp < this->lpMinTimestamp) {
+    		return false;
+    	}
+    	if (this->lpMaxTimestamp < other.lpMaxTimestamp) {
+    		return true;
+    	}
+    	if (other.lpMaxTimestamp < this->lpMaxTimestamp) {
+    		return false;
+    	}
+    	return true;
+    };
 
 
     static void printPlan(const list<FFEvent> & toPrint);

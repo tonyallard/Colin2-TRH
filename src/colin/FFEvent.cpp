@@ -44,6 +44,7 @@ using std::endl;
 namespace Planner {
 
 int FFEvent::tilLimit = 0;
+int FFEvent::count = 0;
     
 FFEvent::~FFEvent() {
     #ifdef STOCHASTICDURATIONS
@@ -57,6 +58,7 @@ FFEvent::FFEvent(instantiatedOp* a, const double & dMin, const double & dMax)
         lpTimestamp(-1.0),lpMinTimestamp(-1.0), lpMaxTimestamp(std::numeric_limits<double>::max()),
         divisionID(-1)
 {
+	id = count++;
     //cout << "FFEvent start\n";
     #ifdef STOCHASTICDURATIONS
     stochasticTimestamp = 0;
@@ -68,6 +70,7 @@ FFEvent::FFEvent(instantiatedOp* a, const int & pw, const double & dMin, const d
         : action(a), time_spec(VAL::E_AT_END), minDuration(dMin), maxDuration(dMax), pairWithStep(pw),
                 getEffects(true), lpTimestamp(-1.0), /*lpEndTimestamp(-1.0), */lpMinTimestamp(-1.0), lpMaxTimestamp(std::numeric_limits<double>::max()), divisionID(-1)
 {
+	id = count++;
     //cout << "FFEvent end\n";
     #ifdef STOCHASTICDURATIONS
     stochasticTimestamp = 0;
@@ -79,6 +82,7 @@ FFEvent::FFEvent(instantiatedOp* a, const int & s, const int & pw, const double 
         : action(a), time_spec(VAL::E_OVER_ALL), minDuration(dMin), maxDuration(dMax), pairWithStep(pw),
                 getEffects(true), lpTimestamp(-1.0), /*lpEndTimestamp(-1.0), */lpMinTimestamp(-1.0), lpMaxTimestamp(std::numeric_limits<double>::max()), divisionID(s)
 {
+	id = count++;
     //cout << "FFEvent end\n";
     #ifdef STOCHASTICDURATIONS
     stochasticTimestamp = 0;
@@ -90,6 +94,7 @@ FFEvent::FFEvent(const int & t)
         : action(0), time_spec(VAL::E_AT), minDuration(-1.0), maxDuration(-1.0), pairWithStep(-1), getEffects(true),
           lpTimestamp(-1.0), /*lpEndTimestamp(-1.0), */lpMinTimestamp(-1.0), lpMaxTimestamp(std::numeric_limits<double>::max()), divisionID(t)
 {
+	id = count++;
     assert(divisionID <= tilLimit);
     //cout << "FFEvent start\n";
     #ifdef STOCHASTICDURATIONS
@@ -102,8 +107,9 @@ FFEvent::FFEvent(const int & t)
 FFEvent::FFEvent(const FFEvent & f)
         : action(f.action), time_spec(f.time_spec), minDuration(f.minDuration), maxDuration(f.maxDuration),
         pairWithStep(f.pairWithStep), getEffects(f.getEffects) , lpTimestamp(f.lpTimestamp),
-        lpMinTimestamp(f.lpMinTimestamp), lpMaxTimestamp(f.lpMaxTimestamp), divisionID(f.divisionID), needToFinish(f.needToFinish)
+        lpMinTimestamp(f.lpMinTimestamp), lpMaxTimestamp(f.lpMaxTimestamp), divisionID(f.divisionID)//, needToFinish(f.needToFinish)
 {
+	id = f.id;
     //cout << "FFEvent copy\n";
     #ifdef STOCHASTICDURATIONS
     stochasticTimestamp = (f.stochasticTimestamp ? f.stochasticTimestamp->clone() : 0);
@@ -115,6 +121,7 @@ FFEvent::FFEvent()
         : action(0), time_spec(VAL::E_AT_START), minDuration(0.0), maxDuration(0.0), lpTimestamp(-1.0),
           lpMinTimestamp(-1.0), lpMaxTimestamp(std::numeric_limits<double>::max()), divisionID(-1)
 {
+	id = count++;
     //cout << "FFEvent default\n";
     #ifdef STOCHASTICDURATIONS
     stochasticTimestamp = 0;
@@ -124,7 +131,8 @@ FFEvent::FFEvent()
 
 FFEvent & FFEvent::operator=(const FFEvent & f)
 {
-    //cout << "FFEvent assignment op\n";
+    id = f.id;//count++;
+	//cout << "FFEvent assignment op\n";
     action = f.action;
     time_spec = f.time_spec;
     minDuration = f.minDuration;
@@ -135,7 +143,7 @@ FFEvent & FFEvent::operator=(const FFEvent & f)
     lpMinTimestamp = f.lpMinTimestamp;
     lpMaxTimestamp = f.lpMaxTimestamp;
     divisionID = f.divisionID;
-    needToFinish = f.needToFinish;
+//    needToFinish = f.needToFinish;
     
     #ifdef STOCHASTICDURATIONS
     delete stochasticTimestamp;
@@ -144,7 +152,6 @@ FFEvent & FFEvent::operator=(const FFEvent & f)
     
     return *this;
 }
-
 
 string threeDP(double d)
 {
