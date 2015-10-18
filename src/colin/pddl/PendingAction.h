@@ -44,8 +44,6 @@ public:
 	}
 	;
 	const std::string & getName() const { return name; };
-	bool operator==(const PendingAction & other);
-	bool operator!=(const PendingAction & other);
 	friend std::ostream & operator<<(std::ostream & output,
 			const PendingAction & action);
 };

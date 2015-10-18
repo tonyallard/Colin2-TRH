@@ -10,7 +10,6 @@
 
 #include <list>
 
-#include "Literal.h"
 #include "Proposition.h"
 
 namespace PDDL {
@@ -31,8 +30,6 @@ public:
 	double getTimestamp() const { return timestamp; };
 	const std::list<Proposition> & getAddEffects() const { return addEffects; };
 	const std::list<Proposition> & getDelEffects() const { return delEffects; };
-	bool operator==(const TIL & other);
-	bool operator!=(const TIL & other);
 	friend std::ostream & operator<<(std::ostream & output, const TIL & til);
 	static bool TILTimestampComparator(const TIL & first, const TIL & second);
 	friend bool TILTimestampComparator(const TIL & first, const TIL & second);

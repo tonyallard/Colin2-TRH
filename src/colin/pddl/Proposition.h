@@ -27,7 +27,6 @@ public:
 	const std::list<std::string> & getArguments() const {return arguments; };
 	friend std::ostream & operator<<(std::ostream & output, const Proposition & proposition);
 	bool operator==(const Proposition & other);
-	bool operator!=(const Proposition & other);
 	static std::string getDecoratedName(const Proposition & proposition);
 	friend std::string getDecoratedName(const Proposition & proposition);
 };

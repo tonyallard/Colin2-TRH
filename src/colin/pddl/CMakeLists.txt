@@ -11,8 +11,7 @@ set(libPDDL_SRCS
 	Literal.cpp
 	PNE.cpp	
 	TIL.cpp
-	PendingProposition.cpp	
-	PendingLiteral.cpp    
+	PendingProposition.cpp
 	PendingPNE.cpp
 	PendingAction.cpp
 	MMCRDomainFactory.cpp

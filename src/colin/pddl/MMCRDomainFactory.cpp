@@ -175,7 +175,7 @@ string MMCRDomainFactory::getdeTILedActions(std::list<TIL> tils) {
 
 string MMCRDomainFactory::getdeTILedAction(const TIL & til,
 		std::list<PDDL::Proposition> * tilActionPreconditions) {
-	//Create special literal for this TIL
+	//Create special proposition for this TIL
 	std::list<string> arguments;
 	arguments.push_back(til.getName());
 	PDDL::Proposition tilLit(MMCRDomainFactory::TIL_ACHIEVED_PROPOSITION, arguments);
@@ -203,7 +203,7 @@ string MMCRDomainFactory::getdeTILedAction(const TIL & til,
 	}
 	output << ")\n";
 	output << "\t\t:effect (";
-	//We add an extra one here for the TIL Literal itself
+	//We add an extra one here for the TIL Proposition itself
 	if (til.getAddEffects().size() + til.getDelEffects().size() + 1 > 1) {
 		output << "\t\t(and\n";
 	}
@@ -224,12 +224,12 @@ string MMCRDomainFactory::getdeTILedAction(const TIL & til,
 	for (; delItr != delItrEnd; delItr++) {
 		output << "\t\t\t(not " << *delItr << ")\n";
 	}
-	//We add an extra one here for the TIL Literal itself
+	//We add an extra one here for the TIL Proposition itself
 	if (til.getAddEffects().size() + til.getDelEffects().size() + 1 > 1) {
 		output << ")";
 	}
 	output << "\t))\n";
-	//Add the TIL Literal to the list of preconditions for future TILS
+	//Add the TIL Proposition to the list of preconditions for future TILS
 	//This retains precedence ordering of TILs
 	tilActionPreconditions->push_back(tilLit);
 	return output.str();

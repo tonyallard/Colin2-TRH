@@ -28,7 +28,6 @@ public:
 	inline bool isNegative() const { return !positive; };
 	inline const Proposition * getProposition() const { return &proposition; };
 	bool operator==(const Literal & other);
-	bool operator!=(const Literal & other);
 	friend std::ostream & operator<<(std::ostream & output,
 			const Literal & literal);
 };

@@ -35,8 +35,5 @@ bool Literal::operator==(const Literal & other) {
 	return true;
 }
 
-bool Literal::operator!=(const Literal & other) {
-	return !((*this) == other);
 }
 
-}

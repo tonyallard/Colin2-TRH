@@ -11,7 +11,7 @@
 #include <list>
 
 #include "Literal.h"
-#include "PendingLiteral.h"
+#include "PendingProposition.h"
 #include "PendingPNE.h"
 #include "PDDLState.h"
 #include "minimalstate.h"

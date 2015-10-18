@@ -54,9 +54,5 @@ bool Proposition::operator==(const Proposition & other) {
 	return true;
 }
 
-bool Proposition::operator!=(const Proposition & other) {
-	return !((*this) == other);
-}
-
 }
 
