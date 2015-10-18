@@ -54,6 +54,7 @@ public:
 	void writeDeTILedStateToFile(std::string filePath, std::string fileName);
 	void writeDeTILedDomainToFile(string filePath, string fileName);
 	bool equals(const PDDLState & other);
+	int getPreFixSize();
 
 };
 

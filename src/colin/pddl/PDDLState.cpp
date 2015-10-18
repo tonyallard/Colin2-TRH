@@ -74,6 +74,10 @@ string PDDLState::getDeTiledDomainString() {
 	return MMCRDomainFactory::getDeTILedMMCRDomain(tils, pendingActions);
 }
 
+int PDDLState::getPreFixSize() {
+	return planPrefix.size();
+}
+
 string PDDLState::getPlanPrefixString() {
 	ostringstream output;
 	std::list<std::string>::const_iterator actionItr = planPrefix.begin();
