@@ -7,7 +7,6 @@
 
 #include <sstream>
 #include "PendingPNE.h"
-#include "Proposition.h"
 
 namespace PDDL {
 

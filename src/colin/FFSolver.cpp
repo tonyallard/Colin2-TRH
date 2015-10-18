@@ -48,7 +48,7 @@
 #include <sys/times.h>
 
 #include "PDDLStateFactory.h"
-#include "PDDLState.h"
+#include "pddl/PDDLState.h"
 
 using std::cerr;
 using std::vector;

@@ -10,9 +10,8 @@
 #include <sstream>
 
 #include "PDDLStateFactory.h"
-#include "FakeTILAction.h"
-#include "instantiation.h"
-#include "Utils.h"
+#include "PDDLUtils.h"
+#include "../FakeTILAction.h"
 
 using namespace Planner;
 
@@ -20,7 +19,7 @@ namespace PDDL {
 
 PDDLState PDDLStateFactory::getPDDLState(const MinimalState & state, std::list<Planner::FFEvent>& plan,
 		double timestamp, double heuristic) {
-	std::list<Proposition> literals = getLiterals(state);
+	std::list<Proposition> literals = PDDLStateFactory::getPropositions(state);
 	std::list<PNE> pnes = getPNEs(state);
 	std::list<TIL> tils = getTILs(state, timestamp);
 	std::list<PendingAction> pendingActions = getPendingActions(state, timestamp);
@@ -28,7 +27,7 @@ PDDLState PDDLStateFactory::getPDDLState(const MinimalState & state, std::list<P
 	return PDDLState(literals, pnes, tils, pendingActions, planPrefix, heuristic, timestamp);
 }
 
-std::list<PDDL::Proposition> PDDLStateFactory::getLiterals(
+std::list<PDDL::Proposition> PDDLStateFactory::getPropositions(
 		const Planner::MinimalState & state) {
 	std::list<PDDL::Proposition> literals;
 	//Cycle through State Literal Facts
@@ -36,9 +35,9 @@ std::list<PDDL::Proposition> PDDLStateFactory::getLiterals(
 	StateFacts::const_iterator cfItr = stateFacts.begin();
 	const StateFacts::const_iterator cfEnd = stateFacts.end();
 	for (; cfItr != cfEnd; cfItr++) {
-		int stateFact = *cfItr;
-		Inst::Literal * aliteral = RPGBuilder::getLiteral(stateFact);
-		PDDL::Proposition literal = PDDLStateFactory::getLiteral(aliteral);
+		int literalID = *cfItr;
+		Inst::Literal * aliteral = RPGBuilder::getLiteral(literalID);
+		PDDL::Proposition literal = PDDL::getProposition(aliteral);
 		literals.push_back(literal);
 	}
 
@@ -53,24 +52,11 @@ std::list<PDDL::Proposition> PDDLStateFactory::getLiterals(
 	for (; slItr != slItrEnd; slItr++) {
 		Inst::Literal * aliteral = RPGBuilder::getLiteral(i++);
 		if (slItr->first && slItr->second) {
-			PDDL::Proposition literal = PDDLStateFactory::getLiteral(aliteral);
+			PDDL::Proposition literal = PDDL::getProposition(aliteral);
 			literals.push_back(literal);
 		}
 	}
 	return literals;
-}
-
-PDDL::Proposition PDDLStateFactory::getLiteral(const Inst::Literal * aLiteral) {
-	string name = aLiteral->getProp()->head->getName();
-	std::list<string> variables;
-	VAL::parameter_symbol_list::const_iterator argItr =
-			aLiteral->getProp()->args->begin();
-	const VAL::parameter_symbol_list::const_iterator argItrEnd =
-			aLiteral->getProp()->args->end();
-	for (; argItr != argItrEnd; argItr++) {
-		variables.push_back(((*aLiteral->getEnv())[*argItr])->getName());
-	}
-	return PDDL::Proposition(name, variables);
 }
 
 std::list<PDDL::PNE> PDDLStateFactory::getPNEs(
@@ -80,7 +66,7 @@ std::list<PDDL::PNE> PDDLStateFactory::getPNEs(
 	const int pneCount = state.secondMin.size();
 	for (int i = 0; i < pneCount; i++) {
 		Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(i);
-		PDDL::PNE pne = PDDLStateFactory::getPNE(aPNE, state.secondMin[i]);
+		PDDL::PNE pne = PDDL::getPNE(aPNE, state.secondMin[i]);
 		pnes.push_back(pne);
 	}
 
@@ -104,19 +90,6 @@ std::list<PDDL::PNE> PDDLStateFactory::getPNEs(
 	return pnes;
 }
 
-PDDL::PNE PDDLStateFactory::getPNE(const Inst::PNE * aPNE, double value) {
-	string name = aPNE->getFunc()->getFunction()->getName();
-	std::list<string> arguments;
-	VAL::parameter_symbol_list::const_iterator argItr =
-			aPNE->getFunc()->getArgs()->begin();
-	const VAL::parameter_symbol_list::const_iterator argItrEnd =
-			aPNE->getFunc()->getArgs()->end();
-	for (; argItr != argItrEnd; argItr++) {
-		arguments.push_back((*argItr)->getName());
-	}
-	return PDDL::PNE(name, arguments, value);
-}
-
 std::list<PDDL::TIL> PDDLStateFactory::getTILs(
 		const Planner::MinimalState & state, double timestamp) {
 	std::list<PDDL::TIL> tils;
@@ -130,43 +103,13 @@ std::list<PDDL::TIL> PDDLStateFactory::getTILs(
 		if ((*tilItr).duration < timestamp) {
 			continue;
 		}
-		PDDL::TIL til = PDDLStateFactory::getTIL(*tilItr, timestamp);
+		PDDL::TIL til = PDDL::getTIL(*tilItr, timestamp);
 		tils.push_back(til);
 	}
 	return tils;
 }
 
-PDDL::TIL PDDLStateFactory::getTIL(Planner::FakeTILAction aTIL,
-		double aTimestamp) {
-	double timestamp = aTIL.duration - aTimestamp;
-	std::list<PDDL::Proposition> addEffects;
-	std::list<PDDL::Proposition> delEffects;
-
-	//Get Add effects
-	std::list<Inst::Literal*>::const_iterator tilAddLitInt =
-			aTIL.addEffects.begin();
-	std::list<Inst::Literal*>::const_iterator tilAddLitIntEnd =
-			aTIL.addEffects.end();
-	for (; tilAddLitInt != tilAddLitIntEnd; tilAddLitInt++) {
-		Inst::Literal * literal = (*tilAddLitInt);
-		PDDL::Proposition lit = PDDLStateFactory::getLiteral(literal);
-		addEffects.push_back(lit);
-	}
-
-	//Get Del Effects
-	std::list<Inst::Literal*>::const_iterator tilDelLitInt =
-			aTIL.delEffects.begin();
-	std::list<Inst::Literal*>::const_iterator tilDelLitIntEnd =
-			aTIL.delEffects.end();
-	for (; tilDelLitInt != tilDelLitIntEnd; tilDelLitInt++) {
-		Inst::Literal * literal = (*tilDelLitInt);
-		PDDL::Proposition lit = PDDLStateFactory::getLiteral(literal);
-		delEffects.push_back(lit);
-	}
-	return PDDL::TIL(addEffects, delEffects, timestamp);
-}
-
-std::list<PendingProposition> PDDLStateFactory::getPendingLiterals(
+std::list<PendingProposition> PDDLStateFactory::getPendingPropositions(
 		const Planner::MinimalState & state, double timestamp) {
 	std::list<PendingProposition> pendingLiterals;
 	//Cycle through Facts held up by executing actions (these are effects coming into play)
@@ -214,7 +157,7 @@ std::list<PendingProposition> PDDLStateFactory::getPendingLiterals(
 		std::list<Inst::Literal*>::const_iterator addItr = adds.begin();
 		const std::list<Inst::Literal*>::const_iterator addItrEnd = adds.end();
 		for (; addItr != addItrEnd; addItr++) {
-			PendingProposition pendingLiteral = PDDLStateFactory::getPendingLiteral(
+			PendingProposition pendingLiteral = PDDL::getPendingProposition(
 					*addItr, conditions, (*saItr->second.begin() - timestamp),
 					true);
 			pendingLiterals.push_back(pendingLiteral);
@@ -227,23 +170,13 @@ std::list<PendingProposition> PDDLStateFactory::getPendingLiterals(
 		const std::list<Inst::Literal*>::const_iterator delItrEnd =
 				deletes.end();
 		for (; delItr != delItrEnd; delItr++) {
-			PendingProposition pendingLiteral = PDDLStateFactory::getPendingLiteral(
+			PendingProposition pendingLiteral = PDDL::getPendingProposition(
 					*delItr, conditions, (*saItr->second.begin() - timestamp),
 					false);
 			pendingLiterals.push_back(pendingLiteral);
 		}
 	}
 	return pendingLiterals;
-}
-
-PDDL::PendingProposition PDDLStateFactory::getPendingLiteral(
-		const Inst::Literal * aLiteral,
-		std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions,
-		double timestamp, bool addEffect) {
-	PDDL::Proposition literal = PDDLStateFactory::getLiteral(aLiteral);
-	PendingProposition pendingLiteral(literal.getName(), literal.getArguments(),
-			conditions, timestamp, addEffect);
-	return pendingLiteral;
 }
 
 std::list<PDDL::PendingPNE> PDDLStateFactory::getPendingPNEs(
@@ -317,7 +250,7 @@ PDDL::PendingPNE PDDLStateFactory::getPendingPNE(
 			state.secondMax, minDur, maxDur);
 	//Determine the PNE that the values belong
 	Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(effect.fluentIndex);
-	PDDL::PNE pne = PDDLStateFactory::getPNE(aPNE, result.first);
+	PDDL::PNE pne = PDDL::getPNE(aPNE, result.first);
 	PendingPNE pendingPNE(pne.getName(), pne.getArguments(), pne.getValue(),
 			conditions, minDur);
 	return pendingPNE;
@@ -371,26 +304,26 @@ std::list<PDDL::PendingAction> PDDLStateFactory::getPendingActions(
 		double maxDur = RPGBuilder::getOpMaxDuration(saItr->first, 1);
 
 		// Literals Added by Action
-		std::list<PDDL::Proposition> literalAddEffects;
+		std::list<PDDL::Proposition> propositionalAddEffects;
 		std::list<Inst::Literal*> adds =
 				RPGBuilder::getEndPropositionAdds()[saItr->first];
 		std::list<Inst::Literal*>::const_iterator addItr = adds.begin();
 		const std::list<Inst::Literal*>::const_iterator addItrEnd = adds.end();
 		for (; addItr != addItrEnd; addItr++) {
-			Proposition lit = getLiteral(*addItr);
-			literalAddEffects.push_back(lit);
+			Proposition prop = PDDL::getProposition(*addItr);
+			propositionalAddEffects.push_back(prop);
 		}
 
 		// Literals Deleted by Action
-		std::list<PDDL::Proposition> literalDelEffects;
+		std::list<PDDL::Proposition> propositionalDelEffects;
 		std::list<Inst::Literal*> deletes =
 				RPGBuilder::getEndPropositionDeletes()[saItr->first];
 		std::list<Inst::Literal*>::const_iterator delItr = deletes.begin();
 		const std::list<Inst::Literal*>::const_iterator delItrEnd =
 				deletes.end();
 		for (; delItr != delItrEnd; delItr++) {
-			Proposition lit = getLiteral(*delItr);
-			literalDelEffects.push_back(lit);
+			Proposition prop = PDDL::getProposition(*delItr);
+			propositionalDelEffects.push_back(prop);
 		}
 
 		// PNEs Added by Action
@@ -407,26 +340,14 @@ std::list<PDDL::PendingAction> PDDLStateFactory::getPendingActions(
 					state.secondMin, state.secondMax, minDur, maxDur);
 			//Determine the PNE that the values belong
 			Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(effect.fluentIndex);
-			PDDL::PNE pne = PDDLStateFactory::getPNE(aPNE, result.first);
+			PDDL::PNE pne = PDDL::getPNE(aPNE, result.first);
 			pneEffects.push_back(pne);
 		}
-		std::string name = getActionName(saItr->first);
-		PendingAction pendingAction (name, literalAddEffects, literalDelEffects, pneEffects, conditions, minDur);
+		std::string name = PDDL::getActionName(saItr->first);
+		PendingAction pendingAction (name, propositionalAddEffects, propositionalDelEffects, pneEffects, conditions, minDur);
 		pendingActions.push_back(pendingAction);
 	}
 	return pendingActions;
-}
-
-std::list<std::string> PDDLStateFactory::getPlanPrefix(std::list<Planner::FFEvent>& plan) {
-	std::list<std::string> prefix;
-	std::list<Planner::FFEvent>::const_iterator eventItr = plan.begin();
-	const std::list<Planner::FFEvent>::const_iterator eventItrEnd = plan.end();
-	for (; eventItr != eventItrEnd; eventItr++) {
-		ostringstream name;
-		name << (*eventItr).lpTimestamp << ": " << getActionName((*eventItr).action->getID());
-		prefix.push_back(name.str());
-	}
-	return prefix;
 }
 
 std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > PDDLStateFactory::getConditions(
@@ -440,7 +361,7 @@ std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > PDDLStateF
 			conditionLiterals.end();
 
 	for (; condItr != condItrEnd; condItr++) {
-		PDDL::Proposition literal = PDDLStateFactory::getLiteral(*condItr);
+		PDDL::Proposition literal = PDDL::getProposition(*condItr);
 		conditions.push_back(
 				pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> >(literal,
 						std::pair<VAL::time_spec, bool>(timeQualifier,
@@ -449,15 +370,4 @@ std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > PDDLStateF
 	return conditions;
 }
 
-std::string PDDLStateFactory::getActionName(int actionNum) {
-	ostringstream output;
-	Inst::instantiatedOp* action = RPGBuilder::getInstantiatedOp(actionNum);
-	output << action->getHead()->getName();
-	VAL::var_symbol_list::const_iterator paramItr = action->forOp()->parameters->begin();
-	const VAL::var_symbol_list::const_iterator paramItrEnd = action->forOp()->parameters->end();
-	for (; paramItr != paramItrEnd; paramItr++) {
-		output << "-" << ((*action->getEnv())[*paramItr])->getName();
-	}
-	return output.str();
-}
 }

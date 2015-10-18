@@ -8,6 +8,7 @@ set( CMAKE_MODULE_PATH    ${CMAKE_MODULE_PATH}
 
 set(DOXYFILE_TARGET_SUFFIX colin)
 include(UseDoxygen OPTIONAL)
+include_directories ("${PROJECT_SOURCE_DIR}/pddl")
 
 add_subdirectory(pddl)
 
@@ -44,9 +45,7 @@ set(colin_build_srcs
     temporalanalysis.cpp
     temporalconstraints.cpp
     numericanalysis.cpp
-    solver.cpp
-	Util.cpp
-	PDDLStateFactory.cpp)
+    solver.cpp)
 
 add_library(ColinCommon STATIC ${colin_build_srcs})
 target_link_libraries(ColinCommon ParsePDDL Inst PDDL)
