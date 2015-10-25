@@ -29,6 +29,8 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 	output << ")\n";
 	output << "\t\t:duration (= ?duration " << action.timestamp << ")\n";
 	output << "\t\t:condition (and \n";
+	//Add pre-condition on initial action
+	output << "\t\t\t(at start (initial-action-complete))\n";
 	//Add pre-conditions for required parameters
 	paramItr = parameterTable.begin();
 	for (; paramItr != parameterTable.end(); paramItr++) {

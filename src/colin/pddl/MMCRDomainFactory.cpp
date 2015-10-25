@@ -16,6 +16,10 @@ namespace PDDL {
 
 const std::string MMCRDomainFactory::TIL_ACHIEVED_PROPOSITION = "til-achieved";
 const std::string MMCRDomainFactory::REQUIRED_PROPOSITION = "required";
+const std::string MMCRDomainFactory::INITIAL_ACTION_REQUIRED_PROPOSITION =
+		"initial-action-required";
+const std::string MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION =
+		"initial-action-complete";
 
 std::string MMCRDomainFactory::getMMCRDomain(
 		const std::list<PendingAction> & pendingActions) {
@@ -32,10 +36,11 @@ std::string MMCRDomainFactory::getDeTILedMMCRDomain(std::list<TIL> tils,
 	ostringstream output;
 	bool hasTils = tils.size();
 	bool hasPendingActions = pendingActions.size();
-	output << getHeader(hasTils) << getTypes(hasTils) << getConstants(hasTils, tils)
+	output << getHeader(hasTils) << getTypes(hasTils)
+			<< getConstants(hasTils, tils)
 			<< getPredicates(hasTils, hasPendingActions) << getFunctions()
 			<< getLoadAction() << getUnloadAction() << getMoveAction()
-			<< getPendingActions(pendingActions);
+			<< getInitialAction() << getPendingActions(pendingActions);
 	if (hasTils) {
 		output << getdeTILedActions(tils);
 	}
@@ -96,6 +101,10 @@ std::string MMCRDomainFactory::getPredicates(bool deTILed,
 		output << "\t\t(" << MMCRDomainFactory::REQUIRED_PROPOSITION
 				<< " ?x - object)\n";
 	}
+	output << "\t\t(" << MMCRDomainFactory::INITIAL_ACTION_REQUIRED_PROPOSITION
+			<< ")\n";
+	output << "\t\t(" << MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION
+			<< ")\n";
 	output << "\t)\n";
 	return output.str();
 }
@@ -120,6 +129,8 @@ std::string MMCRDomainFactory::getLoadAction() {
 	output << "\t\t:parameters (?x - VEHICLE ?y - CARGO ?z - LOCATION)\n";
 	output << "\t\t:duration (= ?duration (* (load-time ?x ?z) (size ?y)))\n";
 	output << "\t\t:condition\t(and\n";
+	output << "\t\t\t(at start ("
+			<< MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << "))\n";
 	output << "\t\t\t(over all (at ?x ?z))\n";
 	output << "\t\t\t(at start (ready-loading ?x))\n";
 	output << "\t\t\t(at start (at ?y ?z))\n";
@@ -145,6 +156,8 @@ std::string MMCRDomainFactory::getUnloadAction() {
 	output << "\t\t:parameters (?x - VEHICLE ?y - CARGO ?z - LOCATION)\n";
 	output << "\t\t:duration (= ?duration (* (unload-time ?x ?z) (size ?y)))\n";
 	output << "\t\t:condition\t(and\n";
+	output << "\t\t\t(at start ("
+			<< MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << "))\n";
 	output << "\t\t\t(over all (at ?x ?z))\n";
 	output << "\t\t\t(at start (ready-loading ?x))\n";
 	output << "\t\t\t(at start (in ?y ?x))\n";
@@ -169,6 +182,8 @@ std::string MMCRDomainFactory::getMoveAction() {
 	output << "\t\t:parameters (?x - VEHICLE ?y ?z - LOCATION)\n";
 	output << "\t\t:duration (= ?duration (travel-time ?x ?y ?z))\n";
 	output << "\t\t:condition\t(and\n";
+	output << "\t\t\t(at start ("
+			<< MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << "))\n";
 	output << "\t\t\t(at start (at ?x ?y))\n";
 	output << "\t\t\t(at start (>= (travel-time ?x ?y ?z) 0))\n";
 	output << "\t\t\t(at start (not (= ?y ?z)))\n";
@@ -178,6 +193,19 @@ std::string MMCRDomainFactory::getMoveAction() {
 	output << "\t\t\t(at end (at ?x ?z))\n";
 	output
 			<< "\t\t\t(at end (increase (total-cost) (* ?duration (cost ?x))))))\n";
+	return output.str();
+}
+
+std::string MMCRDomainFactory::getInitialAction() {
+	ostringstream output;
+	output << "\t(:action init-action" << endl;
+	output << "\t\t:parameters()" << endl << "\t\t:precondition ("
+			<< MMCRDomainFactory::INITIAL_ACTION_REQUIRED_PROPOSITION << ")"
+			<< endl << "\t\t:effect (and" << endl << "\t\t\t(not ("
+			<< MMCRDomainFactory::INITIAL_ACTION_REQUIRED_PROPOSITION << "))"
+			<< endl << "\t\t\t("
+			<< MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << ")"
+			<< endl << "\t\t)" << endl << "\t)" << endl;
 	return output.str();
 }
 
@@ -212,40 +240,34 @@ string MMCRDomainFactory::getdeTILedAction(const TIL & til,
 	ostringstream output;
 	output << "\t(:action " << til.getName() << "\n";
 	output << "\t\t:parameters( ";
-	std::map<const PDDLObject *, std::string>::const_iterator paramItr = parameterTable.begin();
+	std::map<const PDDLObject *, std::string>::const_iterator paramItr =
+			parameterTable.begin();
 	for (; paramItr != parameterTable.end(); paramItr++) {
-		output << paramItr->second << " - " << paramItr->first->getType() << " ";
+		output << paramItr->second << " - " << paramItr->first->getType()
+				<< " ";
 	}
 	output << ")\n";
-	output << "\t\t:precondition (";
+	output << "\t\t:precondition (and\n";
+	output << "\t\t\t(initial-action-complete)\n";
 	if (tilActionPreconditions->size()) {
-		if (tilActionPreconditions->size() > 1) {
-			output << "\t(and";
-		}
-		output << "\n";
 		std::list<PDDL::Proposition>::const_iterator preItr =
 				tilActionPreconditions->begin();
 		const std::list<PDDL::Proposition>::const_iterator preItrEnd =
 				tilActionPreconditions->end();
 		for (; preItr != preItrEnd; preItr++) {
-			output << "\t\t\t" << preItr->toParameterisedString(parameterTable) << "\n";
-		}
-		if (tilActionPreconditions->size() > 1) {
-			output << ")";
+			output << "\t\t\t" << preItr->toParameterisedString(parameterTable)
+					<< "\n";
 		}
 	}
-	output << ")\n";
-	output << "\t\t:effect (";
-	//We add an extra one here for the TIL Proposition itself
-	if (til.getAddEffects().size() + til.getDelEffects().size() + 1 > 1) {
-		output << "\t\t(and\n";
-	}
+	output << "\t\t)\n";
+	output << "\t\t:effect (and\n";
 	std::list<PDDL::Proposition>::const_iterator addItr =
 			til.getAddEffects().begin();
 	const std::list<PDDL::Proposition>::const_iterator addItrEnd =
 			til.getAddEffects().end();
 	for (; addItr != addItrEnd; addItr++) {
-		output << "\t\t\t" << addItr->toParameterisedString(parameterTable) << "\n";
+		output << "\t\t\t" << addItr->toParameterisedString(parameterTable)
+				<< "\n";
 	}
 	// add special predicate to indicate that the til is complete
 	output << "\t\t\t" << tilLit << "\n";
@@ -255,13 +277,10 @@ string MMCRDomainFactory::getdeTILedAction(const TIL & til,
 	const std::list<PDDL::Proposition>::const_iterator delItrEnd =
 			til.getDelEffects().end();
 	for (; delItr != delItrEnd; delItr++) {
-		output << "\t\t\t(not " << delItr->toParameterisedString(parameterTable) << ")\n";
+		output << "\t\t\t(not " << delItr->toParameterisedString(parameterTable)
+				<< ")\n";
 	}
-	//We add an extra one here for the TIL Proposition itself
-	if (til.getAddEffects().size() + til.getDelEffects().size() + 1 > 1) {
-		output << "\t\t)";
-	}
-	output << "\t\t)\n\t)\n";
+	output << "\t\t)\n\t)";
 	//Add the TIL Proposition to the list of preconditions for future TILS
 	//This retains precedence ordering of TILs
 	tilActionPreconditions->push_back(tilLit);

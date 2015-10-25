@@ -30,7 +30,7 @@ string PDDLState::toString() {
 
 std::string PDDLState::getLiteralString() {
 	ostringstream output;
-
+	output << "\t\t(" << MMCRDomainFactory::INITIAL_ACTION_REQUIRED_PROPOSITION << ")\n";
 	// Literals to String
 	list<Proposition>::const_iterator litItr = literals.begin();
 	const list<Proposition>::const_iterator litItrEnd = literals.end();
@@ -133,7 +133,7 @@ void PDDLState::writeDeTILedStateToFile(std::string filePath,
 	myFile << "\t(:domain multi-modal-cargo-routing)\n";
 	myFile
 			<< "\t(:objects \n\t\tv1 v2 - VEHICLE \n\t\tl1 l2 l3 - LOCATION \n\t\tc1  - CARGO \n";
-	myFile << getTILObjectString();
+//	myFile << getTILObjectString();
 	myFile << "\t)\n";
 	myFile << "\t(:init\n";
 	myFile << getLiteralString() << getPNEString();

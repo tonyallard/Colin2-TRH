@@ -26,6 +26,7 @@ private:
 	static std::string getLoadAction();
 	static std::string getUnloadAction();
 	static std::string getMoveAction();
+	static std::string getInitialAction();
 	static std::string getdeTILedActions(std::list<TIL> tils);
 	static std::string getdeTILedAction(const TIL & til,
 			std::list<PDDL::Proposition> * tilActionPreconditions);
@@ -34,6 +35,8 @@ private:
 public:
 	static const std::string TIL_ACHIEVED_PROPOSITION;
 	static const std::string REQUIRED_PROPOSITION;
+	static const std::string INITIAL_ACTION_REQUIRED_PROPOSITION;
+	static const std::string INITIAL_ACTION_COMPLETE_PROPOSITION;
 	static std::string getMMCRDomain(const std::list<PendingAction> & pendingActions);
 	static std::string getDeTILedMMCRDomain(std::list<TIL> tils, const std::list<PendingAction> & pendingActions);
 };
