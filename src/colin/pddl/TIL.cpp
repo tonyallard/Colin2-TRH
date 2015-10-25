@@ -9,6 +9,7 @@
 #include <sstream>
 
 #include "TIL.h"
+#include "PDDLUtils.h"
 
 namespace PDDL {
 
@@ -16,7 +17,8 @@ std::string TIL::getName() const {
 	std::ostringstream output;
 	output << "at-" << timestamp;
 	std::list<Proposition>::const_iterator addEffItr = addEffects.begin();
-	const std::list<Proposition>::const_iterator addEffItrEnd = addEffects.end();
+	const std::list<Proposition>::const_iterator addEffItrEnd =
+			addEffects.end();
 	for (; addEffItr != addEffItrEnd; addEffItr++) {
 		output << "-" << Proposition::getDecoratedName(*addEffItr);
 	}
@@ -40,7 +42,8 @@ std::ostream & operator<<(std::ostream & output, const TIL & til) {
 	output << "(at " << til.timestamp << " ";
 	//add Add Effect is exist
 	if (til.addEffects.size()) {
-		std::list<Proposition>::const_iterator addEffItr = til.addEffects.begin();
+		std::list<Proposition>::const_iterator addEffItr =
+				til.addEffects.begin();
 		const std::list<Proposition>::const_iterator addEffItrEnd =
 				til.addEffects.end();
 		for (; addEffItr != addEffItrEnd; addEffItr++) {
@@ -48,7 +51,8 @@ std::ostream & operator<<(std::ostream & output, const TIL & til) {
 		}
 	} else if (til.delEffects.size()) { //This explicitly means each TIL can either add _OR_ remove facts
 		output << "(not ";
-		std::list<Proposition>::const_iterator delEffItr = til.delEffects.begin();
+		std::list<Proposition>::const_iterator delEffItr =
+				til.delEffects.begin();
 		const std::list<Proposition>::const_iterator delEffItrEnd =
 				til.delEffects.end();
 		for (; delEffItr != delEffItrEnd; delEffItr++) {

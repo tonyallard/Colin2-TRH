@@ -9,29 +9,15 @@
 #include <string>
 
 #include "PendingAction.h"
+#include "PDDLUtils.h"
+#include "MMCRDomainFactory.h"
 
 using namespace std;
 namespace PDDL {
 
-map<const PDDLObject *, string> PendingAction::generateParameterTable() const {
-	map<const PDDLObject *, string> parameterTable;
-	//FIXME: means that there can only be 24 parameters before we create errors
-	char letter = 'a';
-	std::set<PDDLObject>::const_iterator paramItr = parameters.begin();
-	for (; paramItr != parameters.end(); paramItr++) {
-		const PDDLObject * pddlObj = &(*paramItr);
-		ostringstream paramVar;
-		paramVar << "?" << static_cast<char>(letter);
-		letter++;
-		parameterTable.insert(
-				pair<const PDDLObject *, string>(pddlObj, paramVar.str()));
-	}
-	return parameterTable;
-}
-
 std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 	map<const PDDLObject *, string> parameterTable =
-			action.generateParameterTable();
+			PDDL::generateParameterTable(action.parameters);
 	output << "\t(:durative-action " << action.name << "\n";
 	output << "\t\t:parameters (";
 	map<const PDDLObject *, string>::const_iterator paramItr =
@@ -43,6 +29,12 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 	output << ")\n";
 	output << "\t\t:duration (= ?duration " << action.timestamp << ")\n";
 	output << "\t\t:condition (and \n";
+	//Add pre-conditions for required parameters
+	paramItr = parameterTable.begin();
+	for (; paramItr != parameterTable.end(); paramItr++) {
+		output << "\t\t\t(at start (" << MMCRDomainFactory::REQUIRED_PROPOSITION
+				<< " " << paramItr->second << "))" << std::endl;
+	}
 	std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > >::const_iterator condItr =
 			action.conditions.begin();
 	const std::list<
@@ -71,6 +63,12 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 	}
 	output << "\t\t)\n";
 	output << "\t\t:effect (and\n";
+	//Add effects for required parameters
+	paramItr = parameterTable.begin();
+	for (; paramItr != parameterTable.end(); paramItr++) {
+		output << "\t\t\t(at start (not (" << MMCRDomainFactory::REQUIRED_PROPOSITION
+				<< " " << paramItr->second << ")))" << std::endl;
+	}
 	//first get propositional effects
 	//Adds
 	std::list<PDDL::Proposition>::const_iterator litItr =
@@ -93,7 +91,7 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 	const std::list<PDDL::PNE>::const_iterator pneItrEnd =
 			action.pneEffects.end();
 	for (; pneItr != pneItrEnd; pneItr++) {
-		output << "\t\t(at end " << pneItr->toActionEffectString(parameterTable)
+		output << "\t\t\t(at end " << pneItr->toActionEffectString(parameterTable)
 				<< ")\n";
 	}
 	output << "\n\t\t)\n\t)\n";

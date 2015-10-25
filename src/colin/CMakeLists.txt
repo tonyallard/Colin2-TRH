@@ -10,7 +10,6 @@ set(DOXYFILE_TARGET_SUFFIX colin)
 include(UseDoxygen OPTIONAL)
 include_directories ("${PROJECT_SOURCE_DIR}/pddl")
 
-add_subdirectory(util)
 add_subdirectory(pddl)
 
 find_package(Clp)

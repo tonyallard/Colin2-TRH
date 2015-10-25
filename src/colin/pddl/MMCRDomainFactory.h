@@ -20,6 +20,7 @@ private:
 	; //Private constructor
 	static std::string getHeader(bool deTILed);
 	static std::string getTypes(bool deTILed);
+	static std::string getConstants(bool hasTils, std::list<TIL> tils);
 	static std::string getPredicates(bool deTILed, bool hasPendingActions);
 	static std::string getFunctions();
 	static std::string getLoadAction();

@@ -18,46 +18,52 @@ using namespace std;
 namespace PDDL {
 
 //Literal and PNE Helper Functions
+set<PDDLObject> & extractParameters(Inst::Literal * literal,
+		set<PDDLObject> & parameters) {
+	return extractParameters(literal->toProposition()->args, parameters);
+}
+
+set<PDDLObject> & extractParameters(Inst::PNE * pne,
+		set<PDDLObject> & parameters) {
+	return extractParameters(pne->getFunc()->getArgs(), parameters);
+}
+
 set<PDDLObject> & extractParameters(
-		Inst::Literal * literal, set<PDDLObject> & parameters) {
-
-
+		const VAL::parameter_symbol_list * parameter_symbol_list,
+		set<PDDLObject> & parameters) {
 	VAL::parameter_symbol_list::const_iterator argItr =
-			literal->toProposition()->args->begin();
+			parameter_symbol_list->begin();
 	const VAL::parameter_symbol_list::const_iterator argItrEnd =
-			literal->toProposition()->args->end();
+			parameter_symbol_list->end();
 
 	for (; argItr != argItrEnd; argItr++) {
 		const VAL::parameter_symbol * param = *argItr;
 		string paramName = param->getName();
 		string paramType = param->type->getName();
 		std::transform(paramType.begin(), paramType.end(), paramType.begin(),
-						::toupper);
+				::toupper);
 		PDDLObject pddlObj(paramName, paramType);
 		parameters.insert(pddlObj);
 	}
 	return parameters;
 }
 
-set<PDDLObject> & extractParameters(
-		Inst::PNE * pne, set<PDDLObject> & parameters) {
-
-
-	VAL::parameter_symbol_list::const_iterator argItr =
-			pne->getFunc()->getArgs()->begin();
-	const VAL::parameter_symbol_list::const_iterator argItrEnd =
-			pne->getFunc()->getArgs()->end();
-
-	for (; argItr != argItrEnd; argItr++) {
-		const VAL::parameter_symbol * param = *argItr;
-		string paramName = param->getName();
-		string paramType = param->type->getName();
-		std::transform(paramType.begin(), paramType.end(), paramType.begin(),
-						::toupper);
-		PDDLObject pddlObj(paramName, paramType);
-		parameters.insert(pddlObj);
+std::map<const PDDLObject *, std::string> generateParameterTable(
+		const std::set<PDDLObject> & parameters) {
+	map<const PDDLObject *, string> parameterTable;
+	//FIXME: means that there can only be 24 parameters before we create errors
+	char letter = 'a';
+	std::set<PDDLObject>::const_iterator paramItr = parameters.begin();
+	for (; paramItr != parameters.end(); paramItr++) {
+		const PDDLObject * pddlObj = &(*paramItr);
+		std::ostringstream paramVar;
+		paramVar << "?" << static_cast<char>(letter);
+		letter++;
+		parameterTable.insert(
+				std::pair<const PDDLObject *, std::string>(pddlObj,
+						paramVar.str()));
 	}
-	return parameters;
+	return parameterTable;
 }
 
 //Action Helper Functions
@@ -253,6 +259,8 @@ PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp) {
 	std::list<PDDL::Proposition> addEffects;
 	std::list<PDDL::Proposition> delEffects;
 
+	std::set<PDDLObject> parameters;
+
 	//Get Add effects
 	std::list<Inst::Literal*>::const_iterator tilAddLitInt =
 			aTIL.addEffects.begin();
@@ -260,6 +268,7 @@ PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp) {
 			aTIL.addEffects.end();
 	for (; tilAddLitInt != tilAddLitIntEnd; tilAddLitInt++) {
 		Inst::Literal * literal = (*tilAddLitInt);
+		parameters = PDDL::extractParameters(literal, parameters);
 		PDDL::Proposition lit = PDDL::getProposition(literal);
 		addEffects.push_back(lit);
 	}
@@ -271,10 +280,11 @@ PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp) {
 			aTIL.delEffects.end();
 	for (; tilDelLitInt != tilDelLitIntEnd; tilDelLitInt++) {
 		Inst::Literal * literal = (*tilDelLitInt);
+		parameters = PDDL::extractParameters(literal, parameters);
 		PDDL::Proposition lit = PDDL::getProposition(literal);
 		delEffects.push_back(lit);
 	}
-	return PDDL::TIL(addEffects, delEffects, timestamp);
+	return PDDL::TIL(addEffects, delEffects, timestamp, parameters);
 }
 
 PDDL::PendingProposition getPendingProposition(const Inst::Literal * aLiteral,

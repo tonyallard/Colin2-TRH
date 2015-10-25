@@ -9,6 +9,8 @@
 
 #include "MMCRDomainFactory.h"
 #include "TIL.h"
+#include "PDDLUtils.h"
+
 using namespace std;
 namespace PDDL {
 
@@ -30,7 +32,7 @@ std::string MMCRDomainFactory::getDeTILedMMCRDomain(std::list<TIL> tils,
 	ostringstream output;
 	bool hasTils = tils.size();
 	bool hasPendingActions = pendingActions.size();
-	output << getHeader(hasTils) << getTypes(hasTils)
+	output << getHeader(hasTils) << getTypes(hasTils) << getConstants(hasTils, tils)
 			<< getPredicates(hasTils, hasPendingActions) << getFunctions()
 			<< getLoadAction() << getUnloadAction() << getMoveAction()
 			<< getPendingActions(pendingActions);
@@ -62,6 +64,19 @@ std::string MMCRDomainFactory::getTypes(bool deTILed) {
 		output << "\t\tTIL - object\n";
 	}
 	output << "\t)\n";
+	return output.str();
+}
+
+std::string MMCRDomainFactory::getConstants(bool hasTils, std::list<TIL> tils) {
+	std::ostringstream output;
+	if (hasTils) {
+		output << "\t(:constants\n\t\t";
+		std::list<TIL>::const_iterator tilItr = tils.begin();
+		for (; tilItr != tils.end(); tilItr++) {
+			output << tilItr->getName() << " ";
+		}
+		output << " - TIL\n\t)\n";
+	}
 	return output.str();
 }
 
@@ -189,10 +204,19 @@ string MMCRDomainFactory::getdeTILedAction(const TIL & til,
 	PDDL::Proposition tilLit(MMCRDomainFactory::TIL_ACHIEVED_PROPOSITION,
 			arguments);
 
+	//Determine Parameters
+	std::map<const PDDLObject *, std::string> parameterTable =
+			PDDL::generateParameterTable(til.getParameters());
+
 	//Generate action string
 	ostringstream output;
 	output << "\t(:action " << til.getName() << "\n";
-	output << "\t\t:parameters()\n";
+	output << "\t\t:parameters( ";
+	std::map<const PDDLObject *, std::string>::const_iterator paramItr = parameterTable.begin();
+	for (; paramItr != parameterTable.end(); paramItr++) {
+		output << paramItr->second << " - " << paramItr->first->getType() << " ";
+	}
+	output << ")\n";
 	output << "\t\t:precondition (";
 	if (tilActionPreconditions->size()) {
 		if (tilActionPreconditions->size() > 1) {
@@ -204,7 +228,7 @@ string MMCRDomainFactory::getdeTILedAction(const TIL & til,
 		const std::list<PDDL::Proposition>::const_iterator preItrEnd =
 				tilActionPreconditions->end();
 		for (; preItr != preItrEnd; preItr++) {
-			output << "\t\t\t" << *preItr << "\n";
+			output << "\t\t\t" << preItr->toParameterisedString(parameterTable) << "\n";
 		}
 		if (tilActionPreconditions->size() > 1) {
 			output << ")";
@@ -221,7 +245,7 @@ string MMCRDomainFactory::getdeTILedAction(const TIL & til,
 	const std::list<PDDL::Proposition>::const_iterator addItrEnd =
 			til.getAddEffects().end();
 	for (; addItr != addItrEnd; addItr++) {
-		output << "\t\t\t" << *addItr << "\n";
+		output << "\t\t\t" << addItr->toParameterisedString(parameterTable) << "\n";
 	}
 	// add special predicate to indicate that the til is complete
 	output << "\t\t\t" << tilLit << "\n";
@@ -231,13 +255,13 @@ string MMCRDomainFactory::getdeTILedAction(const TIL & til,
 	const std::list<PDDL::Proposition>::const_iterator delItrEnd =
 			til.getDelEffects().end();
 	for (; delItr != delItrEnd; delItr++) {
-		output << "\t\t\t(not " << *delItr << ")\n";
+		output << "\t\t\t(not " << delItr->toParameterisedString(parameterTable) << ")\n";
 	}
 	//We add an extra one here for the TIL Proposition itself
 	if (til.getAddEffects().size() + til.getDelEffects().size() + 1 > 1) {
-		output << ")";
+		output << "\t\t)";
 	}
-	output << "\t))\n";
+	output << "\t\t)\n\t)\n";
 	//Add the TIL Proposition to the list of preconditions for future TILS
 	//This retains precedence ordering of TILs
 	tilActionPreconditions->push_back(tilLit);
