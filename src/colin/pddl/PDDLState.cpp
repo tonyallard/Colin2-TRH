@@ -35,7 +35,7 @@ std::string PDDLState::getLiteralString() {
 	list<Proposition>::const_iterator litItr = literals.begin();
 	const list<Proposition>::const_iterator litItrEnd = literals.end();
 	for (; litItr != litItrEnd; litItr++) {
-		output << *litItr << "\n";
+		output << "\t\t" << *litItr << "\n";
 	}
 	return output.str();
 }
@@ -46,22 +46,7 @@ std::string PDDLState::getPNEString() {
 	list<PNE>::const_iterator pneItr = pnes.begin();
 	const list<PNE>::const_iterator pneItrEnd = pnes.end();
 	for (; pneItr != pneItrEnd; pneItr++) {
-		output << *pneItr << "\n";
-	}
-	return output.str();
-}
-
-std::string PDDLState::getTILLiteralString() {
-	ostringstream output;
-	// TILs to Literals
-	if (tils.size()) {
-		list<TIL>::const_iterator tilItr = tils.begin();
-		const list<TIL>::const_iterator tilItrEnd = tils.end();
-		output << "\t\t\t";
-		for (; tilItr != tilItrEnd; tilItr++) {
-			output << tilItr->getName() << " ";
-		}
-		output << "- TIL\n";
+		output << "\t\t" << *pneItr << "\n";
 	}
 	return output.str();
 }
@@ -85,6 +70,32 @@ string PDDLState::getPlanPrefixString() {
 	return output.str();
 }
 
+std::string PDDLState::getTILObjectString() {
+	ostringstream output;
+	if (!tils.size()) {
+		return output.str();
+	}
+	output << "\t\t";
+	std::list<TIL>::const_iterator tilItr = tils.begin();
+	for (; tilItr != tils.end(); tilItr++) {
+		output << tilItr->getName() << " ";
+	}
+	output << "- TIL\n";
+	return output.str();
+}
+
+std::string PDDLState::getTILGoalString() {
+	ostringstream output;
+	if (!tils.size()) {
+		return output.str();
+	}
+	std::list<TIL>::const_iterator tilItr = tils.begin();
+	for (; tilItr != tils.end(); tilItr++) {
+		output << "(til-achieved " << tilItr->getName() << ") ";
+	}
+	return output.str();
+}
+
 void PDDLState::writeStateToFile(string filePath, string fileName) {
 	ofstream myFile;
 	ostringstream fullFilePath;
@@ -97,7 +108,8 @@ void PDDLState::writeStateToFile(string filePath, string fileName) {
 	myFile << "(define (problem " << fileName << ")\n";
 	myFile << "\t(:domain multi-modal-cargo-routing)\n";
 	myFile
-			<< "\t(:objects \n\t\t v1 v2 - VEHICLE \n\t\t l1 l2 l3 - LOCATION \n\t\t c1  - CARGO \n\t)\n";
+			<< "\t(:objects \n\t\t v1 v2 - VEHICLE \n\t\t l1 l2 l3 - LOCATION \n\t\t c1  - CARGO \n";
+	myFile << "\t)\n";
 	myFile << "\t(:init\n";
 	myFile << toString();
 	myFile << "\t)\n";
@@ -120,13 +132,13 @@ void PDDLState::writeDeTILedStateToFile(std::string filePath,
 	myFile << "(define (problem " << fileName << ")\n";
 	myFile << "\t(:domain multi-modal-cargo-routing)\n";
 	myFile
-			<< "\t(:objects \n\t\t v1 v2 - VEHICLE \n\t\t l1 l2 l3 - LOCATION \n\t\t c1  - CARGO \n";
-	myFile << getTILLiteralString();
+			<< "\t(:objects \n\t\tv1 v2 - VEHICLE \n\t\tl1 l2 l3 - LOCATION \n\t\tc1  - CARGO \n";
+	myFile << getTILObjectString();
 	myFile << "\t)\n";
 	myFile << "\t(:init\n";
 	myFile << getLiteralString() << getPNEString();
 	myFile << "\t)\n";
-	myFile << "\t(:goal (at c1 l3))\n";
+	myFile << "\t(:goal (at c1 l3) " << getTILGoalString() << ")\n";
 	myFile << "\t(:metric minimize (total-cost))\n";
 	myFile << ")";
 	myFile.close();

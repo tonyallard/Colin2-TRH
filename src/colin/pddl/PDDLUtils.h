@@ -9,12 +9,10 @@
 #define COLIN_PDDLUTILS_H_
 
 #include <list>
+#include <set>
+#include <string>
 
-#include "../instantiation.h"
-#include "ptree.h"
-#include "../FakeTILAction.h"
-#include "../FFEvent.h"
-
+#include "PDDLObject.h"
 #include "Proposition.h"
 #include "Literal.h"
 #include "PNE.h"
@@ -22,12 +20,22 @@
 #include "PendingProposition.h"
 #include "PendingPNE.h"
 
+#include "../instantiation.h"
+#include "ptree.h"
+#include "../FakeTILAction.h"
+#include "../FFEvent.h"
+
 namespace PDDL {
+
+//Literal and PNE Helper Functions
+std::set<PDDLObject> & extractParameters(Inst::Literal * literal, set<PDDLObject> & parameters);
+std::set<PDDLObject> & extractParameters(Inst::PNE * pne, set<PDDLObject> & parameters);
 
 //Action Helper Functions
 std::list<PDDL::Literal> getActionConditions(int actionID, VAL::time_spec timeQualifier);
 std::list<PDDL::Proposition> getActionEffects(int actionID, VAL::time_spec timeQualifier, bool positive);
 std::string getActionName(int actionNum);
+std::map<std::string, std::string> getActionParameters(int actionNum);
 bool supported(const PDDL::Proposition * proposition, std::list<PDDL::Proposition> * propositions);
 bool isEqual(const Planner::FFEvent * one, const Planner::FFEvent * two);
 

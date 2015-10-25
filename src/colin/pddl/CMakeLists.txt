@@ -7,6 +7,7 @@ set(CMAKE_CXX_FLAGS "-std=c++0x -pg -ggdb ${CMAKE_CXX_FLAGS}")
 include_directories(${val_SOURCE_DIR} ${val_SOURCE_DIR}/parsing)
 
 set(libPDDL_SRCS
+	PDDLObject.cpp
 	Proposition.cpp
 	Literal.cpp
 	PNE.cpp	

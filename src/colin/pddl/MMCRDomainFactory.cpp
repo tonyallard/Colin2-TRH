@@ -13,11 +13,12 @@ using namespace std;
 namespace PDDL {
 
 const std::string MMCRDomainFactory::TIL_ACHIEVED_PROPOSITION = "til-achieved";
+const std::string MMCRDomainFactory::REQUIRED_PROPOSITION = "required";
 
 std::string MMCRDomainFactory::getMMCRDomain(
 		const std::list<PendingAction> & pendingActions) {
 	ostringstream output;
-	output << getHeader(false) << getTypes(false) << getPredicates(false)
+	output << getHeader(false) << getTypes(false) << getPredicates(false, false)
 			<< getFunctions() << getLoadAction() << getUnloadAction()
 			<< getMoveAction() << getPendingActions(pendingActions)
 			<< getTerminationString();
@@ -28,9 +29,11 @@ std::string MMCRDomainFactory::getDeTILedMMCRDomain(std::list<TIL> tils,
 		const std::list<PendingAction> & pendingActions) {
 	ostringstream output;
 	bool hasTils = tils.size();
-	output << getHeader(hasTils) << getTypes(hasTils) << getPredicates(hasTils)
-			<< getFunctions() << getLoadAction() << getUnloadAction()
-			<< getMoveAction() << getPendingActions(pendingActions);
+	bool hasPendingActions = pendingActions.size();
+	output << getHeader(hasTils) << getTypes(hasTils)
+			<< getPredicates(hasTils, hasPendingActions) << getFunctions()
+			<< getLoadAction() << getUnloadAction() << getMoveAction()
+			<< getPendingActions(pendingActions);
 	if (hasTils) {
 		output << getdeTILedActions(tils);
 	}
@@ -62,7 +65,8 @@ std::string MMCRDomainFactory::getTypes(bool deTILed) {
 	return output.str();
 }
 
-std::string MMCRDomainFactory::getPredicates(bool deTILed) {
+std::string MMCRDomainFactory::getPredicates(bool deTILed,
+		bool hasPendingActions) {
 	ostringstream output;
 	output << "\t(:predicates\n";
 	output << "\t\t(at ?x - (either VEHICLE CARGO) ?y - LOCATION)\n";
@@ -72,6 +76,10 @@ std::string MMCRDomainFactory::getPredicates(bool deTILed) {
 	if (deTILed) {
 		output << "\t\t(" << MMCRDomainFactory::TIL_ACHIEVED_PROPOSITION
 				<< " ?x - TIL)\n";
+	}
+	if (hasPendingActions) {
+		output << "\t\t(" << MMCRDomainFactory::REQUIRED_PROPOSITION
+				<< " ?x - object)\n";
 	}
 	output << "\t)\n";
 	return output.str();
@@ -178,7 +186,8 @@ string MMCRDomainFactory::getdeTILedAction(const TIL & til,
 	//Create special proposition for this TIL
 	std::list<string> arguments;
 	arguments.push_back(til.getName());
-	PDDL::Proposition tilLit(MMCRDomainFactory::TIL_ACHIEVED_PROPOSITION, arguments);
+	PDDL::Proposition tilLit(MMCRDomainFactory::TIL_ACHIEVED_PROPOSITION,
+			arguments);
 
 	//Generate action string
 	ostringstream output;

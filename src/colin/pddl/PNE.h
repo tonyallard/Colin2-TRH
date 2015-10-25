@@ -9,7 +9,10 @@
 #define COLIN_PDDL_PNE_H_
 
 #include <list>
+#include <map>
 #include <string>
+
+#include <PDDLObject.h>
 
 namespace PDDL {
 
@@ -25,7 +28,7 @@ public:
 	const std::string & getName() const { return name; };
 	const std::list<std::string> & getArguments() const {return arguments; };
 	const double & getValue() const { return value; };
-	std::string toActionEffectString() const;
+	std::string toActionEffectString(const std::map<const PDDLObject *, std::string> & parameterTable) const;
 	friend std::ostream & operator<<(std::ostream & output, const PNE & pne);
 
 };

@@ -43,7 +43,8 @@ public:
 	std::string toString();
 	std::string getLiteralString();
 	std::string getPNEString();
-	std::string getTILLiteralString();
+	std::string getTILObjectString();
+	std::string getTILGoalString();
 	std::string getDomainString();
 	std::string getDeTiledDomainString();
 	inline double getTimestamp() {

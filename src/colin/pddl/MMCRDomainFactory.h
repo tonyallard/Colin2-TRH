@@ -15,13 +15,12 @@
 namespace PDDL {
 class MMCRDomainFactory {
 private:
-	static const std::string TIL_ACHIEVED_PROPOSITION;
 	MMCRDomainFactory() {
 	}
 	; //Private constructor
 	static std::string getHeader(bool deTILed);
 	static std::string getTypes(bool deTILed);
-	static std::string getPredicates(bool deTILed);
+	static std::string getPredicates(bool deTILed, bool hasPendingActions);
 	static std::string getFunctions();
 	static std::string getLoadAction();
 	static std::string getUnloadAction();
@@ -32,6 +31,8 @@ private:
 	static std::string getPendingActions(const std::list<PendingAction> & pendingActions);
 	static std::string getTerminationString();
 public:
+	static const std::string TIL_ACHIEVED_PROPOSITION;
+	static const std::string REQUIRED_PROPOSITION;
 	static std::string getMMCRDomain(const std::list<PendingAction> & pendingActions);
 	static std::string getDeTILedMMCRDomain(std::list<TIL> tils, const std::list<PendingAction> & pendingActions);
 };
