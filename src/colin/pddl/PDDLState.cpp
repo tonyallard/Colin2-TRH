@@ -56,7 +56,7 @@ std::string PDDLState::getDomainString() {
 }
 
 string PDDLState::getDeTiledDomainString() {
-	return MMCRDomainFactory::getDeTILedMMCRDomain(tils, pendingActions);
+	return MMCRDomainFactory::getDeTILedMMCRDomain(literals, tils, pendingActions);
 }
 
 string PDDLState::getPlanPrefixString() {
@@ -91,7 +91,7 @@ std::string PDDLState::getTILGoalString() {
 	}
 	std::list<TIL>::const_iterator tilItr = tils.begin();
 	for (; tilItr != tils.end(); tilItr++) {
-		output << "(til-achieved " << tilItr->getName() << ") ";
+		output << "(" << tilItr->getName() << ") ";
 	}
 	return output.str();
 }

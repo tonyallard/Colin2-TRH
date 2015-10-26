@@ -39,8 +39,10 @@ private:
 	static std::list<PDDL::PendingAction> getPendingActions(
 			const Planner::MinimalState & state, double timestamp);
 
+	static void addExtraPropositionsForTILs(const std::list<TIL> & tils,
+			std::list<Proposition> & propositions);
 	static void addExtraPropositionsForPendingActions(
-			std::list<PendingAction> & pendingActions,
+			const std::list<PendingAction> & pendingActions,
 			std::list<Proposition> & propositions);
 	static std::list<Proposition> getRequiredPropositions(
 			std::set<PDDLObject> & parameters);

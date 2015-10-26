@@ -31,13 +31,12 @@ std::string MMCRDomainFactory::getMMCRDomain(
 	return output.str();
 }
 
-std::string MMCRDomainFactory::getDeTILedMMCRDomain(std::list<TIL> tils,
+std::string MMCRDomainFactory::getDeTILedMMCRDomain(const std::list<Proposition> & propositions, const std::list<TIL> & tils,
 		const std::list<PendingAction> & pendingActions) {
 	ostringstream output;
 	bool hasTils = tils.size();
 	bool hasPendingActions = pendingActions.size();
 	output << getHeader(hasTils) << getTypes(hasTils)
-			<< getConstants(hasTils, tils)
 			<< getPredicates(hasTils, hasPendingActions) << getFunctions()
 			<< getLoadAction() << getUnloadAction() << getMoveAction()
 			<< getInitialAction() << getPendingActions(pendingActions);
@@ -65,23 +64,7 @@ std::string MMCRDomainFactory::getTypes(bool deTILed) {
 	output << "\t(:types\n";
 	output << "\t\tCONTAINER CARGO - object\n";
 	output << "\t\tVEHICLE LOCATION - CONTAINER\n";
-	if (deTILed) {
-		output << "\t\tTIL - object\n";
-	}
 	output << "\t)\n";
-	return output.str();
-}
-
-std::string MMCRDomainFactory::getConstants(bool hasTils, std::list<TIL> tils) {
-	std::ostringstream output;
-	if (hasTils) {
-		output << "\t(:constants\n\t\t";
-		std::list<TIL>::const_iterator tilItr = tils.begin();
-		for (; tilItr != tils.end(); tilItr++) {
-			output << tilItr->getName() << " ";
-		}
-		output << " - TIL\n\t)\n";
-	}
 	return output.str();
 }
 
@@ -93,10 +76,6 @@ std::string MMCRDomainFactory::getPredicates(bool deTILed,
 	output << "\t\t(in ?x - CARGO ?y - VEHICLE)\n";
 	output << "\t\t(ready-loading ?x - VEHICLE)\n";
 	output << "\t\t(available ?x - (either VEHICLE CARGO))\n";
-	if (deTILed) {
-		output << "\t\t(" << MMCRDomainFactory::TIL_ACHIEVED_PROPOSITION
-				<< " ?x - TIL)\n";
-	}
 	if (hasPendingActions) {
 		output << "\t\t(" << MMCRDomainFactory::REQUIRED_PROPOSITION
 				<< " ?x - object)\n";
@@ -228,8 +207,7 @@ string MMCRDomainFactory::getdeTILedAction(const TIL & til,
 		std::list<PDDL::Proposition> * tilActionPreconditions) {
 	//Create special proposition for this TIL
 	std::list<string> arguments;
-	arguments.push_back(til.getName());
-	PDDL::Proposition tilLit(MMCRDomainFactory::TIL_ACHIEVED_PROPOSITION,
+	PDDL::Proposition tilLit(til.getName(),
 			arguments);
 
 	//Determine Parameters
@@ -248,7 +226,9 @@ string MMCRDomainFactory::getdeTILedAction(const TIL & til,
 	}
 	output << ")\n";
 	output << "\t\t:precondition (and\n";
-	output << "\t\t\t(initial-action-complete)\n";
+	//Add requirement for initial action
+	output << "\t\t\t("<< MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION <<")\n";
+	//Add requirement for past TILs to have been achieved
 	if (tilActionPreconditions->size()) {
 		std::list<PDDL::Proposition>::const_iterator preItr =
 				tilActionPreconditions->begin();

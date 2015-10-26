@@ -20,7 +20,6 @@ private:
 	; //Private constructor
 	static std::string getHeader(bool deTILed);
 	static std::string getTypes(bool deTILed);
-	static std::string getConstants(bool hasTils, std::list<TIL> tils);
 	static std::string getPredicates(bool deTILed, bool hasPendingActions);
 	static std::string getFunctions();
 	static std::string getLoadAction();
@@ -30,15 +29,20 @@ private:
 	static std::string getdeTILedActions(std::list<TIL> tils);
 	static std::string getdeTILedAction(const TIL & til,
 			std::list<PDDL::Proposition> * tilActionPreconditions);
-	static std::string getPendingActions(const std::list<PendingAction> & pendingActions);
+	static std::string getPendingActions(
+			const std::list<PendingAction> & pendingActions);
 	static std::string getTerminationString();
 public:
 	static const std::string TIL_ACHIEVED_PROPOSITION;
 	static const std::string REQUIRED_PROPOSITION;
 	static const std::string INITIAL_ACTION_REQUIRED_PROPOSITION;
 	static const std::string INITIAL_ACTION_COMPLETE_PROPOSITION;
-	static std::string getMMCRDomain(const std::list<PendingAction> & pendingActions);
-	static std::string getDeTILedMMCRDomain(std::list<TIL> tils, const std::list<PendingAction> & pendingActions);
+	static std::string getMMCRDomain(
+			const std::list<PendingAction> & pendingActions);
+	static std::string getDeTILedMMCRDomain(
+			const std::list<Proposition> & propositions,
+			const std::list<TIL> & tils,
+			const std::list<PendingAction> & pendingActions);
 };
 }
 
