@@ -56,7 +56,7 @@ std::string PDDLState::getDomainString() {
 }
 
 string PDDLState::getDeTiledDomainString() {
-	return MMCRDomainFactory::getDeTILedMMCRDomain(literals, tils, pendingActions);
+	return MMCRDomainFactory::getDeTILedMMCRDomain(tils, pendingActions);
 }
 
 string PDDLState::getPlanPrefixString() {

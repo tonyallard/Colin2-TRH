@@ -19,8 +19,9 @@ private:
 	}
 	; //Private constructor
 	static std::string getHeader(bool deTILed);
-	static std::string getTypes(bool deTILed);
-	static std::string getPredicates(bool deTILed, bool hasPendingActions);
+	static std::string getTypes();
+	static std::string getPredicates(bool hasPendingActions,
+			const std::list<TIL> & tils = std::list<TIL>());
 	static std::string getFunctions();
 	static std::string getLoadAction();
 	static std::string getUnloadAction();
@@ -39,9 +40,7 @@ public:
 	static const std::string INITIAL_ACTION_COMPLETE_PROPOSITION;
 	static std::string getMMCRDomain(
 			const std::list<PendingAction> & pendingActions);
-	static std::string getDeTILedMMCRDomain(
-			const std::list<Proposition> & propositions,
-			const std::list<TIL> & tils,
+	static std::string getDeTILedMMCRDomain(const std::list<TIL> & tils,
 			const std::list<PendingAction> & pendingActions);
 };
 }

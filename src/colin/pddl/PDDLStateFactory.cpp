@@ -27,26 +27,9 @@ PDDLState PDDLStateFactory::getPDDLState(const MinimalState & state,
 	std::list<PendingAction> pendingActions = getPendingActions(state,
 			timestamp);
 	addExtraPropositionsForPendingActions(pendingActions, propositions);
-	addExtraPropositionsForTILs(tils, propositions);
 	std::list<string> planPrefix = getPlanPrefix(plan);
 	return PDDLState(propositions, pnes, tils, pendingActions, planPrefix,
 			heuristic, timestamp);
-}
-
-/**
- * Cycles through each til and adds the proposition for its achivement
- * This proposition is what ensures the TILs are followed causally
- * according to their time stamp and that they are achieved in the goal state
- */
-void PDDLStateFactory::addExtraPropositionsForTILs(const std::list<TIL> & tils,
-		std::list<Proposition> & propositions) {
-	std::set<PDDLObject> parameters;
-	std::list<TIL>::const_iterator tilItr = tils.begin();
-	for (; tilItr != tils.end(); tilItr++) {
-		std::list<string> args;
-		Proposition tilProp(tilItr->getName(), args);
-		propositions.push_back(tilProp);
-	}
 }
 
 /**
