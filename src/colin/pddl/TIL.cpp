@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #include "TIL.h"
 #include "PDDLUtils.h"
@@ -31,7 +32,9 @@ std::string TIL::getName() const {
 			output << "-" << Proposition::getDecoratedName(*delEffItr);
 		}
 	}
-	return output.str();
+	std::string toReturn = output.str();
+	std::replace( toReturn.begin(), toReturn.end(), '.', '-');
+	return toReturn;
 }
 
 /*
