@@ -138,7 +138,7 @@ void PDDLState::writeDeTILedStateToFile(std::string filePath,
 	myFile << "\t(:init\n";
 	myFile << getLiteralString() << getPNEString();
 	myFile << "\t)\n";
-	myFile << "\t(:goal (at c1 l3) " << getTILGoalString() << ")\n";
+	myFile << "\t(:goal (and (at c1 l3) " << getTILGoalString() << "))\n";
 	myFile << "\t(:metric minimize (total-cost))\n";
 	myFile << ")";
 	myFile.close();
