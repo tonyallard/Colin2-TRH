@@ -5947,10 +5947,6 @@ Solution FF::search(bool & reachedGoal)
                 ActionSegment tempSeg(0, VAL::E_AT, oldTIL, RPGHeuristic::emptyIntList);
                 SearchQueueItem * item = new SearchQueueItem(applyActionToState(tempSeg, *(currSQI->state()), currSQI->plan), true);
                 succ = auto_ptr<SearchQueueItem>(item);
-                PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), currSQI->plan, item->state()->timeStamp, item->heuristicValue.qbreak);
-                pair<PDDL::PDDLState, bool> newStatePair (newState, false);
-                list<FFEvent> events = currSQI->plan;
-                visitedPDDLStates.insert(std::make_pair(events, newStatePair));
                 if (!succ->state()) {
                     tsSound = false;
                 } else {
@@ -5965,13 +5961,6 @@ Solution FF::search(bool & reachedGoal)
                 //registerFinished(*(succ->state), helpfulActsItr->needToFinish);
             	SearchQueueItem * item = new SearchQueueItem(applyActionToState(*helpfulActsItr, *(currSQI->state()), currSQI->plan), true);
                 succ = auto_ptr<SearchQueueItem>(item);
-                PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), currSQI->plan, item->state()->timeStamp, item->heuristicValue.qbreak);
-                pair<PDDL::PDDLState, bool> newStatePair (newState, false);
-                list<FFEvent> events = currSQI->plan;
-                if (events.size() % 2 != 0) {
-                	cout << endl << "It's happening here. LOOK" << endl;
-                }
-                visitedPDDLStates.insert(std::make_pair(events, newStatePair));
                 if (!succ->state()) {
                     tsSound = false;
                 } else {
@@ -5993,13 +5982,13 @@ Solution FF::search(bool & reachedGoal)
                 cout << "duration was invalid\n";
             }*/
 
-            if (!tsSound) {
+            if (!tsSound) { //Is not temporally sound
                 if (Globals::globalVerbosity & 2) {
                     cout << "\tTemporally invalid choice\n";
                 } else if (Globals::globalVerbosity & 1) {
                     cout << "t"; cout.flush();
                 }
-            } else {
+            } else { // Is temporally sound
                 assert(succ->state());
                 if (Globals::globalVerbosity & 2) {
                     if (helpfulActsItr->first) {
@@ -6034,7 +6023,10 @@ Solution FF::search(bool & reachedGoal)
                             }
                         }
                     }
-
+                    /* I think this is some house keeping where if the state has been visited before and
+                     * the action is a TIL, it performs some house keeping functions to make this the next
+                     * active TIL or something and update the internal representaiton of the plan.
+                     */
                     if (visitTheState) {
 
                         TILparent = currSQI.get();
@@ -6069,15 +6061,12 @@ Solution FF::search(bool & reachedGoal)
                             }
                             TILparentAutoDelete = auto_ptr<SearchQueueItem>(TILparent);
 
+                            //Not sure how this differs to above but it doesn't seem to get called
                             tempSeg = ActionSegment(0, VAL::E_AT, tn, RPGHeuristic::emptyIntList);
                             SearchQueueItem * item = new SearchQueueItem(applyActionToState(tempSeg, *(TILparent->state()), TILparent->plan), true);
                             succ = auto_ptr<SearchQueueItem>(item);
-                            PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(item->state()->getInnerState(), TILparent->plan, item->state()->timeStamp, item->heuristicValue.qbreak);
-                            pair<PDDL::PDDLState, bool> newStatePair (newState, false);
-                            list<FFEvent> events = currSQI->plan;
-                            visitedPDDLStates.insert(std::make_pair(events, newStatePair));
-
                             succ->heuristicValue.makespan = TILparent->heuristicValue.makespan;
+                            cerr << endl << "States are not being captured!" << endl;
 
                             if (!succ->state() || !checkTemporalSoundness(*(succ->state()), tempSeg, tn - 1)) {
                                 succ->heuristicValue.heuristicValue = -1.0;
@@ -6157,17 +6146,36 @@ Solution FF::search(bool & reachedGoal)
                 if (visitTheState) {
 
                     if (helpfulActsItr->second == VAL::E_AT) {
+                    	//Actually update state and add action with TIL to the plan
                         if (Globals::globalVerbosity & 2) {
                             cout << "About to evaluate with TIL parent = " << TILparent << endl;
                         }
                         evaluateStateAndUpdatePlan(succ, *(succ->state()), TILparent->state(), goals, numericGoals,
                                                    (incrementalIsDead ? (ParentData*) 0 : incrementalData.get()),
                                                    succ->helpfulActions, *helpfulActsItr, TILparent->plan);
-
+                        //If the state is sound
+                        if (succ->heuristicValue.heuristicValue >= 0) {
+							list<FFEvent> events = succ->plan;
+							PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(succ->state()->getInnerState(), succ->plan, succ->state()->timeStamp, succ->heuristicValue.qbreak);
+							pair<PDDL::PDDLState, bool> newStatePair (newState, false);
+							visitedPDDLStates.insert(std::make_pair(events, newStatePair));
+                        }
                     } else {
-
+                    	//Actually create the new FFEvent(s) and update the plan in succ
                         evaluateStateAndUpdatePlan(succ, *(succ->state()), currSQI->state(), goals, numericGoals,
                                                    incrementalData.get(), succ->helpfulActions, *helpfulActsItr, currSQI->plan);
+                        //If the state is sound
+                        if (succ->heuristicValue.heuristicValue >= 0) {
+							list<FFEvent> events = succ->plan;
+							//Remove the last event if it is an end, but the action was a start
+							if ((helpfulActsItr->second == VAL::time_spec::E_AT_START) && (events.size())
+									&& (helpfulActsItr->first == events.rbegin()->action) && (events.rbegin()->time_spec == VAL::time_spec::E_AT_END)){
+								events.remove(*events.rbegin());
+							}
+							PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(succ->state()->getInnerState(), events, succ->state()->timeStamp, succ->heuristicValue.qbreak);
+							pair<PDDL::PDDLState, bool> newStatePair (newState, false);
+							visitedPDDLStates.insert(std::make_pair(events, newStatePair));
+                        }
                     }
 
                     //succ->printPlan();
@@ -6175,16 +6183,6 @@ Solution FF::search(bool & reachedGoal)
 
 
                         if (succ->heuristicValue.heuristicValue == 0.0) {
-                        	cout << endl << "how many: " << visitedPDDLStates.size() << endl;
-                        	std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator testItr = visitedPDDLStates.begin();
-                        	int oddCount = 0;
-                        	for (; testItr != visitedPDDLStates.end(); testItr++) {
-                        		list<Planner::FFEvent> testPlan = testItr->first;
-                        		if (testPlan.size() % 2 != 0) {
-                        			oddCount++;
-                        		}
-                        	}
-                        	cout << "There are " << oddCount << " in action plans" << endl;
 
                             reachedGoal = true;
                             //TODO Cycle through plan and print out good states.
@@ -6217,20 +6215,18 @@ Solution FF::search(bool & reachedGoal)
                             		if (!same) {
                             			continue;
                             		}
+                            		// This is a good state
+
                             		PDDL::PDDLState & state = visitItr->second.first;
-
-//                            			cout << event->id << endl;
-//                            			cout << visitItr->second.first.toString() << endl;
-                            			visitItr->second.second = true;
-                            			std::ostringstream filePath;
-                            			std::ostringstream fileName;
-                            			filePath << "states/";
-                            			fileName << "GoodState" << (stateCount++);
-                            			state.writeDeTILedStateToFile(filePath.str(), fileName.str());
-                            			state.writeDeTILedDomainToFile(filePath.str(), fileName.str());
-                            			//visitedPDDLStates.erase(visitItr);
-                            			break;
-
+                           			visitItr->second.second = true;
+                           			std::ostringstream filePath;
+                           			std::ostringstream fileName;
+                           			filePath << "states/";
+                           			fileName << "GoodState" << (stateCount++);
+                           			state.writeDeTILedStateToFile(filePath.str(), fileName.str());
+                           			state.writeDeTILedDomainToFile(filePath.str(), fileName.str());
+                           			//visitedPDDLStates.erase(visitItr);
+                           			break; //Finish looking for this state
                             	}
                             	processedEvents++;
                             }
@@ -6298,6 +6294,9 @@ Solution FF::search(bool & reachedGoal)
     cout << "\nProblem Unsolvable\n";
     //Cycle through those states that were not good
     int numGoodStates = 0;
+    int numBadStates = 0;
+    int numGoodPendingAction = 0;
+    int numBadPendingAction = 0;
     std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator it = visitedPDDLStates.begin();
     std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator end = visitedPDDLStates.end();
     for (; it != end; ++it) {
@@ -6310,11 +6309,20 @@ Solution FF::search(bool & reachedGoal)
 			fileName << "BadState" << (stateCount++);
 			state.writeDeTILedStateToFile(filePath.str(), fileName.str());
 			state.writeDeTILedDomainToFile(filePath.str(), fileName.str());
+			numBadStates++;
+    		if ((it->first.size() % 2) != 0) {
+    			numBadPendingAction++;
+    		}
     	} else {
     		numGoodStates++;
+    		if ((it->first.size() % 2) != 0) {
+    			numGoodPendingAction++;
+    		}
     	}
     }
-    cout << numGoodStates << " good states skipped." << endl;
+    cout << "There are: " << visitedPDDLStates.size() << " states in total." << endl;
+    cout << numGoodStates << " Good States (" << numGoodPendingAction << " with pending actions). " << numBadStates << " Bad States (" << numBadPendingAction << " with pending actions)." << endl;
+
 
     reachedGoal = false;
     return workingBestSolution;
