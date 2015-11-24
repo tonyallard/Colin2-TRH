@@ -25,7 +25,7 @@ std::string MMCRDomainFactory::getMMCRDomain(
 		const std::list<PendingAction> & pendingActions) {
 	ostringstream output;
 	output << getHeader(false) << getTypes()
-			<< getPredicates(false) << getFunctions()
+			<< getPredicates() << getFunctions()
 			<< getLoadAction() << getUnloadAction() << getMoveAction()
 			<< getPendingActions(pendingActions) << getTerminationString();
 	return output.str();
@@ -36,9 +36,8 @@ std::string MMCRDomainFactory::getDeTILedMMCRDomain(
 		const std::list<PendingAction> & pendingActions) {
 	ostringstream output;
 	bool hasTils = tils.size();
-	bool hasPendingActions = pendingActions.size();
 	output << getHeader(hasTils) << getTypes()
-			<< getPredicates(hasPendingActions, tils) << getFunctions()
+			<< getPredicates(pendingActions, tils) << getFunctions()
 			<< getLoadAction() << getUnloadAction() << getMoveAction()
 			<< getInitialAction() << getPendingActions(pendingActions);
 	if (hasTils) {
@@ -70,7 +69,7 @@ std::string MMCRDomainFactory::getTypes() {
 }
 
 std::string MMCRDomainFactory::getPredicates(
-		bool hasPendingActions, const std::list<TIL> & tils /*=empty list*/) {
+		const std::list<PendingAction> & pendingActions /*=empty list*/, const std::list<TIL> & tils /*=empty list*/) {
 	ostringstream output;
 	output << "\t(:predicates\n";
 	output << "\t\t(at ?x - (either VEHICLE CARGO) ?y - LOCATION)\n";
@@ -81,9 +80,12 @@ std::string MMCRDomainFactory::getPredicates(
 	for (; tilItr != tils.end(); tilItr++) {
 		output << "\t\t(" << tilItr->getName() << ")\n";
 	}
-	if (hasPendingActions) {
-		output << "\t\t(" << MMCRDomainFactory::REQUIRED_PROPOSITION
+	if (pendingActions.size()) {
+		std::list<PendingAction>::const_iterator pendActItr = pendingActions.begin();
+		for (; pendActItr != pendingActions.end(); pendActItr++) {
+		output << "\t\t(" << MMCRDomainFactory::REQUIRED_PROPOSITION << "-" << pendActItr->getName()
 				<< " ?x - object)\n";
+		}
 	}
 	output << "\t\t(" << MMCRDomainFactory::INITIAL_ACTION_REQUIRED_PROPOSITION
 			<< ")\n";

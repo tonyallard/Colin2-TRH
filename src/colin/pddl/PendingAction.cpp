@@ -34,7 +34,7 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 	//Add pre-conditions for required parameters
 	paramItr = parameterTable.begin();
 	for (; paramItr != parameterTable.end(); paramItr++) {
-		output << "\t\t\t(at start (" << MMCRDomainFactory::REQUIRED_PROPOSITION
+		output << "\t\t\t(at start (" << MMCRDomainFactory::REQUIRED_PROPOSITION << "-" << action.name
 				<< " " << paramItr->second << "))" << std::endl;
 	}
 	std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > >::const_iterator condItr =
@@ -68,7 +68,7 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 	//Add effects for required parameters
 	paramItr = parameterTable.begin();
 	for (; paramItr != parameterTable.end(); paramItr++) {
-		output << "\t\t\t(at start (not (" << MMCRDomainFactory::REQUIRED_PROPOSITION
+		output << "\t\t\t(at start (not (" << MMCRDomainFactory::REQUIRED_PROPOSITION << "-" << action.name
 				<< " " << paramItr->second << ")))" << std::endl;
 	}
 	//first get propositional effects

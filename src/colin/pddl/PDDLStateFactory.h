@@ -43,7 +43,7 @@ private:
 			const std::list<PendingAction> & pendingActions,
 			std::list<Proposition> & propositions);
 	static std::list<Proposition> getRequiredPropositions(
-			std::set<PDDLObject> & parameters);
+			const std::set<PDDLObject> & parameters, std::string actionName);
 
 	/*Methods to get condition literals*/
 	static std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > getConditions(

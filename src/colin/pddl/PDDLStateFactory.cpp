@@ -43,12 +43,11 @@ void PDDLStateFactory::addExtraPropositionsForPendingActions(
 	std::set<PDDLObject> parameters;
 	std::list<PendingAction>::const_iterator pActItr = pendingActions.begin();
 	for (; pActItr != pendingActions.end(); pActItr++) {
-		parameters.insert(pActItr->getParameters().begin(),
-				pActItr->getParameters().end());
+		std::list<Proposition> extraProps = getRequiredPropositions(
+				pActItr->getParameters(), pActItr->getName());
+		propositions.insert(propositions.end(), extraProps.begin(),
+					extraProps.end());
 	}
-	std::list<Proposition> extraProps = getRequiredPropositions(parameters);
-	propositions.insert(propositions.end(), extraProps.begin(),
-			extraProps.end());
 }
 
 /**
@@ -56,13 +55,14 @@ void PDDLStateFactory::addExtraPropositionsForPendingActions(
  * This ensures the correct objects get used for the actions
  */
 std::list<Proposition> PDDLStateFactory::getRequiredPropositions(
-		std::set<PDDLObject> & parameters) {
+		const std::set<PDDLObject> & parameters, std::string actionName) {
 	std::list<Proposition> requiredProps;
+	std::string actionDelim = "-" + actionName;
 	std::set<PDDLObject>::const_iterator paramItr = parameters.begin();
 	for (; paramItr != parameters.end(); paramItr++) {
 		list<string> args;
 		args.push_back(paramItr->getName());
-		Proposition prop(MMCRDomainFactory::REQUIRED_PROPOSITION, args);
+		Proposition prop(MMCRDomainFactory::REQUIRED_PROPOSITION + actionDelim, args);
 		requiredProps.push_back(prop);
 	}
 	return requiredProps;
