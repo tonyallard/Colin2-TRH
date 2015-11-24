@@ -8,6 +8,7 @@
 #include <sstream>
 #include <string>
 #include <list>
+#include <regex>
 
 #include "PDDLObject.h"
 #include "PDDLUtils.h"
@@ -16,6 +17,9 @@
 using namespace std;
 
 namespace PDDL {
+
+std::string TIL_ACTION_PREFIX = "at-";
+char TIL_STRING_DELIM = '-';
 
 //Literal and PNE Helper Functions
 set<PDDLObject> & extractParameters(Inst::Literal * literal,
@@ -68,6 +72,9 @@ std::map<const PDDLObject *, std::string> generateParameterTable(
 
 //Action Helper Functions
 
+/**
+ * returns the effects of an action which match the time qualified and sign
+ */
 std::list<PDDL::Proposition> getActionEffects(int actionID,
 		VAL::time_spec timeQualifier, bool positive) {
 	std::list<Inst::Literal*> effects;
@@ -191,8 +198,60 @@ bool supported(const PDDL::Proposition * proposition,
 	return false;
 }
 
-bool isEqual(const Planner::FFEvent * one, const Planner::FFEvent * two) {
+//TIL Helper Functions
+double extractTILTimeStamp(const Planner::FFEvent * tilEvent) {
+	std::string name = tilEvent->action->getHead()->getName();
+	std::stringstream ss (name);
+	std::string item;
+	std::stringstream bits;
+	bool found = false;
+	//Go through each segment of the name looking for numbers
+	while (std::getline(ss, item, TIL_STRING_DELIM)) {
+		std::istringstream test(item);
+		int num;
+		//Check if this segment is all number
+		if (!(test >> num).fail()) {
+			//If we have already found a number add a decimal
+			if (found) {
+				bits << ".";
+			}
+			bits << item;
+			found = true;
+		}
+	}
+	double output;
+	bits >> output;
+	return output;
+}
 
+/**
+ * Looks for TIL actions based on:
+ * They have zero duration,
+ * They are marked as AT_START time spec, and
+ * Their action name prefix begins with 'at-'
+ */
+std::list<const Planner::FFEvent *> getTILActions(
+		std::list<Planner::FFEvent> * plan) {
+	std::list<const Planner::FFEvent *> tilActions;
+
+	std::list<Planner::FFEvent>::const_iterator eventItr = plan->begin();
+	const std::list<Planner::FFEvent>::const_iterator eventItrEnd = plan->end();
+
+	for (; eventItr != eventItrEnd; eventItr++) {
+		const Planner::FFEvent * event = &(*eventItr);
+
+		//check if action name matches typical TIL prefix
+		std::string eventName = event->action->getHead()->getName();
+		int found = eventName.substr(0, TIL_ACTION_PREFIX.size()).find(TIL_ACTION_PREFIX);
+
+		if ((event->maxDuration == event->minDuration == 0)
+				&& (event->time_spec == VAL::time_spec::E_AT_START)
+				&& (found >= 0)) {
+			tilActions.push_back(event);
+		}
+	}
+
+	return tilActions;
 }
 
 // Basic Conversions Functions
@@ -341,23 +400,6 @@ bool isBefore(const Planner::FFEvent * event, const Planner::FFEvent * before,
 		}
 	}
 	return false;
-}
-
-std::list<const Planner::FFEvent *> getTILActions(
-		std::list<Planner::FFEvent> * plan) {
-	std::list<const Planner::FFEvent *> tilActions;
-
-	std::list<Planner::FFEvent>::const_iterator eventItr = plan->begin();
-	const std::list<Planner::FFEvent>::const_iterator eventItrEnd = plan->end();
-
-	for (; eventItr != eventItrEnd; eventItr++) {
-		const Planner::FFEvent * event = &(*eventItr);
-		if (event->maxDuration == event->minDuration == 0) {
-			tilActions.push_back(event);
-		}
-	}
-
-	return tilActions;
 }
 
 }

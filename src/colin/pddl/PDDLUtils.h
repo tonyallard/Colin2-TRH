@@ -50,6 +50,9 @@ bool supported(const PDDL::Proposition * proposition,
 		std::list<PDDL::Proposition> * propositions);
 bool isEqual(const Planner::FFEvent * one, const Planner::FFEvent * two);
 
+//TIL Helper Functions
+double extractTILTimeStamp(const Planner::FFEvent * tilEvent);
+
 //Basic conversion functions
 std::list<PDDL::Proposition> getPropositions(
 		std::list<Inst::Literal*> * literals);
