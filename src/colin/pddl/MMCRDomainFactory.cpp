@@ -16,8 +16,6 @@ namespace PDDL {
 
 const std::string MMCRDomainFactory::TIL_ACHIEVED_PROPOSITION = "til-achieved";
 const std::string MMCRDomainFactory::REQUIRED_PROPOSITION = "required";
-const std::string MMCRDomainFactory::INITIAL_ACTION_REQUIRED_PROPOSITION =
-		"initial-action-required";
 const std::string MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION =
 		"initial-action-complete";
 
@@ -87,8 +85,6 @@ std::string MMCRDomainFactory::getPredicates(
 				<< " ?x - object)\n";
 		}
 	}
-	output << "\t\t(" << MMCRDomainFactory::INITIAL_ACTION_REQUIRED_PROPOSITION
-			<< ")\n";
 	output << "\t\t(" << MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION
 			<< ")\n";
 	output << "\t)\n";
@@ -185,13 +181,12 @@ std::string MMCRDomainFactory::getMoveAction() {
 std::string MMCRDomainFactory::getInitialAction() {
 	ostringstream output;
 	output << "\t(:action init-action" << endl;
-	output << "\t\t:parameters()" << endl << "\t\t:precondition ("
-			<< MMCRDomainFactory::INITIAL_ACTION_REQUIRED_PROPOSITION << ")"
-			<< endl << "\t\t:effect (and" << endl << "\t\t\t(not ("
-			<< MMCRDomainFactory::INITIAL_ACTION_REQUIRED_PROPOSITION << "))"
-			<< endl << "\t\t\t("
-			<< MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << ")"
-			<< endl << "\t\t)" << endl << "\t)" << endl;
+	output << "\t\t:parameters()" << endl
+			<< "\t\t:precondition ( )" << endl
+			<< "\t\t:effect " << endl
+			<< "\t\t\t("
+			<< MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << ")" << endl
+			<< "\t)" << endl;
 	return output.str();
 }
 

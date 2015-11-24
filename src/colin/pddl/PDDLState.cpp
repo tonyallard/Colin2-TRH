@@ -30,7 +30,6 @@ string PDDLState::toString() {
 
 std::string PDDLState::getLiteralString() {
 	ostringstream output;
-	output << "\t\t(" << MMCRDomainFactory::INITIAL_ACTION_REQUIRED_PROPOSITION << ")\n";
 	// Literals to String
 	list<Proposition>::const_iterator litItr = literals.begin();
 	const list<Proposition>::const_iterator litItrEnd = literals.end();
