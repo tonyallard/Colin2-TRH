@@ -18,6 +18,14 @@ using namespace Planner;
 
 namespace PDDL {
 
+PDDLStateFactory::PDDLStateFactory(const Planner::MinimalState & initialState) {
+	std::list<PDDL::Proposition> stdPropositions = getPropositions(
+			initialState);
+	staticPropositions = getStaticPropositions(stdPropositions);
+	std::list<PDDL::PNE> stdPNEs = getPNEs(initialState);
+	staticPNEs = getStaticPNEs(stdPNEs);
+}
+
 PDDLState PDDLStateFactory::getPDDLState(const MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic) {
 	std::list<Proposition> propositions = PDDLStateFactory::getPropositions(
@@ -46,7 +54,7 @@ void PDDLStateFactory::addExtraPropositionsForPendingActions(
 		std::list<Proposition> extraProps = getRequiredPropositions(
 				pActItr->getParameters(), pActItr->getName());
 		propositions.insert(propositions.end(), extraProps.begin(),
-					extraProps.end());
+				extraProps.end());
 	}
 }
 
@@ -62,7 +70,8 @@ std::list<Proposition> PDDLStateFactory::getRequiredPropositions(
 	for (; paramItr != parameters.end(); paramItr++) {
 		list<string> args;
 		args.push_back(paramItr->getName());
-		Proposition prop(MMCRDomainFactory::REQUIRED_PROPOSITION + actionDelim, args);
+		Proposition prop(MMCRDomainFactory::REQUIRED_PROPOSITION + actionDelim,
+				args);
 		requiredProps.push_back(prop);
 	}
 	return requiredProps;
@@ -82,22 +91,57 @@ std::list<PDDL::Proposition> PDDLStateFactory::getPropositions(
 		literals.push_back(literal);
 	}
 
-	//Look for static literals
-	std::vector<pair<bool, bool> > staticLiterals =
+	literals.insert(literals.end(), staticPropositions.begin(),
+			staticPropositions.end());
+
+	return literals;
+}
+
+std::list<PDDL::Proposition> PDDLStateFactory::getStaticPropositions(
+		std::list<PDDL::Proposition> & dynamicLiterals) {
+	std::list<PDDL::Proposition> staticLiterals;
+
+	//Look for static literals, these are usually new and unique, no need for checks
+	std::vector<pair<bool, bool> > modelledStaticLiterals =
 			Planner::RPGBuilder::getStaticLiterals();
 	std::vector<pair<bool, bool> >::const_iterator slItr =
-			staticLiterals.begin();
+			modelledStaticLiterals.begin();
 	const std::vector<pair<bool, bool> >::const_iterator slItrEnd =
-			staticLiterals.end();
+			modelledStaticLiterals.end();
 	int i = 0;
 	for (; slItr != slItrEnd; slItr++) {
 		Inst::Literal * aliteral = RPGBuilder::getLiteral(i++);
 		if (slItr->first && slItr->second) {
 			PDDL::Proposition literal = PDDL::getProposition(aliteral);
-			literals.push_back(literal);
+			staticLiterals.push_back(literal);
 		}
 	}
-	return literals;
+
+	/*Look for all other literals, these are ones missed by all
+	 * other checks and requires going back to the original
+	 * state description. These will require duplications checks.*/
+
+	VAL::pc_list<VAL::simple_effect*> & props =
+			VAL::current_analysis->the_problem->initial_state->add_effects;
+	VAL::pc_list<VAL::simple_effect*>::const_iterator propItr = props.begin();
+	for (; propItr != props.end(); propItr++) {
+		VAL::simple_effect* prop = *propItr;
+		std::string name = prop->prop->head->getName();
+		std::list<std::string> args;
+		VAL::typed_symbol_list<VAL::parameter_symbol>::const_iterator argItr =
+				prop->prop->args->begin();
+		for (; argItr != prop->prop->args->end(); argItr++) {
+			args.push_back((*argItr)->getName());
+		}
+		PDDL::Proposition prop2(name, args);
+		if ((std::find(dynamicLiterals.begin(), dynamicLiterals.end(), prop2)
+				== dynamicLiterals.end())
+				&& (std::find(staticLiterals.begin(), staticLiterals.end(),
+						prop2) == staticLiterals.end())) {
+			staticLiterals.push_back(prop2);
+		}
+	}
+	return staticLiterals;
 }
 
 std::list<PDDL::PNE> PDDLStateFactory::getPNEs(
@@ -111,24 +155,60 @@ std::list<PDDL::PNE> PDDLStateFactory::getPNEs(
 		pnes.push_back(pne);
 	}
 
+	pnes.insert(pnes.end(), staticPNEs.begin(),
+			staticPNEs.end());
+
 	//Manually Add static PNEs
-	pnes.push_back(PNE("travel-time", { "v1", "l2", "l1" }, 2.0));
-	pnes.push_back(PNE("travel-time", { "v1", "l1", "l2" }, 2.0));
-	pnes.push_back(PNE("travel-time", { "v2", "l2", "l3" }, 2.0));
-	pnes.push_back(PNE("travel-time", { "v2", "l3", "l2" }, 2.0));
-	pnes.push_back(PNE("size", { "C1" }, 1.0));
-	pnes.push_back(PNE("load-time", { "v1", "l1" }, 1.0));
-	pnes.push_back(PNE("load-time", { "v1", "l2" }, 1.0));
-	pnes.push_back(PNE("unload-time", { "v1", "l1" }, 1.0));
-	pnes.push_back(PNE("unload-time", { "v1", "l2" }, 1.0));
-	pnes.push_back(PNE("load-time", { "v2", "l3" }, 1.0));
-	pnes.push_back(PNE("load-time", { "v2", "l2" }, 1.0));
-	pnes.push_back(PNE("unload-time", { "v2", "l3" }, 1.0));
-	pnes.push_back(PNE("unload-time", { "v2", "l2" }, 1.0));
-	pnes.push_back(PNE("cost", { "v1" }, 1.0));
-	pnes.push_back(PNE("cost", { "v2" }, 1.0));
+//	pnes.push_back(PNE("travel-time", { "v1", "l2", "l1" }, 2.0));
+//	pnes.push_back(PNE("travel-time", { "v1", "l1", "l2" }, 2.0));
+//	pnes.push_back(PNE("travel-time", { "v2", "l2", "l3" }, 2.0));
+//	pnes.push_back(PNE("travel-time", { "v2", "l3", "l2" }, 2.0));
+//	pnes.push_back(PNE("size", { "C1" }, 1.0));
+//	pnes.push_back(PNE("load-time", { "v1", "l1" }, 1.0));
+//	pnes.push_back(PNE("load-time", { "v1", "l2" }, 1.0));
+//	pnes.push_back(PNE("unload-time", { "v1", "l1" }, 1.0));
+//	pnes.push_back(PNE("unload-time", { "v1", "l2" }, 1.0));
+//	pnes.push_back(PNE("load-time", { "v2", "l3" }, 1.0));
+//	pnes.push_back(PNE("load-time", { "v2", "l2" }, 1.0));
+//	pnes.push_back(PNE("unload-time", { "v2", "l3" }, 1.0));
+//	pnes.push_back(PNE("unload-time", { "v2", "l2" }, 1.0));
+//	pnes.push_back(PNE("cost", { "v1" }, 1.0));
+//	pnes.push_back(PNE("cost", { "v2" }, 1.0));
 
 	return pnes;
+}
+
+std::list<PDDL::PNE> PDDLStateFactory::getStaticPNEs(
+		std::list<PDDL::PNE> dynamicPNEs) {
+	std::list<PDDL::PNE> staticPNEs;
+	/*Look for all other literals, these are ones missed by all
+	 * other checks and requires going back to the original
+	 * state description. These will require duplications checks.*/
+
+	VAL::pc_list<VAL::assignment*> & pnes =
+			VAL::current_analysis->the_problem->initial_state->assign_effects;
+	VAL::pc_list<VAL::assignment*>::const_iterator pneItr = pnes.begin();
+	for (; pneItr != pnes.end(); pneItr++) {
+		VAL::assignment* pne = *pneItr;
+		std::string name = pne->getFTerm()->getFunction()->getName();
+		std::list<std::string> args;
+		VAL::typed_symbol_list<VAL::parameter_symbol>::const_iterator argItr =
+				pne->getFTerm()->getArgs()->begin();
+		for (; argItr != pne->getFTerm()->getArgs()->end(); argItr++) {
+			args.push_back((*argItr)->getName());
+		}
+		double value = ((VAL::num_expression*)pne->getExpr())->double_value();
+		PDDL::PNE pne2(name, args, value);
+
+		if ((std::find(dynamicPNEs.begin(), dynamicPNEs.end(), pne2)
+				== dynamicPNEs.end())
+				&& (std::find(staticPNEs.begin(), staticPNEs.end(), pne2)
+						== staticPNEs.end())) {
+			staticPNEs.push_back(pne2);
+		}
+	}
+	return staticPNEs;
+
 }
 
 std::list<PDDL::TIL> PDDLStateFactory::getTILs(

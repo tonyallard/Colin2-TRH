@@ -45,5 +45,29 @@ std::ostream & operator<<(std::ostream & output, const PNE & pne) {
 	return output;
 }
 
+bool PNE::operator==(const PNE & other) {
+	if (name.compare(other.name)) {
+		return false;
+	}
+	if (arguments.size() != other.arguments.size()) {
+		return false;
+	}
+	std::list<std::string>::const_iterator argItr = arguments.begin();
+	const std::list<std::string>::const_iterator argItrEnd = arguments.end();
+	std::list<std::string>::const_iterator otherArgItr =
+			other.arguments.begin();
+	for (; argItr != argItrEnd; argItr++, otherArgItr++) {
+		if (argItr->compare(*otherArgItr)) {
+			return false;
+		}
+	}
+
+	if (value != other.value) {
+		return false;
+	}
+
+	return true;
+}
+
 }
 

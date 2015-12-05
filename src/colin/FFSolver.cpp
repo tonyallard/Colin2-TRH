@@ -5289,6 +5289,7 @@ Solution FF::search(bool & reachedGoal)
 {
     //List for remembering visited search queue items
     std::map<std::list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> > visitedPDDLStates;
+
     //Count the BFS encountered states
     static int stateCount = 0;
     static bool initCSBase = false;
@@ -5336,6 +5337,9 @@ Solution FF::search(bool & reachedGoal)
         }
 
     }
+
+    //Setup PDDL Factory
+    PDDL::PDDLStateFactory pddlFactory(initialState.getInnerState());
 
     // I think this does some simple relaxed goal checking to determine if the problem is solveable
     // It also adds the logic goals to a list for tracking
@@ -6156,7 +6160,7 @@ Solution FF::search(bool & reachedGoal)
                         //If the state is sound
                         if (succ->heuristicValue.heuristicValue >= 0) {
 							list<FFEvent> events = succ->plan;
-							PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(succ->state()->getInnerState(), succ->plan, succ->state()->timeStamp, succ->heuristicValue.qbreak);
+							PDDL::PDDLState newState = pddlFactory.getPDDLState(succ->state()->getInnerState(), succ->plan, succ->state()->timeStamp, succ->heuristicValue.qbreak);
 							pair<PDDL::PDDLState, bool> newStatePair (newState, false);
 							visitedPDDLStates.insert(std::make_pair(events, newStatePair));
                         }
@@ -6172,7 +6176,7 @@ Solution FF::search(bool & reachedGoal)
 									&& (helpfulActsItr->first == events.rbegin()->action) && (events.rbegin()->time_spec == VAL::time_spec::E_AT_END)){
 								events.remove(*events.rbegin());
 							}
-							PDDL::PDDLState newState = PDDL::PDDLStateFactory::getPDDLState(succ->state()->getInnerState(), events, succ->state()->timeStamp, succ->heuristicValue.qbreak);
+							PDDL::PDDLState newState = pddlFactory.getPDDLState(succ->state()->getInnerState(), events, succ->state()->timeStamp, succ->heuristicValue.qbreak);
 							pair<PDDL::PDDLState, bool> newStatePair (newState, false);
 							visitedPDDLStates.insert(std::make_pair(events, newStatePair));
                         }

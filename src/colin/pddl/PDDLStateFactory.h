@@ -26,30 +26,40 @@ namespace PDDL {
 
 class PDDLStateFactory {
 public:
-	static PDDLState getPDDLState(const Planner::MinimalState & state,
+
+	PDDLStateFactory(const Planner::MinimalState & initialState);
+
+	PDDLState getPDDLState(const Planner::MinimalState & state,
 			std::list<Planner::FFEvent>& plan, double timestamp,
 			double heuristic);
-
 private:
-	static std::list<PDDL::Proposition> getPropositions(
+	std::list<PDDL::Proposition> staticPropositions;
+	std::list<PDDL::PNE> staticPNEs;
+
+	std::list<PDDL::Proposition> getPropositions(
 			const Planner::MinimalState & state);
-	static std::list<PDDL::PNE> getPNEs(const Planner::MinimalState & state);
-	static std::list<PDDL::TIL> getTILs(const Planner::MinimalState & state,
+	std::list<PDDL::Proposition> getStaticPropositions(
+			std::list<PDDL::Proposition> & dynamicLiterals);
+	std::list<PDDL::PNE> getPNEs(const Planner::MinimalState & state);
+	std::list<PDDL::PNE> getStaticPNEs(
+			std::list<PDDL::PNE> dynamicPNEs);
+//	double extract
+	std::list<PDDL::TIL> getTILs(const Planner::MinimalState & state,
 			double timestamp);
-	static std::list<PDDL::PendingAction> getPendingActions(
+	std::list<PDDL::PendingAction> getPendingActions(
 			const Planner::MinimalState & state, double timestamp);
 
-	static void addExtraPropositionsForPendingActions(
+	void addExtraPropositionsForPendingActions(
 			const std::list<PendingAction> & pendingActions,
 			std::list<Proposition> & propositions);
-	static std::list<Proposition> getRequiredPropositions(
+	std::list<Proposition> getRequiredPropositions(
 			const std::set<PDDLObject> & parameters, std::string actionName);
 
 	/*Methods to get condition literals*/
-	static std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > getConditions(
+	std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > getConditions(
 			int actionID, std::set<PDDLObject> & parameters);
 
-	static std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > convertLiterals_AddSignAndTime(
+	std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > convertLiterals_AddSignAndTime(
 			std::list<Inst::Literal*> literals, VAL::time_spec timeQualifier,
 			bool isPositive, std::set<PDDLObject> & parameters);
 
