@@ -10,6 +10,7 @@
 
 #include <string>
 #include <list>
+#include <set>
 
 #include "Proposition.h"
 #include "PNE.h"
@@ -21,6 +22,7 @@ namespace PDDL {
 class PDDLState {
 
 private:
+	std::set<PDDLObject> objectSymbolTable;
 	std::list<Proposition> literals;
 	std::list<PNE> pnes;
 	std::list<TIL> tils;
@@ -32,15 +34,17 @@ private:
 	string getPlanPrefixString();
 
 public:
-	PDDLState(std::list<Proposition> literals, std::list<PNE> pnes,
+	PDDLState(std::set<PDDLObject> objectSymbolTable,
+			std::list<Proposition> literals, std::list<PNE> pnes,
 			std::list<TIL> tils, std::list<PendingAction> pendingActions,
 			std::list<string> planPrefix, double heuristic, double timestamp) :
-			literals(literals), pnes(pnes), tils(tils), pendingActions(
-					pendingActions), planPrefix(planPrefix), heuristic(
-					heuristic), timestamp(timestamp) {
+			objectSymbolTable(objectSymbolTable), literals(literals), pnes(
+					pnes), tils(tils), pendingActions(pendingActions), planPrefix(
+					planPrefix), heuristic(heuristic), timestamp(timestamp) {
 	}
 	;
 	std::string toString();
+	std::string getObjectSymbolTableString();
 	std::string getLiteralString();
 	std::string getPNEString();
 	std::string getTILObjectString();

@@ -28,6 +28,16 @@ string PDDLState::toString() {
 	return output.str();
 }
 
+std::string PDDLState::getObjectSymbolTableString() {
+	ostringstream output;
+	set<PDDLObject>::const_iterator objItr = objectSymbolTable.begin();
+	const set<PDDLObject>::const_iterator objItrEnd = objectSymbolTable.end();
+	for (; objItr != objItrEnd; objItr++) {
+		output << "\t\t" << *objItr << std::endl;
+	}
+	return output.str();
+}
+
 std::string PDDLState::getLiteralString() {
 	ostringstream output;
 	// Literals to String
@@ -106,8 +116,8 @@ void PDDLState::writeStateToFile(string filePath, string fileName) {
 	myFile << getPlanPrefixString() << "\n";
 	myFile << "(define (problem " << fileName << ")\n";
 	myFile << "\t(:domain multi-modal-cargo-routing)\n";
-	myFile
-			<< "\t(:objects \n\t\t v1 v2 - VEHICLE \n\t\t l1 l2 l3 - LOCATION \n\t\t c1  - CARGO \n";
+	myFile << "\t(:objects" << std::endl << getObjectSymbolTableString()
+			<< std::endl;
 	myFile << "\t)\n";
 	myFile << "\t(:init\n";
 	myFile << toString();
@@ -130,14 +140,13 @@ void PDDLState::writeDeTILedStateToFile(std::string filePath,
 	myFile << getPlanPrefixString() << "\n";
 	myFile << "(define (problem " << fileName << ")\n";
 	myFile << "\t(:domain multi-modal-cargo-routing)\n";
-	myFile
-			<< "\t(:objects \n\t\tv1 v2 - VEHICLE \n\t\tl1 l2 l3 - LOCATION \n\t\tc1  - CARGO \n";
-//	myFile << getTILObjectString();
+	myFile << "\t(:objects" << std::endl << getObjectSymbolTableString()
+			<< std::endl;
 	myFile << "\t)\n";
 	myFile << "\t(:init\n";
 	myFile << getLiteralString() << getPNEString();
 	myFile << "\t)\n";
-	myFile << "\t(:goal (and (at c1 l3) " << getTILGoalString() << "))\n";
+	myFile << "\t(:goal (and (at C1 L5) (at C2 L5) " << getTILGoalString() << "))\n";
 	myFile << "\t(:metric minimize (total-cost))\n";
 	myFile << ")";
 	myFile.close();

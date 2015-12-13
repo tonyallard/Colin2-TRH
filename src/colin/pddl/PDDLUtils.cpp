@@ -21,7 +21,7 @@ namespace PDDL {
 std::string TIL_ACTION_PREFIX = "at-";
 char TIL_STRING_DELIM = '-';
 
-//Literal and PNE Helper Functions
+//Literal, PNE and TIL Helper Functions
 set<PDDLObject> & extractParameters(Inst::Literal * literal,
 		set<PDDLObject> & parameters) {
 	return extractParameters(literal->toProposition()->args, parameters);
@@ -30,6 +30,21 @@ set<PDDLObject> & extractParameters(Inst::Literal * literal,
 set<PDDLObject> & extractParameters(Inst::PNE * pne,
 		set<PDDLObject> & parameters) {
 	return extractParameters(pne->getFunc()->getArgs(), parameters);
+}
+
+std::set<PDDLObject> & extractParameters(const Planner::FakeTILAction * til,
+		set<PDDLObject> & parameters) {
+	//get params for adds
+	list<Inst::Literal*>::const_iterator addItr = til->addEffects.begin();
+	for (; addItr != til->addEffects.end(); addItr++) {
+		extractParameters(*addItr, parameters);
+	}
+	//get params for dels
+	list<Inst::Literal*>::const_iterator delItr = til->delEffects.begin();
+	for (; delItr != til->delEffects.end(); delItr++) {
+		extractParameters(*delItr, parameters);
+	}
+	return parameters;
 }
 
 set<PDDLObject> & extractParameters(
@@ -201,7 +216,7 @@ bool supported(const PDDL::Proposition * proposition,
 //TIL Helper Functions
 double extractTILTimeStamp(const Planner::FFEvent * tilEvent) {
 	std::string name = tilEvent->action->getHead()->getName();
-	std::stringstream ss (name);
+	std::stringstream ss(name);
 	std::string item;
 	std::stringstream bits;
 	bool found = false;
@@ -242,7 +257,8 @@ std::list<const Planner::FFEvent *> getTILActions(
 
 		//check if action name matches typical TIL prefix
 		std::string eventName = event->action->getHead()->getName();
-		int found = eventName.substr(0, TIL_ACTION_PREFIX.size()).find(TIL_ACTION_PREFIX);
+		int found = eventName.substr(0, TIL_ACTION_PREFIX.size()).find(
+				TIL_ACTION_PREFIX);
 
 		if ((event->maxDuration == event->minDuration == 0)
 				&& (event->time_spec == VAL::time_spec::E_AT_START)
@@ -363,8 +379,15 @@ std::list<std::string> getPlanPrefix(std::list<Planner::FFEvent>& plan) {
 	const std::list<Planner::FFEvent>::const_iterator eventItrEnd = plan.end();
 	for (; eventItr != eventItrEnd; eventItr++) {
 		ostringstream name;
-		name << (*eventItr).lpTimestamp << ": "
-				<< PDDL::getActionName((*eventItr).action->getID());
+		Inst::instantiatedOp* op = (*eventItr).action;
+		name << (*eventItr).lpTimestamp << ": ";
+		if (eventItr->time_spec == VAL::time_spec::E_AT) {
+			Planner::FakeTILAction * action =
+					Planner::RPGBuilder::getAllTimedInitialLiterals()[eventItr->divisionID];
+			name << "at " << PDDL::getTIL(*action, 0.0).getName() << endl;
+		} else {
+			name << PDDL::getActionName(op->getID());
+		}
 		prefix.push_back(name.str());
 	}
 	return prefix;

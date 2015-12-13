@@ -22,15 +22,14 @@ const std::string MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION =
 std::string MMCRDomainFactory::getMMCRDomain(
 		const std::list<PendingAction> & pendingActions) {
 	ostringstream output;
-	output << getHeader(false) << getTypes()
-			<< getPredicates() << getFunctions()
-			<< getLoadAction() << getUnloadAction() << getMoveAction()
-			<< getPendingActions(pendingActions) << getTerminationString();
+	output << getHeader(false) << getTypes() << getPredicates()
+			<< getFunctions() << getLoadAction() << getUnloadAction()
+			<< getMoveAction() << getPendingActions(pendingActions)
+			<< getTerminationString();
 	return output.str();
 }
 
-std::string MMCRDomainFactory::getDeTILedMMCRDomain(
-		const std::list<TIL> & tils,
+std::string MMCRDomainFactory::getDeTILedMMCRDomain(const std::list<TIL> & tils,
 		const std::list<PendingAction> & pendingActions) {
 	ostringstream output;
 	bool hasTils = tils.size();
@@ -67,7 +66,8 @@ std::string MMCRDomainFactory::getTypes() {
 }
 
 std::string MMCRDomainFactory::getPredicates(
-		const std::list<PendingAction> & pendingActions /*=empty list*/, const std::list<TIL> & tils /*=empty list*/) {
+		const std::list<PendingAction> & pendingActions /*=empty list*/,
+		const std::list<TIL> & tils /*=empty list*/) {
 	ostringstream output;
 	output << "\t(:predicates\n";
 	output << "\t\t(at ?x - (either VEHICLE CARGO) ?y - LOCATION)\n";
@@ -79,10 +79,11 @@ std::string MMCRDomainFactory::getPredicates(
 		output << "\t\t(" << tilItr->getName() << ")\n";
 	}
 	if (pendingActions.size()) {
-		std::list<PendingAction>::const_iterator pendActItr = pendingActions.begin();
+		std::list<PendingAction>::const_iterator pendActItr =
+				pendingActions.begin();
 		for (; pendActItr != pendingActions.end(); pendActItr++) {
-		output << "\t\t(" << MMCRDomainFactory::REQUIRED_PROPOSITION << "-" << pendActItr->getName()
-				<< " ?x - object)\n";
+			output << "\t\t(" << MMCRDomainFactory::REQUIRED_PROPOSITION << "-"
+					<< pendActItr->getName() << " ?x - object)\n";
 		}
 	}
 	output << "\t\t(" << MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION
@@ -181,12 +182,10 @@ std::string MMCRDomainFactory::getMoveAction() {
 std::string MMCRDomainFactory::getInitialAction() {
 	ostringstream output;
 	output << "\t(:action init-action" << endl;
-	output << "\t\t:parameters()" << endl
-			<< "\t\t:precondition ( )" << endl
-			<< "\t\t:effect " << endl
-			<< "\t\t\t("
-			<< MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << ")" << endl
-			<< "\t)" << endl;
+	output << "\t\t:parameters()" << endl << "\t\t:precondition ( )" << endl
+			<< "\t\t:effect " << endl << "\t\t\t("
+			<< MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << ")"
+			<< endl << "\t)" << endl;
 	return output.str();
 }
 
@@ -229,7 +228,10 @@ string MMCRDomainFactory::getdeTILedAction(const TIL & til,
 	output << "\t\t:precondition (and\n";
 	//Add requirement for initial action
 	output << "\t\t\t("
-			<< MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << ")\n";
+			<< MMCRDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << ")"
+			<< std::endl;
+	//Add requiredment that TIL hasn't happened (one shot)
+	output << "\t\t\t(not (" << til.getName() << "))" << std::endl;
 	//Add requirement for past TILs to have been achieved
 	if (tilActionPreconditions->size()) {
 		std::list<PDDL::Proposition>::const_iterator preItr =

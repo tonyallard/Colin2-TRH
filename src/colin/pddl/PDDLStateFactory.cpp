@@ -20,35 +20,35 @@ namespace PDDL {
 
 PDDLStateFactory::PDDLStateFactory(const Planner::MinimalState & initialState) {
 	std::list<PDDL::Proposition> stdPropositions = getPropositions(
-			initialState);
-	staticPropositions = getStaticPropositions(stdPropositions);
-	std::list<PDDL::PNE> stdPNEs = getPNEs(initialState);
+			initialState, objectParameterTable);
+	staticPropositions = getStaticPropositions(stdPropositions, objectParameterTable);
+	std::list<PDDL::PNE> stdPNEs = getPNEs(initialState, objectParameterTable);
 	staticPNEs = getStaticPNEs(stdPNEs);
 }
 
 PDDLState PDDLStateFactory::getPDDLState(const MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic) {
+	std::set<PDDLObject> objectSymbolTable = this->objectParameterTable;
+
 	std::list<Proposition> propositions = PDDLStateFactory::getPropositions(
-			state);
-	std::list<PNE> pnes = getPNEs(state);
-	std::list<TIL> tils = getTILs(state, timestamp);
+			state, objectSymbolTable);
+	std::list<PNE> pnes = getPNEs(state, objectSymbolTable);
+	std::list<TIL> tils = getTILs(state, timestamp, objectSymbolTable);
 	std::list<PendingAction> pendingActions = getPendingActions(state,
-			timestamp);
-	addExtraPropositionsForPendingActions(pendingActions, propositions);
+			timestamp, objectSymbolTable);
+	addRequiredPropositionsForPendingActions(pendingActions, propositions);
 	std::list<string> planPrefix = getPlanPrefix(plan);
-	return PDDLState(propositions, pnes, tils, pendingActions, planPrefix,
+	return PDDLState(objectSymbolTable, propositions, pnes, tils, pendingActions, planPrefix,
 			heuristic, timestamp);
 }
 
 /**
- * Cycles through each pending action, gets the parameters,
- * dumps it all into one set for uniqueness and then creates the
+ * Cycles through each pending action, and then creates the
  * required propositions
  */
-void PDDLStateFactory::addExtraPropositionsForPendingActions(
+void PDDLStateFactory::addRequiredPropositionsForPendingActions(
 		const std::list<PendingAction> & pendingActions,
 		std::list<Proposition> & propositions) {
-	std::set<PDDLObject> parameters;
 	std::list<PendingAction>::const_iterator pActItr = pendingActions.begin();
 	for (; pActItr != pendingActions.end(); pActItr++) {
 		std::list<Proposition> extraProps = getRequiredPropositions(
@@ -78,7 +78,7 @@ std::list<Proposition> PDDLStateFactory::getRequiredPropositions(
 }
 
 std::list<PDDL::Proposition> PDDLStateFactory::getPropositions(
-		const Planner::MinimalState & state) {
+		const Planner::MinimalState & state, std::set<PDDLObject> & objectSymbolTable) {
 	std::list<PDDL::Proposition> literals;
 	//Cycle through State Literal Facts
 	const StateFacts & stateFacts = state.first;
@@ -87,6 +87,8 @@ std::list<PDDL::Proposition> PDDLStateFactory::getPropositions(
 	for (; cfItr != cfEnd; cfItr++) {
 		int literalID = *cfItr;
 		Inst::Literal * aliteral = RPGBuilder::getLiteral(literalID);
+
+		PDDL::extractParameters(aliteral, objectSymbolTable);
 		PDDL::Proposition literal = PDDL::getProposition(aliteral);
 		literals.push_back(literal);
 	}
@@ -97,8 +99,11 @@ std::list<PDDL::Proposition> PDDLStateFactory::getPropositions(
 	return literals;
 }
 
+/**
+ * FIXME: Does not generate parameter table for propositions created from actual PDDL Parse Tree
+ */
 std::list<PDDL::Proposition> PDDLStateFactory::getStaticPropositions(
-		std::list<PDDL::Proposition> & dynamicLiterals) {
+		std::list<PDDL::Proposition> & dynamicLiterals, std::set<PDDLObject> & objectSymbolTable) {
 	std::list<PDDL::Proposition> staticLiterals;
 
 	//Look for static literals, these are usually new and unique, no need for checks
@@ -112,6 +117,7 @@ std::list<PDDL::Proposition> PDDLStateFactory::getStaticPropositions(
 	for (; slItr != slItrEnd; slItr++) {
 		Inst::Literal * aliteral = RPGBuilder::getLiteral(i++);
 		if (slItr->first && slItr->second) {
+			PDDL::extractParameters(aliteral, objectSymbolTable);
 			PDDL::Proposition literal = PDDL::getProposition(aliteral);
 			staticLiterals.push_back(literal);
 		}
@@ -145,39 +151,26 @@ std::list<PDDL::Proposition> PDDLStateFactory::getStaticPropositions(
 }
 
 std::list<PDDL::PNE> PDDLStateFactory::getPNEs(
-		const Planner::MinimalState & state) {
+		const Planner::MinimalState & state, std::set<PDDLObject> & objectSymbolTable) {
 	std::list<PDDL::PNE> pnes;
 	//Cycle through PNEs
 	const int pneCount = state.secondMin.size();
 	for (int i = 0; i < pneCount; i++) {
 		Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(i);
+
+		PDDL::extractParameters(aPNE, objectSymbolTable);
 		PDDL::PNE pne = PDDL::getPNE(aPNE, state.secondMin[i]);
 		pnes.push_back(pne);
 	}
 
 	pnes.insert(pnes.end(), staticPNEs.begin(),
 			staticPNEs.end());
-
-	//Manually Add static PNEs
-//	pnes.push_back(PNE("travel-time", { "v1", "l2", "l1" }, 2.0));
-//	pnes.push_back(PNE("travel-time", { "v1", "l1", "l2" }, 2.0));
-//	pnes.push_back(PNE("travel-time", { "v2", "l2", "l3" }, 2.0));
-//	pnes.push_back(PNE("travel-time", { "v2", "l3", "l2" }, 2.0));
-//	pnes.push_back(PNE("size", { "C1" }, 1.0));
-//	pnes.push_back(PNE("load-time", { "v1", "l1" }, 1.0));
-//	pnes.push_back(PNE("load-time", { "v1", "l2" }, 1.0));
-//	pnes.push_back(PNE("unload-time", { "v1", "l1" }, 1.0));
-//	pnes.push_back(PNE("unload-time", { "v1", "l2" }, 1.0));
-//	pnes.push_back(PNE("load-time", { "v2", "l3" }, 1.0));
-//	pnes.push_back(PNE("load-time", { "v2", "l2" }, 1.0));
-//	pnes.push_back(PNE("unload-time", { "v2", "l3" }, 1.0));
-//	pnes.push_back(PNE("unload-time", { "v2", "l2" }, 1.0));
-//	pnes.push_back(PNE("cost", { "v1" }, 1.0));
-//	pnes.push_back(PNE("cost", { "v2" }, 1.0));
-
 	return pnes;
 }
 
+/**
+ * FIXME: Does not generate parameter table for propositions created from actual PDDL Parse Tree
+ */
 std::list<PDDL::PNE> PDDLStateFactory::getStaticPNEs(
 		std::list<PDDL::PNE> dynamicPNEs) {
 	std::list<PDDL::PNE> staticPNEs;
@@ -212,7 +205,7 @@ std::list<PDDL::PNE> PDDLStateFactory::getStaticPNEs(
 }
 
 std::list<PDDL::TIL> PDDLStateFactory::getTILs(
-		const Planner::MinimalState & state, double timestamp) {
+		const Planner::MinimalState & state, double timestamp, std::set<PDDLObject> & objectSymbolTable) {
 	std::list<PDDL::TIL> tils;
 
 	//Cycle thourgh TILs
@@ -220,11 +213,14 @@ std::list<PDDL::TIL> PDDLStateFactory::getTILs(
 	std::list<FakeTILAction>::const_iterator tilItr = theTILs.begin();
 	const std::list<FakeTILAction>::const_iterator tilItrEnd = theTILs.end();
 	for (; tilItr != tilItrEnd; tilItr++) {
+		const FakeTILAction * tilAction = &(*tilItr);
 		//Make sure the TIL is still current
-		if ((*tilItr).duration < timestamp) {
+		if (tilAction->duration <= timestamp) {
 			continue;
 		}
-		PDDL::TIL til = PDDL::getTIL(*tilItr, timestamp);
+
+		PDDL::extractParameters(tilAction, objectSymbolTable);
+		PDDL::TIL til = PDDL::getTIL(*tilAction, timestamp);
 		tils.push_back(til);
 	}
 	return tils;
@@ -235,7 +231,7 @@ std::list<PDDL::TIL> PDDLStateFactory::getTILs(
  * For example the start snap action has been executed, but not the end snap action
  */
 std::list<PDDL::PendingAction> PDDLStateFactory::getPendingActions(
-		const Planner::MinimalState & state, double timestamp) {
+		const Planner::MinimalState & state, double timestamp, std::set<PDDLObject> & objectSymbolTable) {
 	std::list<PendingAction> pendingActions;
 	//Cycle through Facts held up by executing actions (these are effects coming into play)
 	std::map<int, std::set<int> >::const_iterator saItr =
@@ -298,6 +294,8 @@ std::list<PDDL::PendingAction> PDDLStateFactory::getPendingActions(
 			//Ensure the parameteres of the PNE are captured
 			parameters = extractParameters(aPNE, parameters);
 		}
+		// insert all parameters into master table
+		objectSymbolTable.insert(parameters.begin(), parameters.end());
 		std::string name = PDDL::getActionName(saItr->first);
 		PendingAction pendingAction(name, parameters, propositionalAddEffects,
 				propositionalDelEffects, pneEffects, conditions, minDur);

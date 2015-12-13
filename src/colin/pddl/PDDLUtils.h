@@ -28,10 +28,12 @@
 
 namespace PDDL {
 
-//Literal and PNE Helper Functions
+//Literal, PNE and TIL Helper Functions
 std::set<PDDLObject> & extractParameters(Inst::Literal * literal,
 		set<PDDLObject> & parameters);
 std::set<PDDLObject> & extractParameters(Inst::PNE * pne,
+		set<PDDLObject> & parameters);
+std::set<PDDLObject> & extractParameters(const Planner::FakeTILAction * til,
 		set<PDDLObject> & parameters);
 set<PDDLObject> & extractParameters(
 		const VAL::parameter_symbol_list * parameter_symbol_list,
