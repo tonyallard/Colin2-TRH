@@ -6289,7 +6289,6 @@ Solution FF::search(bool & reachedGoal)
                 }
             }
         }
-
     }
 
     visitedStates->clear();
