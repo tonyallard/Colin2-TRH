@@ -93,6 +93,15 @@ std::string PDDLState::getTILObjectString() {
 	return output.str();
 }
 
+std::string PDDLState::getGoalString() {
+	ostringstream output;
+	std::list<Proposition>::const_iterator goalItr = goals.begin();
+	for (; goalItr != goals.end(); goalItr++) {
+		output << *goalItr << " ";
+	}
+	return output.str();
+}
+
 std::string PDDLState::getTILGoalString() {
 	ostringstream output;
 	if (!tils.size()) {
@@ -122,8 +131,8 @@ void PDDLState::writeStateToFile(string filePath, string fileName) {
 	myFile << "\t(:init\n";
 	myFile << toString();
 	myFile << "\t)\n";
-	myFile << "\t(:goal (at c1 l3))\n";
-	myFile << "\t(:metric minimize (total-cost))\n";
+	myFile << "\t(:goal (and " << getGoalString() << "))\n";
+	myFile << "\t(:metric " << metric << ")\n";
 	myFile << ")";
 	myFile.close();
 }
@@ -146,8 +155,8 @@ void PDDLState::writeDeTILedStateToFile(std::string filePath,
 	myFile << "\t(:init\n";
 	myFile << getLiteralString() << getPNEString();
 	myFile << "\t)\n";
-	myFile << "\t(:goal (and (at C1 L5) (at C2 L5) " << getTILGoalString() << "))\n";
-	myFile << "\t(:metric minimize (total-cost))\n";
+	myFile << "\t(:goal (and " << getGoalString() << " " << getTILGoalString() << "))\n";
+	myFile << "\t(:metric " << metric << ")\n";
 	myFile << ")";
 	myFile.close();
 }

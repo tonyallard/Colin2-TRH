@@ -24,6 +24,38 @@ PDDLStateFactory::PDDLStateFactory(const Planner::MinimalState & initialState) {
 	staticPropositions = getStaticPropositions(stdPropositions, objectParameterTable);
 	std::list<PDDL::PNE> stdPNEs = getPNEs(initialState, objectParameterTable);
 	staticPNEs = getStaticPNEs(stdPNEs);
+	goals = getPropositionalGoals();
+	metric = getMetric();
+}
+
+PDDL::Metric PDDLStateFactory::getMetric() {
+	Planner::RPGBuilder::Metric * metric = Planner::RPGBuilder::getMetric();
+	list<std::string> variables;
+	list<int>::const_iterator varItr = metric->variables.begin();
+	for (; varItr != metric->variables.end(); varItr++) {
+		Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(*varItr);
+		std::string var = "(" + aPNE->getHead()->getName() + ")";
+		variables.push_back(var);
+	}
+	PDDL::Metric aMetric (metric->minimise, variables);
+	return aMetric;
+}
+
+
+/**
+ * Gets the propositional Goals.
+ * N.B. We say propositional because we assume they are positive.
+ * FIXME Add support for negative propositonal goals
+ */
+std::list<Proposition> PDDLStateFactory::getPropositionalGoals() {
+	std::list<Proposition> goals;
+	std::list<Inst::Literal*>::const_iterator goalItr = Planner::RPGBuilder::getLiteralGoals().begin();
+	const std::list<Inst::Literal*>::const_iterator goalItrEnd = Planner::RPGBuilder::getLiteralGoals().end();
+	for (; goalItr != goalItrEnd; goalItr++) {
+		Proposition prop = getProposition(*goalItr);
+		goals.push_back(prop);
+	}
+	return goals;
 }
 
 PDDLState PDDLStateFactory::getPDDLState(const MinimalState & state,
@@ -38,7 +70,7 @@ PDDLState PDDLStateFactory::getPDDLState(const MinimalState & state,
 			timestamp, objectSymbolTable);
 	addRequiredPropositionsForPendingActions(pendingActions, propositions);
 	std::list<string> planPrefix = getPlanPrefix(plan);
-	return PDDLState(objectSymbolTable, propositions, pnes, tils, pendingActions, planPrefix,
+	return PDDLState(objectSymbolTable, propositions, pnes, tils, pendingActions, goals, metric, planPrefix,
 			heuristic, timestamp);
 }
 

@@ -16,6 +16,7 @@
 #include "PNE.h"
 #include "TIL.h"
 #include "PendingAction.h"
+#include "Metric.h"
 
 namespace PDDL {
 
@@ -27,6 +28,8 @@ private:
 	std::list<PNE> pnes;
 	std::list<TIL> tils;
 	std::list<PendingAction> pendingActions;
+	std::list<Proposition> goals;
+	PDDL::Metric metric;
 	std::list<string> planPrefix;
 	double timestamp;
 	double heuristic;
@@ -37,10 +40,12 @@ public:
 	PDDLState(std::set<PDDLObject> objectSymbolTable,
 			std::list<Proposition> literals, std::list<PNE> pnes,
 			std::list<TIL> tils, std::list<PendingAction> pendingActions,
-			std::list<string> planPrefix, double heuristic, double timestamp) :
+			std::list<Proposition> goals, Metric metric, std::list<string> planPrefix,
+			double heuristic, double timestamp) :
 			objectSymbolTable(objectSymbolTable), literals(literals), pnes(
-					pnes), tils(tils), pendingActions(pendingActions), planPrefix(
-					planPrefix), heuristic(heuristic), timestamp(timestamp) {
+					pnes), tils(tils), pendingActions(pendingActions), goals(
+					goals), metric(metric), planPrefix(planPrefix), heuristic(heuristic), timestamp(
+					timestamp) {
 	}
 	;
 	std::string toString();
@@ -51,6 +56,7 @@ public:
 	std::string getTILGoalString();
 	std::string getDomainString();
 	std::string getDeTiledDomainString();
+	std::string getGoalString();
 	inline double getTimestamp() {
 		return timestamp;
 	}

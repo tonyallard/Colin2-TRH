@@ -38,6 +38,8 @@ private:
 	std::list<PDDL::Proposition> staticPropositions;
 	std::list<PDDL::PNE> staticPNEs;
 	std::set<PDDLObject> objectParameterTable;
+	std::list<PDDL::Proposition> goals;
+	PDDL::Metric metric;
 
 
 	std::list<PDDL::Proposition> getStaticPropositions(
@@ -45,7 +47,9 @@ private:
 	std::list<PDDL::PNE> getPNEs(const Planner::MinimalState & state, std::set<PDDLObject> & objectSymbolTable);
 	std::list<PDDL::PNE> getStaticPNEs(
 			std::list<PDDL::PNE> dynamicPNEs);
-//	double extract
+	std::list<PDDL::Proposition> getPropositionalGoals();
+	PDDL::Metric getMetric();
+
 	std::list<PDDL::TIL> getTILs(const Planner::MinimalState & state,
 			double timestamp, std::set<PDDLObject> & objectSymbolTable);
 	std::list<PDDL::PendingAction> getPendingActions(

@@ -48,7 +48,7 @@ std::string MMCRDomainFactory::getHeader(bool deTILed) {
 	ostringstream output;
 	output << "(define (domain multi-modal-cargo-routing)\n";
 	output
-			<< "\t(:requirements :typing :equality :fluents :action-costs :durative-actions :duration-inequalities";
+			<< "\t(:requirements :typing :equality :fluents :action-costs :durative-actions :duration-inequalities :negative-preconditions";
 	if (!deTILed) {
 		output << " :timed-initial-literals";
 	}
