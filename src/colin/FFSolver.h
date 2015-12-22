@@ -33,6 +33,8 @@
 #include "SearchQueueItem.h"
 #include "HTrio.h"
 
+#include "pddl/PDDLState.h"
+
 #include <ptree.h>
 
 #include <map>
@@ -166,6 +168,9 @@ class FF
 {
 
 public:
+	//List for remembering visited search queue items
+	static std::map<std::list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> > visitedPDDLStates;
+	static std::list<std::list<FFEvent>> plans;
 
 private:
 

@@ -12,6 +12,8 @@
 
 #include "PDDLObject.h"
 #include "PDDLUtils.h"
+#include "PDDLStateFactory.h"
+
 #include "../RPGBuilder.h"
 
 using namespace std;
@@ -423,6 +425,103 @@ bool isBefore(const Planner::FFEvent * event, const Planner::FFEvent * before,
 		}
 	}
 	return false;
+}
+
+void printStates() {
+	static int stateCount = 0;
+	//Cycle through all plans found
+	std::list<std::list<Planner::FFEvent>>::const_iterator planItr =
+			Planner::FF::plans.begin();
+	const std::list<std::list<Planner::FFEvent>>::const_iterator planItrEnd =
+			Planner::FF::plans.end();
+	for (; planItr != planItrEnd; planItr++) {
+
+		std::list<Planner::FFEvent> plan = *planItr;
+		// Cycle through plan and print out good states.
+		std::list<Planner::FFEvent>::const_iterator pItr = plan.begin();
+		const list<Planner::FFEvent>::const_iterator pEnd = plan.end();
+		list<Planner::FFEvent> partialSolutionPlan;
+		int processedEvents = 0;
+		for (; pItr != pEnd; pItr++) {
+			Planner::FFEvent event = *pItr;
+			partialSolutionPlan.push_back(event);
+			//Find Event
+			std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator visitItr =
+					Planner::FF::visitedPDDLStates.begin();
+			std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator visitItrEnd =
+					Planner::FF::visitedPDDLStates.end();
+			for (; visitItr != visitItrEnd; visitItr++) {
+				std::list<Planner::FFEvent> partPlan = visitItr->first;
+				if (partPlan.size() != partialSolutionPlan.size()) {
+					continue;
+				}
+				std::list<Planner::FFEvent>::const_iterator solnItr =
+						partialSolutionPlan.begin();
+				std::list<Planner::FFEvent>::const_iterator searchItr =
+						partPlan.begin();
+				bool same = true;
+				for (; searchItr != partPlan.end(); solnItr++, searchItr++) {
+					Planner::FFEvent solutionEvent = *solnItr;
+					Planner::FFEvent searchEvent = *searchItr;
+					if (solutionEvent.id != searchEvent.id) {
+						same = false;
+						break;
+					}
+				}
+				if (!same) {
+					continue;
+				}
+				// This is a good state
+
+				PDDL::PDDLState & state = visitItr->second.first;
+				visitItr->second.second = true;
+				std::ostringstream filePath;
+				std::ostringstream fileName;
+				filePath << "states/";
+				fileName << "GoodState" << (stateCount++);
+				state.writeDeTILedStateToFile(filePath.str(), fileName.str());
+				state.writeDeTILedDomainToFile(filePath.str(), fileName.str());
+				//visitedPDDLStates.erase(visitItr);
+				break;//Finish looking for this state
+			}
+			processedEvents++;
+		}
+	}
+	//Cycle through those states that were not good
+	int numGoodStates = 0;
+	int numBadStates = 0;
+	int numGoodPendingAction = 0;
+	int numBadPendingAction = 0;
+	std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator it =
+			Planner::FF::visitedPDDLStates.begin();
+	std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator end =
+			Planner::FF::visitedPDDLStates.end();
+	for (; it != end; ++it) {
+		std::pair<PDDL::PDDLState, bool> statePair = it->second;
+		if (!statePair.second) {
+			PDDL::PDDLState & state = statePair.first;
+			std::ostringstream filePath;
+			std::ostringstream fileName;
+			filePath << "states/";
+			fileName << "BadState" << (stateCount++);
+			state.writeDeTILedStateToFile(filePath.str(), fileName.str());
+			state.writeDeTILedDomainToFile(filePath.str(), fileName.str());
+			numBadStates++;
+			if ((it->first.size() % 2) != 0) {
+				numBadPendingAction++;
+			}
+		} else {
+			numGoodStates++;
+			if ((it->first.size() % 2) != 0) {
+				numGoodPendingAction++;
+			}
+		}
+	}
+	cout << "There are: " << Planner::FF::visitedPDDLStates.size()
+			<< " states in total." << std::endl;
+	cout << numGoodStates << " Good States (" << numGoodPendingAction
+			<< " with pending actions). " << numBadStates << " Bad States ("
+			<< numBadPendingAction << " with pending actions)." << endl;
 }
 
 }

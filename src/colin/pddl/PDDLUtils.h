@@ -25,6 +25,7 @@
 #include "ptree.h"
 #include "../FakeTILAction.h"
 #include "../FFEvent.h"
+#include "../FFSolver.h"
 
 namespace PDDL {
 
@@ -80,6 +81,8 @@ bool isBefore(const Planner::FFEvent * event, const Planner::FFEvent * before,
 		std::list<Planner::FFEvent> * plan);
 std::list<const Planner::FFEvent *> getTILActions(
 		std::list<Planner::FFEvent> * plan);
+
+void printStates();
 }
 
 #endif /* COLIN_PDDLUTILS_H_ */

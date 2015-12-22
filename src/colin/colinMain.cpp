@@ -31,6 +31,8 @@
 
 #include <sys/times.h>
 
+#include "PDDLUtils.h"
+
 #include <sstream>
 
 using std::ifstream;
@@ -441,6 +443,7 @@ int main(int argc, char * argv[])
 #endif
     } else {
         planAndConstraints = FF::search(reachesGoals);
+        PDDL::printStates();
     }
 
     if (spSoln) {
