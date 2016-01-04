@@ -5,6 +5,7 @@
  *      Author: tony
  */
 
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <list>
@@ -15,6 +16,7 @@
 #include "PDDLStateFactory.h"
 
 #include "../RPGBuilder.h"
+#include "../../VALfiles/TimSupport.h"
 
 using namespace std;
 
@@ -23,48 +25,314 @@ namespace PDDL {
 std::string TIL_ACTION_PREFIX = "at-";
 char TIL_STRING_DELIM = '-';
 
+//PDDL Type Helper Functions
+
+/**
+ * Outputs the type of PDDL object in string format
+ */
+std::string getPDDLTypeString(const VAL::pddl_typed_symbol * type) {
+	ostringstream output;
+	if (type->either_types) {
+		output << "(either ";
+		VAL::pddl_type_list::const_iterator typeItr =
+				type->either_types->begin();
+		for (; typeItr != type->either_types->end(); typeItr++) {
+			string typeName = (*typeItr)->getName();
+			std::transform(typeName.begin(), typeName.end(), typeName.begin(),
+					::toupper);
+			output << typeName << " ";
+		}
+		output << ")";
+	} else {
+		string typeName = type->type->getName();
+		std::transform(typeName.begin(), typeName.end(), typeName.begin(),
+				::toupper);
+		output << typeName;
+	}
+	return output.str();
+}
+
+/**
+ * Cycles through a list of arguments and prints them as a PDDL formatted string
+ * for predicate or function parameters.
+ */
+std::string getArgumentString(
+		const VAL::typed_symbol_list<VAL::var_symbol> * arguments) {
+	ostringstream output;
+	VAL::typed_symbol_list<VAL::var_symbol>::const_iterator argItr =
+			arguments->begin();
+	for (; argItr != arguments->end(); argItr++) {
+		const VAL::var_symbol * arg = *argItr;
+		string name = arg->getName();
+		std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+		output << "?" << name << " - " << PDDL::getPDDLTypeString(arg) << " ";
+	}
+	return output.str();
+}
+
+/**
+ * Cycles through arguments and prints them as a PDDL formatted string
+ * for conditiona and effect clauses. This also handles Constants
+ */
+std::string getArgumentString(
+		const VAL::typed_symbol_list<VAL::parameter_symbol> * arguments) {
+	ostringstream output;
+	VAL::typed_symbol_list<VAL::parameter_symbol>::const_iterator argItr =
+			arguments->begin();
+	for (; argItr != arguments->end(); argItr++) {
+		const VAL::parameter_symbol * arg = *argItr;
+		string typeName = arg->getName();
+		std::transform(typeName.begin(), typeName.end(), typeName.begin(),
+				::toupper);
+		const VAL::var_symbol * varArg =
+				dynamic_cast<const VAL::var_symbol *>(arg);
+		if (varArg) {
+			output << "?";
+		}
+		output << typeName << " ";
+	}
+	return output.str();
+}
+
+std::string getOperatorString(VAL::comparison_op op) {
+	switch (op) {
+	case VAL::comparison_op::E_GREATER:
+		return ">";
+		break;
+	case VAL::comparison_op::E_GREATEQ:
+		return ">=";
+		break;
+	case VAL::comparison_op::E_LESS:
+		return "<";
+		break;
+	case VAL::comparison_op::E_LESSEQ:
+		return "<=";
+		break;
+	case VAL::comparison_op::E_EQUALS:
+		return "=";
+		break;
+	};
+}
+
+std::string getAssignmentString(VAL::assign_op op) {
+	switch (op) {
+	case VAL::assign_op::E_ASSIGN:
+		return "assign";
+		break;
+	case VAL::assign_op::E_DECREASE:
+		return "decrease";
+		break;
+	case VAL::assign_op::E_INCREASE:
+		return "increase";
+		break;
+	case VAL::assign_op::E_SCALE_DOWN:
+		return "/=";
+		break;
+	case VAL::assign_op::E_SCALE_UP:
+		return "*=";
+		break;
+	};
+}
+
+std::string getExpressionString(const VAL::expression * exp) {
+	std::ostringstream output;
+	const VAL::mul_expression * mulExp =
+			dynamic_cast<const VAL::mul_expression *>(exp);
+	const VAL::comparison * comp = dynamic_cast<const VAL::comparison *>(exp);
+	const VAL::func_term * func = dynamic_cast<const VAL::func_term *>(exp);
+	const VAL::special_val_expr * specVal =
+			dynamic_cast<const VAL::special_val_expr *>(exp);
+	const VAL::int_expression * intExp =
+			dynamic_cast<const VAL::int_expression *>(exp);
+
+	if (comp) {
+		output << "(" << getOperatorString(comp->getOp()) << " "
+				<< getExpressionString(comp->getLHS()) << " "
+				<< getExpressionString(comp->getRHS()) << ")";
+	} else if (mulExp) {
+		output << "(* " << getExpressionString(mulExp->getLHS()) << " "
+				<< getExpressionString(mulExp->getRHS()) << ")";
+	} else if (func) {
+		output << "(" << func->getFunction()->getName() << " "
+				<< getArgumentString(func->getArgs()) << ")";
+	} else if (specVal) {
+		if (specVal->getKind() == VAL::special_val::E_HASHT)
+			output << "hasht";
+		else if (specVal->getKind() == VAL::special_val::E_DURATION_VAR)
+			output << "?duration";
+		else if (specVal->getKind() == VAL::special_val::E_TOTAL_TIME)
+			output << "total-time";
+		else
+			output << "?? ";
+	} else if (intExp) {
+		output << intExp->double_value();
+	} else {
+		cerr << "Something went wrong, unhandled expression." << endl;
+		exp->display(0);
+	}
+	return output.str();
+}
+
+std::string getTimeSpecString(VAL::time_spec time_spec) {
+	switch (time_spec) {
+	case VAL::time_spec::E_AT:
+		return "at";
+	case VAL::time_spec::E_AT_END:
+		return "at end";
+	case VAL::time_spec::E_AT_START:
+		return "at start";
+	case VAL::time_spec::E_OVER_ALL:
+		return "over all";
+	case VAL::time_spec::E_CONTINUOUS:
+		return "continuous";
+	};
+	return "???";
+}
+
+std::string getGoalString(const VAL::goal * goal) {
+	std::ostringstream output;
+	const VAL::conj_goal * conjGoal = dynamic_cast<const VAL::conj_goal *>(goal);
+	const VAL::timed_goal * timedGoal =
+			dynamic_cast<const VAL::timed_goal *>(goal);
+	const VAL::simple_goal * simpleGoal =
+			dynamic_cast<const VAL::simple_goal *>(goal);
+	const VAL::comparison * compGoal =
+			dynamic_cast<const VAL::comparison *>(goal);
+	const VAL::neg_goal * negGoal = dynamic_cast<const VAL::neg_goal *>(goal);
+	if (conjGoal) {
+		output << "\t\t\t(and " << endl;
+		VAL::goal_list::const_iterator goalItr = conjGoal->getGoals()->begin();
+		for (; goalItr != conjGoal->getGoals()->end(); goalItr++) {
+			const VAL::goal * aGoal = *goalItr;
+			output << "\t\t\t\t" << getGoalString(aGoal) << endl;
+		}
+		output << "\t\t\t)" << endl;
+	} else if (timedGoal) {
+		output << "(" << getTimeSpecString(timedGoal->getTime()) << " "
+				<< getGoalString(timedGoal->getGoal()) << ")";
+	} else if (simpleGoal) {
+		output << "(";
+		if (simpleGoal->getPolarity() == VAL::polarity::E_NEG) {
+			output << "not (" << simpleGoal->getProp()->head->getName() << " "
+					<< getArgumentString(simpleGoal->getProp()->args) << ")";
+		} else {
+			output << simpleGoal->getProp()->head->getName() << " "
+					<< getArgumentString(simpleGoal->getProp()->args);
+		}
+		output << ")";
+	} else if (compGoal) {
+		output << getExpressionString(compGoal);
+	} else if (negGoal) {
+		output << "(not " << getGoalString(negGoal->getGoal()) << ")";
+	} else {
+		cerr << "Something went wrong printing goals. Unhandled Goal." << endl;
+		goal->display(0);
+	}
+	return output.str();
+}
+
+std::string getEffectsString(const VAL::effect_lists * effects) {
+	ostringstream output;
+	int numEffects = effects->add_effects.size() + effects->del_effects.size()
+			+ effects->timed_effects.size() + effects->assign_effects.size()
+			+ effects->cond_assign_effects.size() + effects->cond_effects.size()
+			+ effects->forall_effects.size();
+	if (numEffects > 1) {
+		output << "\t\t\t(and" << endl;
+	}
+	//timed effects
+	VAL::pc_list<VAL::timed_effect*>::const_iterator teffItr =
+			effects->timed_effects.begin();
+	for (; teffItr != effects->timed_effects.end(); teffItr++) {
+		const VAL::timed_effect* tEffect = *teffItr;
+		output << "\t\t\t\t(" << getTimeSpecString(tEffect->ts) << " "
+				<< getEffectsString(tEffect->effs) << ")" << endl;
+	}
+	//add effects
+	VAL::pc_list<VAL::simple_effect*>::const_iterator addEffItr =
+			effects->add_effects.begin();
+	for (; addEffItr != effects->add_effects.end(); addEffItr++) {
+		const VAL::simple_effect* addEffect = *addEffItr;
+		output << "(" << addEffect->prop->head->getName() << " "
+				<< getArgumentString(addEffect->prop->args) << ")";
+	}
+	//del effects
+	VAL::pc_list<VAL::simple_effect*>::const_iterator delEffItr =
+			effects->del_effects.begin();
+	for (; delEffItr != effects->del_effects.end(); delEffItr++) {
+		const VAL::simple_effect* delEffect = *delEffItr;
+		output << "(not (" << delEffect->prop->head->getName() << " "
+				<< getArgumentString(delEffect->prop->args) << "))";
+	}
+	//assign effects
+	VAL::pc_list<VAL::assignment*>::const_iterator assignEffItr =
+			effects->assign_effects.begin();
+	for (; assignEffItr != effects->assign_effects.end(); assignEffItr++) {
+		const VAL::assignment* assignEffect = *assignEffItr;
+		output << "(" << getAssignmentString(assignEffect->getOp()) << " "
+				<< getExpressionString(assignEffect->getFTerm()) << " "
+				<< getExpressionString(assignEffect->getExpr()) << ")";
+	}
+	if (numEffects > 1) {
+		output << "\t\t\t)";
+	}
+	return output.str();
+}
+
 //Literal, PNE and TIL Helper Functions
 set<PDDLObject> & extractParameters(Inst::Literal * literal,
-		set<PDDLObject> & parameters) {
-	return extractParameters(literal->toProposition()->args, parameters);
+		set<PDDLObject> & parameters,
+		std::list<std::pair<std::string, std::string> > constants) {
+	return extractParameters(literal->toProposition()->args, parameters,
+			constants);
 }
 
 set<PDDLObject> & extractParameters(Inst::PNE * pne,
-		set<PDDLObject> & parameters) {
-	return extractParameters(pne->getFunc()->getArgs(), parameters);
+		set<PDDLObject> & parameters,
+		std::list<std::pair<std::string, std::string> > constants) {
+	return extractParameters(pne->getFunc()->getArgs(), parameters, constants);
 }
 
 std::set<PDDLObject> & extractParameters(const Planner::FakeTILAction * til,
-		set<PDDLObject> & parameters) {
+		set<PDDLObject> & parameters,
+		std::list<std::pair<std::string, std::string> > constants) {
 	//get params for adds
 	list<Inst::Literal*>::const_iterator addItr = til->addEffects.begin();
 	for (; addItr != til->addEffects.end(); addItr++) {
-		extractParameters(*addItr, parameters);
+		extractParameters(*addItr, parameters, constants);
 	}
 	//get params for dels
 	list<Inst::Literal*>::const_iterator delItr = til->delEffects.begin();
 	for (; delItr != til->delEffects.end(); delItr++) {
-		extractParameters(*delItr, parameters);
+		extractParameters(*delItr, parameters, constants);
 	}
 	return parameters;
 }
 
 set<PDDLObject> & extractParameters(
 		const VAL::parameter_symbol_list * parameter_symbol_list,
-		set<PDDLObject> & parameters) {
+		set<PDDLObject> & parameters,
+		std::list<std::pair<std::string, std::string> > constants) {
 	VAL::parameter_symbol_list::const_iterator argItr =
 			parameter_symbol_list->begin();
 	const VAL::parameter_symbol_list::const_iterator argItrEnd =
 			parameter_symbol_list->end();
-
 	for (; argItr != argItrEnd; argItr++) {
 		const VAL::parameter_symbol * param = *argItr;
-		string paramName = param->getName();
-		string paramType = param->type->getName();
-		std::transform(paramType.begin(), paramType.end(), paramType.begin(),
-				::toupper);
-		PDDLObject pddlObj(paramName, paramType);
-		parameters.insert(pddlObj);
+		string name = param->getName();
+		std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+		std::list<std::pair<std::string, std::string> >::const_iterator constItr =
+				constants.begin();
+		bool constant = false;
+		for (; constItr != constants.end(); constItr++) {
+			if (name == constItr->first) {
+				constant = true;
+			}
+		}
+		if (!constant) {
+			PDDLObject pddlObj = getPDDLObject(param);
+			parameters.insert(pddlObj);
+		}
 	}
 	return parameters;
 }
@@ -274,6 +542,27 @@ std::list<const Planner::FFEvent *> getTILActions(
 
 // Basic Conversions Functions
 
+PDDL::PDDLObject getPDDLObject(const VAL::pddl_typed_symbol * pddlType) {
+	string name = pddlType->getName();
+	list<string> type;
+	if (pddlType->either_types) {
+		VAL::pddl_type_list::const_iterator typeItr =
+				pddlType->either_types->begin();
+		for (; typeItr != pddlType->either_types->end(); typeItr++) {
+			string paramType = (*typeItr)->getName();
+			std::transform(paramType.begin(), paramType.end(),
+					paramType.begin(), ::toupper);
+			type.push_back(paramType);
+		}
+	} else {
+		string paramType = pddlType->type->getName();
+		std::transform(paramType.begin(), paramType.end(), paramType.begin(),
+				::toupper);
+		type.push_back(paramType);
+	}
+	return PDDLObject(name, type);;
+}
+
 std::list<PDDL::Proposition> getPropositions(
 		std::list<Inst::Literal*> * literals) {
 	std::list<PDDL::Proposition> pddlLiterals;
@@ -331,7 +620,8 @@ PDDL::PNE getPNE(const Inst::PNE * aPNE, double value) {
 	return PDDL::PNE(name, arguments, value);
 }
 
-PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp) {
+PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp,
+		std::list<std::pair<std::string, std::string> > constants) {
 	double timestamp = aTIL.duration - aTimestamp;
 	std::list<PDDL::Proposition> addEffects;
 	std::list<PDDL::Proposition> delEffects;
@@ -345,7 +635,7 @@ PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp) {
 			aTIL.addEffects.end();
 	for (; tilAddLitInt != tilAddLitIntEnd; tilAddLitInt++) {
 		Inst::Literal * literal = (*tilAddLitInt);
-		parameters = PDDL::extractParameters(literal, parameters);
+		parameters = PDDL::extractParameters(literal, parameters, constants);
 		PDDL::Proposition lit = PDDL::getProposition(literal);
 		addEffects.push_back(lit);
 	}
@@ -357,7 +647,7 @@ PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp) {
 			aTIL.delEffects.end();
 	for (; tilDelLitInt != tilDelLitIntEnd; tilDelLitInt++) {
 		Inst::Literal * literal = (*tilDelLitInt);
-		parameters = PDDL::extractParameters(literal, parameters);
+		parameters = PDDL::extractParameters(literal, parameters, constants);
 		PDDL::Proposition lit = PDDL::getProposition(literal);
 		delEffects.push_back(lit);
 	}
@@ -427,6 +717,9 @@ bool isBefore(const Planner::FFEvent * event, const Planner::FFEvent * before,
 	return false;
 }
 
+/**
+ * FIXME: The list should be passed in as a var
+ */
 void printStates() {
 	static int stateCount = 0;
 	//Cycle through all plans found

@@ -9,6 +9,7 @@
 #include <sstream>
 #include <map>
 #include <string>
+#include <algorithm>
 
 #include "Proposition.h"
 
@@ -16,6 +17,8 @@ namespace PDDL {
 
 /**
  * Output the proposition using parameters according to the parameter table
+ * FIXME: Assumes arguments that are not in the parameter table are constants
+ * Should probably use the contants table to confirm this.
  */
 std::string Proposition::toParameterisedString(
 		const std::map<const PDDLObject *, std::string> & parameterTable) const {
@@ -24,13 +27,22 @@ std::string Proposition::toParameterisedString(
 	std::list<std::string>::const_iterator argItr = arguments.begin();
 	const std::list<std::string>::const_iterator argItrEnd = arguments.end();
 	for (; argItr != argItrEnd; argItr++) {
+		bool found = false;
 		// Find the corresponding parameters
 		std::map<const PDDLObject *, std::string>::const_iterator paramItr = parameterTable.begin();
 		for (; paramItr != parameterTable.end(); paramItr++) {
 			std::pair<const PDDLObject *, std::string> param = *paramItr;
 			if (param.first->getName().compare(*argItr) == 0) {
 				output << param.second << " ";
+				found = true;
 			}
+		}
+		//Must be a constant
+		if (!found) {
+			string constant = *argItr;
+			std::transform(constant.begin(), constant.end(), constant.begin(),
+							::toupper);
+			output << constant << " ";
 		}
 	}
 	output << ")";

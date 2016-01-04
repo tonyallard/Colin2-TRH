@@ -16,7 +16,6 @@
 #include "PendingPNE.h"
 #include "PDDLState.h"
 #include "PendingProposition.h"
-#include "MMCRDomainFactory.h"
 
 #include "../minimalstate.h"
 #include "../RPGBuilder.h"
@@ -27,7 +26,7 @@ namespace PDDL {
 class PDDLStateFactory {
 public:
 
-	PDDLStateFactory(const Planner::MinimalState & initialState);
+	PDDLStateFactory(const Planner::MinimalState & initialState, std::list<std::pair<std::string, std::string> > constants);
 
 	PDDLState getPDDLState(const Planner::MinimalState & state,
 			std::list<Planner::FFEvent>& plan, double timestamp,
@@ -35,6 +34,7 @@ public:
 	std::list<PDDL::Proposition> getPropositions(
 					const Planner::MinimalState & state, std::set<PDDLObject> & objectSymbolTable);
 private:
+	std::list<std::pair<std::string, std::string> > constants;
 	std::list<PDDL::Proposition> staticPropositions;
 	std::list<PDDL::PNE> staticPNEs;
 	std::set<PDDLObject> objectParameterTable;

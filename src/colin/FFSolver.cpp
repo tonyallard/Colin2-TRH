@@ -46,6 +46,7 @@
 #include <sstream>
 
 #include "pddl/PDDLStateFactory.h"
+#include "pddl/PDDLDomainFactory.h"
 
 #include <sys/times.h>
 
@@ -5335,7 +5336,7 @@ Solution FF::search(bool & reachedGoal)
 
     }
     //Setup PDDL Factory
-    PDDL::PDDLStateFactory pddlFactory(initialState.getInnerState());
+    PDDL::PDDLStateFactory pddlFactory(initialState.getInnerState(), PDDL::PDDLDomainFactory::getInstance()->getConstants());
 
     // I think this does some simple relaxed goal checking to determine if the problem is solveable
     // It also adds the logic goals to a list for tracking
@@ -5452,7 +5453,7 @@ Solution FF::search(bool & reachedGoal)
     }
 
     if (skipEHC) searchQueue.pop_front();
-
+    int myCounter = 0;
 
     // Actually search
     while (!searchQueue.empty()) {
@@ -5798,7 +5799,11 @@ Solution FF::search(bool & reachedGoal)
                 }
             }
         }
-
+//TODO: Counter Logic
+//        myCounter++;
+//        if (myCounter >= 4) {
+//        	return Planner::Solution();
+//        }
         FFonly_one_successor = false;
     }
 

@@ -10,24 +10,26 @@
 
 #include <iostream>
 #include <string>
+#include <list>
 
 using namespace std;
+namespace PDDL{
 
 class PDDLObject {
 private:
 	string name;
-	string type;
+	list<string> type;
 public:
-	PDDLObject(string name, string type) : name(name), type(type) {};
+	PDDLObject(string name, list<string> type) : name(name), type(type) {};
 	string getName() const {return name;};
-	string getType() const {return type;};
+	string getTypeString() const;
 
 	bool operator<(const PDDLObject & other) const;
 	bool operator==(const PDDLObject & other);
 
 	friend ostream & operator<<(ostream & out, const PDDLObject & pddlObject);
 };
-
+}
 
 
 #endif /* COLIN_PDDL_PDDLOBJECT_H_ */

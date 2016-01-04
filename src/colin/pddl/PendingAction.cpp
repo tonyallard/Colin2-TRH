@@ -10,7 +10,7 @@
 
 #include "PendingAction.h"
 #include "PDDLUtils.h"
-#include "MMCRDomainFactory.h"
+#include "PDDLDomainFactory.h"
 
 using namespace std;
 namespace PDDL {
@@ -23,7 +23,7 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 	map<const PDDLObject *, string>::const_iterator paramItr =
 			parameterTable.begin();
 	for (; paramItr != parameterTable.end(); paramItr++) {
-		output << paramItr->second << " - " << paramItr->first->getType()
+		output << paramItr->second << " - " << paramItr->first->getTypeString()
 				<< " ";
 	}
 	output << ")\n";
@@ -34,7 +34,7 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 	//Add pre-conditions for required parameters
 	paramItr = parameterTable.begin();
 	for (; paramItr != parameterTable.end(); paramItr++) {
-		output << "\t\t\t(at start (" << MMCRDomainFactory::REQUIRED_PROPOSITION << "-" << action.name
+		output << "\t\t\t(at start (" << PDDLDomainFactory::REQUIRED_PROPOSITION << "-" << action.name
 				<< " " << paramItr->second << "))" << std::endl;
 	}
 	std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > >::const_iterator condItr =
@@ -68,7 +68,7 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 	//Add effects for required parameters
 	paramItr = parameterTable.begin();
 	for (; paramItr != parameterTable.end(); paramItr++) {
-		output << "\t\t\t(at start (not (" << MMCRDomainFactory::REQUIRED_PROPOSITION << "-" << action.name
+		output << "\t\t\t(at start (not (" << PDDLDomainFactory::REQUIRED_PROPOSITION << "-" << action.name
 				<< " " << paramItr->second << ")))" << std::endl;
 	}
 	//first get propositional effects

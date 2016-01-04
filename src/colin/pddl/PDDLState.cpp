@@ -8,7 +8,7 @@
 #include <fstream>
 
 #include "PDDLState.h"
-#include "MMCRDomainFactory.h"
+#include "PDDLDomainFactory.h"
 
 using namespace std;
 namespace PDDL {
@@ -61,11 +61,13 @@ std::string PDDLState::getPNEString() {
 }
 
 std::string PDDLState::getDomainString() {
-	return MMCRDomainFactory::getMMCRDomain(pendingActions);
+	return PDDLDomainFactory::getInstance()->getDomainString(VAL::current_analysis->the_domain,
+			pendingActions);
 }
 
 string PDDLState::getDeTiledDomainString() {
-	return MMCRDomainFactory::getDeTILedMMCRDomain(tils, pendingActions);
+	return PDDLDomainFactory::getInstance()->getDeTILedDomainString(
+			VAL::current_analysis->the_domain, tils, pendingActions);
 }
 
 string PDDLState::getPlanPrefixString() {
@@ -124,7 +126,8 @@ void PDDLState::writeStateToFile(string filePath, string fileName) {
 	myFile << ";plan prefix\n";
 	myFile << getPlanPrefixString() << "\n";
 	myFile << "(define (problem " << fileName << ")\n";
-	myFile << "\t(:domain multi-modal-cargo-routing)\n";
+	myFile << "\t(:domain " << VAL::current_analysis->the_domain->name << ")"
+			<< std::endl;
 	myFile << "\t(:objects" << std::endl << getObjectSymbolTableString()
 			<< std::endl;
 	myFile << "\t)\n";
@@ -148,14 +151,16 @@ void PDDLState::writeDeTILedStateToFile(std::string filePath,
 	myFile << ";plan prefix\n";
 	myFile << getPlanPrefixString() << "\n";
 	myFile << "(define (problem " << fileName << ")\n";
-	myFile << "\t(:domain multi-modal-cargo-routing)\n";
+	myFile << "\t(:domain " << VAL::current_analysis->the_domain->name << ")"
+			<< std::endl;
 	myFile << "\t(:objects" << std::endl << getObjectSymbolTableString()
 			<< std::endl;
 	myFile << "\t)\n";
 	myFile << "\t(:init\n";
 	myFile << getLiteralString() << getPNEString();
 	myFile << "\t)\n";
-	myFile << "\t(:goal (and " << getGoalString() << " " << getTILGoalString() << "))\n";
+	myFile << "\t(:goal (and " << getGoalString() << " " << getTILGoalString()
+			<< "))\n";
 	myFile << "\t(:metric " << metric << ")\n";
 	myFile << ")";
 	myFile.close();
