@@ -870,9 +870,9 @@ bool NumericAnalysis::couldBeWorseThan(const RPGBuilder::ConditionalEffect * a, 
                 }
                 
                 if (pass) {
-                    writeTo.insert(make_pair(currEff.fluentIndex, pair<RPGBuilder::RPGNumericEffect*, RPGBuilder::RPGNumericEffect*>(0,0))).first->second.second = &currEff;
+                    writeTo.insert(make_pair(currEff.fluentIndex, pair<RPGBuilder::RPGNumericEffect*, RPGBuilder::RPGNumericEffect*>((RPGBuilder::RPGNumericEffect*)0,(RPGBuilder::RPGNumericEffect*)0))).first->second.second = &currEff;
                 } else {
-                    writeTo.insert(make_pair(currEff.fluentIndex, pair<RPGBuilder::RPGNumericEffect*, RPGBuilder::RPGNumericEffect*>(0,0))).first->second.first = &currEff;
+                    writeTo.insert(make_pair(currEff.fluentIndex, pair<RPGBuilder::RPGNumericEffect*, RPGBuilder::RPGNumericEffect*>((RPGBuilder::RPGNumericEffect*)0,(RPGBuilder::RPGNumericEffect*)0))).first->second.first = &currEff;
                 }
                 
             }

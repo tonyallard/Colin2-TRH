@@ -211,11 +211,11 @@ public:
 	};
 	void addPre(operator_* o) 
 	{
-		preconds.push_back(pair<operator_*, derivation_rule*>(o,0));
+		preconds.push_back(pair<operator_*, derivation_rule*>(o,(derivation_rule*)NULL));
 	};
 	void addPre(derivation_rule * o) 
 	{
-		preconds.push_back(pair<operator_*, derivation_rule*>(0,o));
+		preconds.push_back(pair<operator_*, derivation_rule*>((operator_*)NULL,o));
 	};
 	void addAssign(operator_ * o,assignment * a) 
 	{

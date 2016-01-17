@@ -1293,8 +1293,8 @@ bool RPGBuilder::pushInvariantBackThroughStartEffects(const RPGBuilder::RPGNumer
     if (fabs(rhs) < 0.00000000001) rhs = 0.0;
 
     if (lhs.empty()) { //variable-less precondition
-        preResult = pair<RPGNumericPrecondition*, bool>(0, false);
-        avResult = pair<ArtificialVariable*, bool>(0, false);
+        preResult = pair<RPGNumericPrecondition*, bool>((RPGNumericPrecondition*)NULL, false);
+        avResult = pair<ArtificialVariable*, bool>((ArtificialVariable*)NULL, false);
         if (pre.op == E_GREATER) {
             return (0.0 > rhs);
         } else {
@@ -1307,14 +1307,14 @@ bool RPGBuilder::pushInvariantBackThroughStartEffects(const RPGBuilder::RPGNumer
             cout << "Invariant is unchanged: copy as-is" << endl;
         }
         preResult = pair<const RPGNumericPrecondition*, bool>(&pre, false);
-        avResult = pair<ArtificialVariable*, bool>(0, false);
+        avResult = pair<ArtificialVariable*, bool>((ArtificialVariable*)NULL, false);
         return true;
     }
 
     const int lhsSize = lhs.size();
 
     if (lhsSize == 1 && lhs.begin()->second > 0.0) {
-        avResult = pair<ArtificialVariable*, bool>(0, false);
+        avResult = pair<ArtificialVariable*, bool>((ArtificialVariable*)NULL, false);
         RPGNumericPrecondition * const candidate = new RPGNumericPrecondition();
         candidate->LHSConstant = lhs.begin()->second;
         candidate->LHSVariable = lhs.begin()->first;
@@ -1427,8 +1427,8 @@ void RPGBuilder::handleNumericInvariants()
                     }
                     const RPGNumericPrecondition & invPre = rpgNumericPreconditions[*liItr];
 
-                    pair<const RPGNumericPrecondition*, bool> preResult(0, false);
-                    pair<ArtificialVariable*, bool> avResult(0, false);
+                    pair<const RPGNumericPrecondition*, bool> preResult((const RPGNumericPrecondition*)NULL, false);
+                    pair<ArtificialVariable*, bool> avResult((ArtificialVariable*)NULL, false);
 
                     const bool feasible = pushInvariantBackThroughStartEffects(invPre, actionsToRPGNumericStartEffects[i], linearDiscretisation[i], commonData, preResult, avResult);
 
