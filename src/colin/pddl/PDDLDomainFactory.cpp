@@ -128,7 +128,8 @@ std::string PDDLDomainFactory::getTypes(const VAL::pddl_type_list * types) {
 			const VAL::pddl_type * type = *typeItr;
 			string name = type->getName();
 			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-			output << "\t\t" << name << " - " << getPDDLTypeString(type) << endl;
+			output << "\t\t" << name << " - " << getPDDLTypeString(type)
+					<< endl;
 		}
 		output << "\t)" << endl;
 	}
@@ -257,7 +258,7 @@ std::ostream & PDDLDomainFactory::getDurativeAction(
 			dynamic_cast<const VAL::comparison *>(duration->getGoal());
 	output << "\t\t:duration " << getExpressionString(durationalGoal) << endl;
 	//get conditions
-	output << "\t\t:condition" << endl << getGoalString(action->precondition)
+	output << "\t\t:condition" << endl << getConditions(action->precondition, true)
 			<< endl;
 	//get effects
 	output << "\t\t:effect" << endl << getEffectsString(action->effects)
@@ -274,13 +275,41 @@ std::ostream & PDDLDomainFactory::getAction(const VAL::action * action,
 	output << "\t\t:parameters (" << getArgumentString(action->parameters)
 			<< ")" << endl;
 	//get preconditions
-	output << "\t\t:precondition" << endl << getGoalString(action->precondition)
+	output << "\t\t:precondition" << endl << getConditions(action->precondition, false)
 			<< endl;
 	//get effects
 	output << "\t\t:effect" << endl << getEffectsString(action->effects)
 			<< endl;
 	output << "\t)" << endl;
 	return output;
+}
+
+std::string PDDLDomainFactory::getConditions(const VAL::goal * goal,
+		bool isForDurativeAction) {
+	std::ostringstream output;
+	const VAL::conj_goal * conjGoal = dynamic_cast<const VAL::conj_goal *>(goal);
+	if (conjGoal) {
+		output << "\t\t\t(and " << endl;
+		if (isForDurativeAction) {
+			output << "\t\t\t\t(at start ("
+					<< INITIAL_ACTION_COMPLETE_PROPOSITION << "))" << std::endl;
+		} else {
+			output << "\t\t\t\t(" << INITIAL_ACTION_COMPLETE_PROPOSITION << ")"
+					<< std::endl;
+		}
+		VAL::goal_list::const_iterator goalItr = conjGoal->getGoals()->begin();
+		for (; goalItr != conjGoal->getGoals()->end(); goalItr++) {
+			const VAL::goal * aGoal = *goalItr;
+			output << "\t\t\t\t" << getGoalString(aGoal) << endl;
+		}
+		output << "\t\t\t)" << endl;
+	} else {
+		output << "\t\t\t(and " << endl;
+		output << "\t\t\t\t(at start (" << INITIAL_ACTION_COMPLETE_PROPOSITION
+				<< "))" << std::endl;
+		output << getGoalString(goal);
+	}
+	return output.str();
 }
 
 std::string PDDLDomainFactory::getInitialAction() {

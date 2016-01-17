@@ -49,9 +49,7 @@ private:
 	std::ostream & getDurativeAction(const VAL::durative_action * action,
 			std::ostream & output);
 	std::ostream & getAction(const VAL::action * action, std::ostream & output);
-	std::string getLoadAction();
-	std::string getUnloadAction();
-	std::string getMoveAction();
+	std::string getConditions(const VAL::goal * goal, bool isForDurativeAction);
 	std::string getInitialAction();
 	std::string getdeTILedActions(std::list<TIL> tils);
 	std::string getdeTILedAction(const TIL & til,
