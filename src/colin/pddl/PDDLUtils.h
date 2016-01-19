@@ -83,7 +83,8 @@ std::list<PDDL::Literal> getLiterals(std::list<Inst::Literal*> * literals,
 		bool positive);
 PDDL::PNE getPNE(const Inst::PNE * aPNE, double value);
 PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp,
-		std::list<std::pair<std::string, std::string> > constants = std::list<std::pair<std::string, std::string> >());
+		std::list<std::pair<std::string, std::string> > constants = std::list<
+				std::pair<std::string, std::string> >());
 PDDL::PendingProposition getPendingProposition(const Inst::Literal * aLiteral,
 		std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions,
 		double timestamp, bool isPositive);
@@ -101,7 +102,9 @@ bool isBefore(const Planner::FFEvent * event, const Planner::FFEvent * before,
 std::list<const Planner::FFEvent *> getTILActions(
 		std::list<Planner::FFEvent> * plan);
 
-void printStates();
+void printStates(
+		std::map<std::list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> > visitedPDDLStates,
+		std::list<std::list<Planner::FFEvent>> plans);
 }
 
 #endif /* COLIN_PDDLUTILS_H_ */

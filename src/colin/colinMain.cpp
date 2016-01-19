@@ -443,7 +443,7 @@ int main(int argc, char * argv[])
 #endif
     } else {
         planAndConstraints = FF::search(reachesGoals);
-        PDDL::printStates();
+        PDDL::printStates(FF::visitedPDDLStates, FF::plans);
     }
 
     if (spSoln) {
