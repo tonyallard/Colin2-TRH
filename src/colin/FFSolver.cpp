@@ -1525,7 +1525,7 @@ void populateTimestamps(vector<double> & minTimestamps, double & makespan, list<
 }
 
 
-HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const incrementalData, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, bool considerCache, map<double, list<pair<int, int> > > * justApplied, double tilFrom)
+HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const incrementalData, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, PDDL::PDDLStateFactory pddlFactory, bool considerCache, map<double, list<pair<int, int> > > * justApplied, double tilFrom)
 {
 
     //cout << "Evaluating a state reached by " << header.size() + now.size() << " snap actions\n";
@@ -1582,6 +1582,7 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
             makespanEstimate = FFcache_makespanEstimate;
             cout << "*";
             cout.flush();
+            cout << "Considering Cache and its all good" << endl;
         } else {
             h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
                                                            extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,                                  // for colin-jair heuristic
@@ -1592,12 +1593,32 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
             FFcache_h = h;
             FFcache_makespanEstimate = makespanEstimate;
             FFcache_upToDate = true;
+
+            //TODO: get new heuristic value
+
+            PDDL::PDDLState tempState = pddlFactory.getPDDLState(theState.getInnerState(), header, theState.timeStamp, 0);
+            string filePath = "";
+            string fileName = "temp";
+            tempState.writeDeTILedStateToFile(filePath, fileName);
+            tempState.writeDeTILedDomainToFile(filePath, fileName);
+
+            FILE * output = popen("./lib/colin-clp tempdomain.pddl temp.pddl", "r");
+            char buffer[10025];
+            char *line = fgets(buffer, sizeof(buffer), output);
+            pclose(output);
+            for (int i = 0; i < 10025; i++) {
+            	cout << line[i];
+            }
+
+//            cout << output << endl;
+            cout << "Considering Cache but it's not up to date" << endl;
         }
     } else {
         //printState(theState);
         h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
                                                        extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,                                      // for colin-jair heuristic
                                                        helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
+        cout << "Just flat out ignoring the cahce" << endl;
 
     }
 
@@ -2046,7 +2067,7 @@ void ExtendedMinimalState::deQueueStep(const int & actID, const int & stepID)
     assert(pwItr != pwEnd);
 
 }
-void FF::evaluateStateAndUpdatePlan(auto_ptr<SearchQueueItem> & succ, ExtendedMinimalState & state, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const incrementalData, list<ActionSegment> & helpfulActionsExport, const ActionSegment & actID, list<FFEvent> & header)
+void FF::evaluateStateAndUpdatePlan(auto_ptr<SearchQueueItem> & succ, ExtendedMinimalState & state, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const incrementalData, list<ActionSegment> & helpfulActionsExport, const ActionSegment & actID, list<FFEvent> & header, PDDL::PDDLStateFactory pddlFactory)
 {
 
     #ifdef POPF3ANALYSIS
@@ -2181,7 +2202,7 @@ void FF::evaluateStateAndUpdatePlan(auto_ptr<SearchQueueItem> & succ, ExtendedMi
     if (FF::allowCompressionSafeScheduler) {
         h1 = calculateHeuristicAndCompressionSafeSchedule(state, prevState, goals, goalFluents, helpfulActions, succ->plan, nowList, stepID, justApplied, tilFrom);
     } else {
-        h1 = calculateHeuristicAndSchedule(state, prevState, goals, goalFluents, incrementalData, helpfulActions, succ->plan, nowList, stepID, true, justApplied, tilFrom);
+        h1 = calculateHeuristicAndSchedule(state, prevState, goals, goalFluents, incrementalData, helpfulActions, succ->plan, nowList, stepID, pddlFactory, true, justApplied, tilFrom);
     }
 
 
@@ -4660,6 +4681,8 @@ list<FFEvent> * FF::doBenchmark(bool & reachedGoal, list<FFEvent> * oldSoln, con
 
     }
 
+    PDDL::PDDLStateFactory pddlFactory(initialState.getInnerState(), PDDL::PDDLDomainFactory::getInstance()->getConstants());
+
     {
         list<Literal*>::iterator gsItr = RPGBuilder::getLiteralGoals().begin();
         const list<Literal*>::iterator gsEnd = RPGBuilder::getLiteralGoals().end();
@@ -4736,7 +4759,7 @@ list<FFEvent> * FF::doBenchmark(bool & reachedGoal, list<FFEvent> * oldSoln, con
 
         } else {
             h1 = calculateHeuristicAndSchedule(*(currSQI->state()), 0, goals, numericGoals,
-                                               (ParentData*) 0, currSQI->helpfulActions, currSQI->plan, tEvent, -1);
+                                               (ParentData*) 0, currSQI->helpfulActions, currSQI->plan, tEvent, -1, pddlFactory);
         }
         currSQI->heuristicValue = h1;
         cout << "Heuristic value of initial state: ";
@@ -5048,7 +5071,7 @@ list<FFEvent> * FF::doBenchmark(bool & reachedGoal, list<FFEvent> * oldSoln, con
 
             } else {
                 h1 = calculateHeuristicAndSchedule(*(succ->state()), currSQI->state(), goals, numericGoals, pd.get(),
-                                                       succ->helpfulActions, succ->plan, nowList, stepID, true, 0, 0.001);
+                                                       succ->helpfulActions, succ->plan, nowList, stepID, pddlFactory, true, 0, 0.001);
             }
             #ifdef STOCHASTICDURATIONS
             }
@@ -5398,7 +5421,7 @@ Solution FF::search(bool & reachedGoal)
         if (FF::allowCompressionSafeScheduler) {
             bestHeuristic = calculateHeuristicAndCompressionSafeSchedule(initialState, 0, goals, numericGoals, initialSQI->helpfulActions, initialSQI->plan, tEvent, -1);
         } else {
-            bestHeuristic = calculateHeuristicAndSchedule(initialState, 0, goals, numericGoals, (ParentData*) 0, initialSQI->helpfulActions, initialSQI->plan, tEvent, -1);
+            bestHeuristic = calculateHeuristicAndSchedule(initialState, 0, goals, numericGoals, (ParentData*) 0, initialSQI->helpfulActions, initialSQI->plan, tEvent, -1, pddlFactory);
         }
         initialSQI->heuristicValue = bestHeuristic;
         initialHeuristic = bestHeuristic;
@@ -5604,7 +5627,7 @@ Solution FF::search(bool & reachedGoal)
 
                             evaluateStateAndUpdatePlan(succ, *(succ->state()), TILparent->state(), goals, numericGoals,
                                                        (incrementalIsDead ? (ParentData*) 0 : incrementalData.get()) ,
-                                                       succ->helpfulActions, tempSeg, TILparent->plan);
+                                                       succ->helpfulActions, tempSeg, TILparent->plan, pddlFactory);
 
                             if (succ->heuristicValue.heuristicValue == -1.0) {
                                 TILfailure = true;
@@ -5715,7 +5738,7 @@ Solution FF::search(bool & reachedGoal)
                 if (visitTheState) {
 
                     if (helpfulActsItr->second == VAL::E_AT) {
-                        evaluateStateAndUpdatePlan(succ, *(succ->state()), TILparent->state(), goals, numericGoals, (incrementalIsDead ? (ParentData*) 0 : incrementalData.get()), succ->helpfulActions, *helpfulActsItr, TILparent->plan);
+                        evaluateStateAndUpdatePlan(succ, *(succ->state()), TILparent->state(), goals, numericGoals, (incrementalIsDead ? (ParentData*) 0 : incrementalData.get()), succ->helpfulActions, *helpfulActsItr, TILparent->plan, pddlFactory);
                         //If the state is sound
                         if (succ->heuristicValue.heuristicValue >= 0) {
                         	list<FFEvent> events = succ->plan;
@@ -5724,7 +5747,7 @@ Solution FF::search(bool & reachedGoal)
                         	visitedPDDLStates.insert(std::make_pair(events, newStatePair));
                         }
                     } else {
-                        evaluateStateAndUpdatePlan(succ,  *(succ->state()), currSQI->state(), goals, numericGoals, incrementalData.get(), succ->helpfulActions, *helpfulActsItr, currSQI->plan);
+                        evaluateStateAndUpdatePlan(succ,  *(succ->state()), currSQI->state(), goals, numericGoals, incrementalData.get(), succ->helpfulActions, *helpfulActsItr, currSQI->plan, pddlFactory);
                         //If the state is sound
                         if (succ->heuristicValue.heuristicValue >= 0) {
 							list<FFEvent> events = succ->plan;
@@ -6065,7 +6088,7 @@ Solution FF::search(bool & reachedGoal)
 
                             evaluateStateAndUpdatePlan(succ, *(succ->state()), TILparent->state(), goals, numericGoals,
                                                        (incrementalIsDead ? (ParentData*) 0 : incrementalData.get()),
-                                                       succ->helpfulActions, tempSeg, TILparent->plan);
+                                                       succ->helpfulActions, tempSeg, TILparent->plan, pddlFactory);
 
                             if (succ->heuristicValue.heuristicValue == -1.0) {
                                 TILfailure = true;
@@ -6176,7 +6199,7 @@ Solution FF::search(bool & reachedGoal)
                         }
                         evaluateStateAndUpdatePlan(succ, *(succ->state()), TILparent->state(), goals, numericGoals,
                                                    (incrementalIsDead ? (ParentData*) 0 : incrementalData.get()),
-                                                   succ->helpfulActions, *helpfulActsItr, TILparent->plan);
+                                                   succ->helpfulActions, *helpfulActsItr, TILparent->plan, pddlFactory);
                         //If the state is sound
                         if (succ->heuristicValue.heuristicValue >= 0) {
 							list<FFEvent> events = succ->plan;
@@ -6187,7 +6210,7 @@ Solution FF::search(bool & reachedGoal)
                     } else {
                     	//Actually create the new FFEvent(s) and update the plan in succ
                         evaluateStateAndUpdatePlan(succ, *(succ->state()), currSQI->state(), goals, numericGoals,
-                                                   incrementalData.get(), succ->helpfulActions, *helpfulActsItr, currSQI->plan);
+                                                   incrementalData.get(), succ->helpfulActions, *helpfulActsItr, currSQI->plan, pddlFactory);
                         //If the state is sound
                         if (succ->heuristicValue.heuristicValue >= 0) {
 							list<FFEvent> events = succ->plan;
@@ -6319,6 +6342,7 @@ list<FFEvent> * FF::reprocessPlan(list<FFEvent> * oldSoln, TemporalConstraints *
         }
     }
 
+    PDDL::PDDLStateFactory pddlFactory(initialState.getInnerState(), PDDL::PDDLDomainFactory::getInstance()->getConstants());
 
     {
         list<Literal*>::iterator gsItr = RPGBuilder::getLiteralGoals().begin();
@@ -6500,7 +6524,7 @@ list<FFEvent> * FF::reprocessPlan(list<FFEvent> * oldSoln, TemporalConstraints *
         if (FF::allowCompressionSafeScheduler) {
             calculateHeuristicAndCompressionSafeSchedule(initialState, 0, goals, numericGoals, currSQI->helpfulActions, currSQI->plan, tEvent, -1);
         } else {
-            calculateHeuristicAndSchedule(initialState, 0, goals, numericGoals, (ParentData*) 0, currSQI->helpfulActions, currSQI->plan, tEvent, -1);
+            calculateHeuristicAndSchedule(initialState, 0, goals, numericGoals, (ParentData*) 0, currSQI->helpfulActions, currSQI->plan, tEvent, -1, pddlFactory);
         }
     }
 
@@ -6533,7 +6557,7 @@ list<FFEvent> * FF::reprocessPlan(list<FFEvent> * oldSoln, TemporalConstraints *
         auto_ptr<SearchQueueItem> succ = auto_ptr<SearchQueueItem>(new SearchQueueItem(applyActionToState(nextSeg, *(currSQI->state()), currSQI->plan), true));
         succ->heuristicValue.makespan = currSQI->heuristicValue.makespan;
 
-        evaluateStateAndUpdatePlan(succ,  *(succ->state()), currSQI->state(), goals, numericGoals, incrementalData.get(), succ->helpfulActions, nextSeg, currSQI->plan);
+        evaluateStateAndUpdatePlan(succ,  *(succ->state()), currSQI->state(), goals, numericGoals, incrementalData.get(), succ->helpfulActions, nextSeg, currSQI->plan, pddlFactory);
 
         delete currSQI;
         currSQI = succ.release();
