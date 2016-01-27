@@ -117,7 +117,7 @@ int main(int argc, char * argv[])
 
     //Keep searching for all possible solutions
 	#ifdef POPF3ANALYSIS
-    Globals::optimiseSolutionQuality = false;
+    Globals::optimiseSolutionQuality = true;
     Globals::bestSolutionQuality = -DBL_MAX;
 	#endif
 
