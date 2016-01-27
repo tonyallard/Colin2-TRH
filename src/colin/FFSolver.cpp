@@ -47,6 +47,7 @@
 
 #include "pddl/PDDLStateFactory.h"
 #include "pddl/PDDLDomainFactory.h"
+#include "TRH/TRH.h"
 
 #include <sys/times.h>
 
@@ -1576,48 +1577,42 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
     double makespanEstimate = 0.0;
     if (considerCache) {
         if (FFcache_upToDate) {
-            relaxedPlan = FFcache_relaxedPlan;
-            helpfulActions.insert(helpfulActions.end(), FFcache_helpfulActions.begin(), FFcache_helpfulActions.end());
-            h = FFcache_h;
-            makespanEstimate = FFcache_makespanEstimate;
-            cout << "*";
-            cout.flush();
-            cout << "Considering Cache and its all good" << endl;
-        } else {
-            h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
-                                                           extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,                                  // for colin-jair heuristic
-                                                           helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
+        	PDDL::PDDLState tempState = pddlFactory.getPDDLState(theState.getInnerState(), header, theState.timeStamp, 0);
+        	h = TRH::TRH::getInstance()->getHeuristic(tempState);
 
-            FFcache_relaxedPlan = relaxedPlan;
-            FFcache_helpfulActions = helpfulActions;
-            FFcache_h = h;
-            FFcache_makespanEstimate = makespanEstimate;
-            FFcache_upToDate = true;
+
+//        	relaxedPlan = FFcache_relaxedPlan;
+//            helpfulActions.insert(helpfulActions.end(), FFcache_helpfulActions.begin(), FFcache_helpfulActions.end());
+//            h = FFcache_h;
+//            makespanEstimate = FFcache_makespanEstimate;
+//            cout << "*";
+//            cout.flush();
+//            cout << "Considering Cache and its all good" << endl;
+        } else {
+//            h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
+//                                                           extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,                                  // for colin-jair heuristic
+//                                                           helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
+//
+//            FFcache_relaxedPlan = relaxedPlan;
+//            FFcache_helpfulActions = helpfulActions;
+//            FFcache_h = h;
+//            FFcache_makespanEstimate = makespanEstimate;
+//            FFcache_upToDate = true;
 
             //TODO: get new heuristic value
 
             PDDL::PDDLState tempState = pddlFactory.getPDDLState(theState.getInnerState(), header, theState.timeStamp, 0);
-            string filePath = "";
-            string fileName = "temp";
-            tempState.writeDeTILedStateToFile(filePath, fileName);
-            tempState.writeDeTILedDomainToFile(filePath, fileName);
-
-            FILE * output = popen("./lib/colin-clp tempdomain.pddl temp.pddl", "r");
-            char buffer[10025];
-            char *line = fgets(buffer, sizeof(buffer), output);
-            pclose(output);
-            for (int i = 0; i < 10025; i++) {
-            	cout << line[i];
-            }
-
+            h = TRH::TRH::getInstance()->getHeuristic(tempState);
 //            cout << output << endl;
             cout << "Considering Cache but it's not up to date" << endl;
         }
     } else {
         //printState(theState);
-        h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
-                                                       extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,                                      // for colin-jair heuristic
-                                                       helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
+    	PDDL::PDDLState tempState = pddlFactory.getPDDLState(theState.getInnerState(), header, theState.timeStamp, 0);
+    	h = TRH::TRH::getInstance()->getHeuristic(tempState);
+//        h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
+//                                                       extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,                                      // for colin-jair heuristic
+//                                                       helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
         cout << "Just flat out ignoring the cahce" << endl;
 
     }
@@ -5439,11 +5434,11 @@ Solution FF::search(bool & reachedGoal)
     }
 
     // If the inital state is the goal
-    if (bestHeuristic.heuristicValue == 0.0) {
-        reachedGoal = true;
-        workingBestSolution.update(list<FFEvent>(), 0, evaluateMetric(initialState.getInnerState(), list<FFEvent>(), false));
-        return workingBestSolution;
-    }
+//    if (bestHeuristic.heuristicValue == 0.0) {
+//        reachedGoal = true;
+//        workingBestSolution.update(list<FFEvent>(), 0, evaluateMetric(initialState.getInnerState(), list<FFEvent>(), false));
+//        return workingBestSolution;
+//    }
 
     auto_ptr<list<FFEvent> > bestPlan(new list<FFEvent>());
     {
@@ -6230,6 +6225,7 @@ Solution FF::search(bool & reachedGoal)
 
 
                         if (succ->heuristicValue.heuristicValue == 0.0) {
+
                         	plans.push_back(succ->plan);
                             reachedGoal = true;
 
