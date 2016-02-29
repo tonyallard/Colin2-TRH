@@ -31,6 +31,10 @@ private:
 public:
 	static TRH * getInstance();
 	double getHeuristic(PDDL::PDDLState state);
+	static int STATES_EVALUATED;
+	static double TIME_SPENT_IN_HEURISTIC;
+	static double TIME_SPENT_IN_PRINTING_TO_FILE;
+	static double TIME_SPENT_CONVERTING_PDDL_STATE;
 };
 }
 
