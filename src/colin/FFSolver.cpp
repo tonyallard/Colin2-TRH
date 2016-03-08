@@ -96,6 +96,8 @@ bool FF::openListOrderLowMakespanFirst = false;
 bool FF::skipRPG = false;
 bool FF::allowCompressionSafeScheduler = false;
 
+std::map<int, int> FF::EHC_PERFORMANCE_HISTOGRAM;
+
 #ifndef NDEBUG
 list<FFEvent> * FF::benchmarkPlan = 0;
 #endif
@@ -1582,7 +1584,6 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
     PDDL::PDDLState tempState = pddlFactory.getPDDLState(theState.getInnerState(), header, theState.timeStamp, 0);
     TRH::TRH::TIME_SPENT_CONVERTING_PDDL_STATE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
     double h = TRH::TRH::getInstance()->getHeuristic(tempState);
-    TRH::TRH::STATES_EVALUATED++;
 
     if (h < oldBestH) {
         oldBestH = h;
@@ -5270,6 +5271,21 @@ void printASList(const list<ActionSegment> & helpfulActions) {
 
 }
 
+void FF::incrementEHCPerformance(int EHCSearchStateCount) {
+	//Save EHC Performance
+	map<int,int>::iterator it = FF::EHC_PERFORMANCE_HISTOGRAM.find(EHCSearchStateCount);
+	if(it == FF::EHC_PERFORMANCE_HISTOGRAM.end())
+	{
+		//If doesn't exist, add it
+		pair<int,int> counter(EHCSearchStateCount, 1);
+		FF::EHC_PERFORMANCE_HISTOGRAM.insert(counter);
+	} else {
+		//If exists increase count by one
+		int result = it->second + 1;
+		FF::EHC_PERFORMANCE_HISTOGRAM[it->first] = result;
+	}
+}
+
 Solution FF::search(bool & reachedGoal)
 {
     static bool initCSBase = false;
@@ -5436,7 +5452,8 @@ Solution FF::search(bool & reachedGoal)
 
     if (skipEHC) searchQueue.pop_front();
     int myCounter = 0;
-
+    //Count states explored from last EHC jump
+    int EHCSearchStateCount = 0;
     // Actually search
     while (!searchQueue.empty()) {
         if (Globals::globalVerbosity & 2) cout << "\n--\n";
@@ -5451,12 +5468,11 @@ Solution FF::search(bool & reachedGoal)
 
         bool foundBetter = false;
 
-
-
         list<ActionSegment > maybeApplicableActions;
         list<ActionSegment >::iterator helpfulActsItr;
         list<ActionSegment >::iterator helpfulActsEnd;
 
+        //Generate actions for this state
         if (!foundBetter) {
             if (helpfulActions) {
             	// If using helpful actions
@@ -5497,7 +5513,7 @@ Solution FF::search(bool & reachedGoal)
                 currSQI->state()->startEventQueue));
 
 
-        // Cycle through all the actions for this state
+        // Cycle through all the actions helpful actions and determine if they are applicable
         for (; helpfulActsItr != helpfulActsEnd; ++helpfulActsItr) {
 
             auto_ptr<SearchQueueItem> succ;
@@ -5708,6 +5724,8 @@ Solution FF::search(bool & reachedGoal)
                         if (succ->heuristicValue.heuristicValue == 0.0) {
 
                             reachedGoal = true;
+                            EHCSearchStateCount++;
+                        	FF::incrementEHCPerformance(EHCSearchStateCount);
 
                             if (!carryOnSearching(succ->state()->getInnerState(), succ->plan)) {
                             	cout << "EHC Success!!!!\n";
@@ -5732,11 +5750,20 @@ Solution FF::search(bool & reachedGoal)
                                     && (succ->heuristicValue.makespan < bestHeuristic.makespan))
                            ) {
 
-                            bestHeuristic = succ->heuristicValue;
+                        	//Save EHC Performance
+                        	FF::incrementEHCPerformance(EHCSearchStateCount);
+                        	//Reset Performance Counter;
+                        	EHCSearchStateCount = 0;
+
+                        	bestHeuristic = succ->heuristicValue;
                             cout << "b (" << bestHeuristic.heuristicValue << " | " << bestHeuristic.makespan << ")" ; cout.flush();
                             //succ->printPlan();
+                            //Clear search queue and add this as new root node
+                            //Expansion will only take place from here now
                             searchQueue.clear();
                             searchQueue.push_back(succ.release(), 1);
+                            //I believe this means do not try current helpful actions
+                            //Generate new ones for the new state
                             if (!FF::steepestDescent) {
                                 foundBetter = true;
                                 break;
@@ -5744,6 +5771,8 @@ Solution FF::search(bool & reachedGoal)
                         } else {
                             if (Globals::globalVerbosity & 1) cout << "."; cout.flush();
                             searchQueue.push_back(succ.release(), 1);
+                        	//Increase EHC Search State Count
+                            EHCSearchStateCount++;
                         }
                     } else {
                         if (Globals::globalVerbosity & 1) {
@@ -5762,11 +5791,6 @@ Solution FF::search(bool & reachedGoal)
                 }
             }
         }
-//TODO: Counter Logic
-//        myCounter++;
-//        if (myCounter >= 4) {
-//        	return Planner::Solution();
-//        }
         FFonly_one_successor = false;
     }
 

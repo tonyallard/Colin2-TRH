@@ -17,6 +17,7 @@ class TRH {
 private:
 	static const char * H_CMD;
 	static const string H_VAL_DELIM;
+	static const string H_STATES_EVAL_DELIM;
 	static TRH * INSTANCE;
 	//Singleton
 	TRH() {
@@ -32,6 +33,7 @@ public:
 	static TRH * getInstance();
 	double getHeuristic(PDDL::PDDLState state);
 	static int STATES_EVALUATED;
+	static int STATES_EVALUATED_IN_HEURISTIC;
 	static double TIME_SPENT_IN_HEURISTIC;
 	static double TIME_SPENT_IN_PRINTING_TO_FILE;
 	static double TIME_SPENT_CONVERTING_PDDL_STATE;
