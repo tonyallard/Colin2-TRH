@@ -52,6 +52,11 @@ private:
 
 	std::list<PDDL::TIL> getTILs(const Planner::MinimalState & state,
 			double timestamp, std::set<PDDLObject> & objectSymbolTable);
+
+	void addRequiredPropositionsForTILs(
+				std::list<PDDL::TIL> & tils,
+				std::list<Proposition> & propositions);
+
 	std::list<PDDL::PendingAction> getPendingActions(
 			const Planner::MinimalState & state, double timestamp, std::set<PDDLObject> & objectSymbolTable);
 

@@ -74,6 +74,7 @@ PDDLState PDDLStateFactory::getPDDLState(const MinimalState & state,
 	std::list<PendingAction> pendingActions = getPendingActions(state,
 			timestamp, objectSymbolTable);
 	addRequiredPropositionsForPendingActions(pendingActions, propositions);
+	addRequiredPropositionsForTILs(tils, propositions);
 	std::list<string> planPrefix = getPlanPrefix(plan);
 	return PDDLState(objectSymbolTable, propositions, pnes, tils,
 			pendingActions, goals, metric, planPrefix, heuristic, timestamp);
@@ -264,6 +265,22 @@ std::list<PDDL::TIL> PDDLStateFactory::getTILs(
 		tils.push_back(til);
 	}
 	return tils;
+}
+
+/**
+ * Cycles through each TIL, and then creates the
+ * required propositions
+ */
+void PDDLStateFactory::addRequiredPropositionsForTILs(
+		std::list<PDDL::TIL> & tils,
+		std::list<Proposition> & propositions) {
+	std::list<PDDL::TIL>::const_iterator tilItr = tils.begin();
+	for (; tilItr != tils.end(); tilItr++) {
+		std::list<PDDL::Proposition> extraProps = getRequiredPropositions(
+				tilItr->getParameters(), tilItr->getName());
+		propositions.insert(propositions.end(), extraProps.begin(),
+				extraProps.end());
+	}
 }
 
 /**

@@ -160,6 +160,7 @@ std::string PDDLDomainFactory::getPredicates(
 	//Add Domain Predicates
 	output << domainPredicates;
 	//Add Predicates for de-TILed Actions
+	//This ensures correct TIL ordering
 	std::list<TIL>::const_iterator tilItr = tils.begin();
 	for (; tilItr != tils.end(); tilItr++) {
 		output << "\t\t(" << tilItr->getName() << ")\n";
@@ -170,7 +171,16 @@ std::string PDDLDomainFactory::getPredicates(
 				pendingActions.begin();
 		for (; pendActItr != pendingActions.end(); pendActItr++) {
 			output << "\t\t(" << PDDLDomainFactory::REQUIRED_PROPOSITION << "-"
-					<< pendActItr->getName() << " ?x - object)\n";
+					<< pendActItr->getName() << " ?x - OBJECT)\n";
+		}
+	}
+	//Add Required Predicates for TILs
+	//This ensures the correct Cargo Items are used for a TIL
+	if (tils.size()) {
+		tilItr = tils.begin();
+		for (; tilItr != tils.end(); tilItr++) {
+			output << "\t\t(" << PDDLDomainFactory::REQUIRED_PROPOSITION << "-" 
+					<< tilItr->getName() << " ?x - CARGO)\n";
 		}
 	}
 	//Add Initial Action Predicate
@@ -360,13 +370,15 @@ string PDDLDomainFactory::getdeTILedAction(const TIL & til,
 				<< " ";
 	}
 	output << ")" << endl;
+	// Pre-conditions
 	output << "\t\t:precondition (and" << endl;
 	//Add requirement for initial action
 	output << "\t\t\t("
 			<< PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << ")"
 			<< std::endl;
 	//Add requiredment that TIL hasn't happened (one shot)
-	output << "\t\t\t(not (" << til.getName() << "))" << std::endl;
+	//TODO: This is pretty much redundant given tracking of cargo
+	output << "\t\t\t(not " << tilLit << ")" << std::endl;
 	//Add requirement for past TILs to have been achieved
 	if (tilActionPreconditions->size()) {
 		std::list<PDDL::Proposition>::const_iterator preItr =
@@ -378,6 +390,26 @@ string PDDLDomainFactory::getdeTILedAction(const TIL & til,
 					<< endl;
 		}
 	}
+
+	//Add predicates to ensure correct cargo is used
+	paramItr = parameterTable.begin();
+	for (; paramItr != parameterTable.end(); paramItr++) {
+		output << "\t\t\t(" << PDDLDomainFactory::REQUIRED_PROPOSITION << "-" 
+					<< til.getName() << " " << paramItr->second << ")\n";
+	}
+
+	//Add predicates that ensure cargos cannot be equal
+	//If there is more than one
+	if (parameterTable.size() > 1) {
+		paramItr = parameterTable.begin();
+		output << "\t\t\t(not (=";
+		for (; paramItr != parameterTable.end(); paramItr++) {
+			output << " " << paramItr->second;
+		}
+		output << "))\n";
+	}
+
+	//Add Effects
 	output << "\t\t)" << endl;
 	output << "\t\t:effect (and" << endl;
 	std::list<PDDL::Proposition>::const_iterator addItr =
@@ -389,8 +421,12 @@ string PDDLDomainFactory::getdeTILedAction(const TIL & til,
 				<< endl;
 	}
 	// add special predicate to indicate that the til is complete
+	// This is the one shot to remove the TIL requirement
+	//TODO: This is pretty much redundant given tracking of cargo
 	output << "\t\t\t" << tilLit << endl;
 
+	// Del Effects
+	// Add predicates to make cargo unavailable
 	std::list<PDDL::Proposition>::const_iterator delItr =
 			til.getDelEffects().begin();
 	const std::list<PDDL::Proposition>::const_iterator delItrEnd =
@@ -399,6 +435,14 @@ string PDDLDomainFactory::getdeTILedAction(const TIL & til,
 		output << "\t\t\t(not " << delItr->toParameterisedString(parameterTable)
 				<< ")" << endl;
 	}
+	//Remove Predicates that require cargo
+	paramItr = parameterTable.begin();
+	for (; paramItr != parameterTable.end(); paramItr++) {
+		output << "\t\t\t(not (" << PDDLDomainFactory::REQUIRED_PROPOSITION << "-" 
+					<< til.getName() << " " << paramItr->second << "))\n";
+	}
+
+	//Footer
 	output << "\t\t)" << endl << "\t)" << endl;
 	//Add the TIL Proposition to the list of preconditions for future TILS
 	//This retains precedence ordering of TILs
