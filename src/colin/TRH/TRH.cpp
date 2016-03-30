@@ -1,4 +1,4 @@
-//#include <stdlib.h>
+#include <stdlib.h>
 #include <string>
 #include <iostream>
 #include <cstdio>
@@ -12,6 +12,7 @@ TRH * TRH::INSTANCE = NULL;
 const char * TRH::H_CMD = "./lib/colin-clp tempdomain.pddl temp.pddl";
 const string TRH::H_VAL_DELIM = "State Heuristic Value is: ";
 const string TRH::H_STATES_EVAL_DELIM = "; States evaluated: ";
+const string TRH::H_PLAN_DELIM = "(init-action)  [0.001]";
 int TRH::STATES_EVALUATED = 0;
 int TRH::STATES_EVALUATED_IN_HEURISTIC = 0;
 double TRH::TIME_SPENT_IN_HEURISTIC = 0.0;
@@ -61,6 +62,11 @@ double TRH::getHeuristic(PDDL::PDDLState state) {
 	string h_val_str = result.substr(pos + H_VAL_DELIM.size());
 	printf("%s\n", h_val_str.c_str());
 	double hval = stod(h_val_str);
+	int planPos = result.find(H_PLAN_DELIM);
+	if (planPos != -1) {
+		string plan = result.substr(planPos + H_PLAN_DELIM.size(), pos);
+		cout << plan << endl;
+	}
 	return hval;
 }
 }

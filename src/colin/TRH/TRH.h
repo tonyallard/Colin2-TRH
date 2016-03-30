@@ -18,6 +18,7 @@ private:
 	static const char * H_CMD;
 	static const string H_VAL_DELIM;
 	static const string H_STATES_EVAL_DELIM;
+	static const string H_PLAN_DELIM;
 	static TRH * INSTANCE;
 	//Singleton
 	TRH() {
