@@ -103,7 +103,9 @@ std::string PDDLDomainFactory::getDomainRequirementsString(
 		result += ":duration-inequalities ";
 	if (flags & VAL::E_CONTINUOUS_EFFECTS)
 		result += ":continuous-effects ";
-	if (flags & VAL::E_NEGATIVE_PRECONDITIONS)
+	//Explicitly Add Negative PreConditions because
+	//They are used in de-tiled domains (for de-tiled actions)
+	if ((flags & VAL::E_NEGATIVE_PRECONDITIONS) || deTILed)
 		result += ":negative-preconditions ";
 	if (flags & VAL::E_DERIVED_PREDICATES)
 		result += ":derived-predicates ";
