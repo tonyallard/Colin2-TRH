@@ -5335,6 +5335,8 @@ Solution FF::search(bool & reachedGoal)
     }
     //Setup PDDL Factory
     PDDL::PDDLStateFactory pddlFactory(initialState.getInnerState(), PDDL::PDDLDomainFactory::getInstance()->getConstants());
+    //Count states explored from last EHC jump
+    int EHCSearchStateCount = 0;
 
     // I think this does some simple relaxed goal checking to determine if the problem is solveable
     // It also adds the logic goals to a list for tracking
@@ -5414,11 +5416,13 @@ Solution FF::search(bool & reachedGoal)
     }
 
     // If the inital state is the goal
-//    if (bestHeuristic.heuristicValue == 0.0) {
-//        reachedGoal = true;
-//        workingBestSolution.update(list<FFEvent>(), 0, evaluateMetric(initialState.getInnerState(), list<FFEvent>(), false));
-//        return workingBestSolution;
-//    }
+   if (bestHeuristic.heuristicValue == 0.0) {
+       //Save EHC Performance
+       FF::incrementEHCPerformance(EHCSearchStateCount);
+       reachedGoal = true;
+       workingBestSolution.update(list<FFEvent>(), 0, evaluateMetric(initialState.getInnerState(), list<FFEvent>(), false));
+       return workingBestSolution;
+   }
 
     auto_ptr<list<FFEvent> > bestPlan(new list<FFEvent>());
     {
@@ -5451,9 +5455,6 @@ Solution FF::search(bool & reachedGoal)
     }
 
     if (skipEHC) searchQueue.pop_front();
-    int myCounter = 0;
-    //Count states explored from last EHC jump
-    int EHCSearchStateCount = 0;
     // Actually search
     while (!searchQueue.empty()) {
         if (Globals::globalVerbosity & 2) cout << "\n--\n";
@@ -5720,11 +5721,12 @@ Solution FF::search(bool & reachedGoal)
 
                     //succ->printPlan();
                     if (succ->heuristicValue.heuristicValue != -1.0) {
+                        //Increase EHC Search State Count
+                        EHCSearchStateCount++;
 
                         if (succ->heuristicValue.heuristicValue == 0.0) {
 
                             reachedGoal = true;
-                            EHCSearchStateCount++;
                         	FF::incrementEHCPerformance(EHCSearchStateCount);
 
                             if (!carryOnSearching(succ->state()->getInnerState(), succ->plan)) {
@@ -5771,8 +5773,6 @@ Solution FF::search(bool & reachedGoal)
                         } else {
                             if (Globals::globalVerbosity & 1) cout << "."; cout.flush();
                             searchQueue.push_back(succ.release(), 1);
-                        	//Increase EHC Search State Count
-                            EHCSearchStateCount++;
                         }
                     } else {
                         if (Globals::globalVerbosity & 1) {
