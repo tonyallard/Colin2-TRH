@@ -20,6 +20,7 @@
 #include "TIL.h"
 #include "PendingProposition.h"
 #include "PendingPNE.h"
+#include "PDDLState.h"
 
 #include "../instantiation.h"
 #include "ptree.h"
@@ -104,7 +105,7 @@ std::list<const Planner::FFEvent *> getTILActions(
 
 void printStates(
 		std::map<std::list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> > visitedPDDLStates,
-		std::list<std::list<Planner::FFEvent>> plans);
+		std::list<std::list<Planner::FFEvent> > plans);
 }
 
 #endif /* COLIN_PDDLUTILS_H_ */
