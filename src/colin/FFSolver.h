@@ -173,6 +173,9 @@ public:
 	static std::map<std::list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> > visitedPDDLStates;
 	static std::list<std::list<FFEvent>> plans;
 	static std::map<int, int> EHC_PERFORMANCE_HISTOGRAM;
+    static bool USE_TRH;
+    static int STATES_EVALUATED;
+    static int STATES_EVALUATED_IN_HEURISTIC;
 
 private:
 

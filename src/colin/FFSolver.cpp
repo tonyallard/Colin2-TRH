@@ -97,6 +97,9 @@ bool FF::skipRPG = false;
 bool FF::allowCompressionSafeScheduler = false;
 
 std::map<int, int> FF::EHC_PERFORMANCE_HISTOGRAM;
+bool FF::USE_TRH = true;
+int FF::STATES_EVALUATED = 0;
+int FF::STATES_EVALUATED_IN_HEURISTIC = 0;
 
 #ifndef NDEBUG
 list<FFEvent> * FF::benchmarkPlan = 0;
@@ -1578,12 +1581,41 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
 
 
     double makespanEstimate = 0.0;
+    double h; 
 
-    //TODO: Here is the heuristic stuff
-    const clock_t begin_time = clock();
-    PDDL::PDDLState tempState = pddlFactory.getPDDLState(theState.getInnerState(), header, theState.timeStamp, 0);
-    TRH::TRH::TIME_SPENT_CONVERTING_PDDL_STATE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
-    double h = TRH::TRH::getInstance()->getHeuristic(tempState);
+    if (FF::USE_TRH) {
+        //Use TRH Heuristic
+        const clock_t begin_time = clock();
+        PDDL::PDDLState tempState = pddlFactory.getPDDLState(theState.getInnerState(), header, theState.timeStamp, 0);
+        TRH::TRH::TIME_SPENT_CONVERTING_PDDL_STATE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
+        h = TRH::TRH::getInstance()->getHeuristic(tempState);
+    } else {
+        //Use RPG Heuristic
+        if (considerCache) {
+            if (FFcache_upToDate) {
+                relaxedPlan = FFcache_relaxedPlan;
+                helpfulActions.insert(helpfulActions.end(), FFcache_helpfulActions.begin(), FFcache_helpfulActions.end());
+                h = FFcache_h;
+                makespanEstimate = FFcache_makespanEstimate;
+                cout << "*";
+                cout.flush();
+            } else {
+                h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
+                                                               extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,       // for colin-jair heuristic
+                                                               helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
+                FFcache_relaxedPlan = relaxedPlan;
+                FFcache_helpfulActions = helpfulActions;
+                FFcache_h = h;
+                FFcache_makespanEstimate = makespanEstimate;
+                FFcache_upToDate = true;
+            }
+        } else {
+            //printState(theState);
+            h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
+                                                            extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,          // for colin-jair heuristic
+                                                            helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
+        }
+    }
 
     if (h < oldBestH) {
         oldBestH = h;

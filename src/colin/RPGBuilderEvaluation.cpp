@@ -7688,6 +7688,7 @@ int RPGHeuristic::getRelaxedPlan(const MinimalState & theState, const list<Start
     
     if (!d->expandFully) {
         ++statesEvaluated;
+        FF::STATES_EVALUATED++;
     }
     
         

@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "TRH.h"
+#include "../FFSolver.h"
 
 namespace TRH {
 
@@ -13,8 +14,7 @@ const char * TRH::H_CMD = "./lib/colin-clp tempdomain.pddl temp.pddl";
 const string TRH::H_VAL_DELIM = "State Heuristic Value is: ";
 const string TRH::H_STATES_EVAL_DELIM = "; States evaluated: ";
 const string TRH::H_PLAN_DELIM = "(init-action)  [0.001]";
-int TRH::STATES_EVALUATED = 0;
-int TRH::STATES_EVALUATED_IN_HEURISTIC = 0;
+
 double TRH::TIME_SPENT_IN_HEURISTIC = 0.0;
 double TRH::TIME_SPENT_IN_PRINTING_TO_FILE = 0.0;
 double TRH::TIME_SPENT_CONVERTING_PDDL_STATE = 0.0;
@@ -28,7 +28,7 @@ TRH * TRH::getInstance() {
 
 double TRH::getHeuristic(PDDL::PDDLState state) {
 
-    TRH::TRH::STATES_EVALUATED++;
+    Planner::FF::STATES_EVALUATED++;
 	clock_t begin_time = clock();
 	string filePath = "";
 	string fileName = "temp";
@@ -52,7 +52,7 @@ double TRH::getHeuristic(PDDL::PDDLState state) {
 		string statesEvalStr = result.substr(pos + H_STATES_EVAL_DELIM.size(), posEnd-(pos + H_STATES_EVAL_DELIM.size()));
 		int statesEval = stoi(statesEvalStr);
 		printf("Heuristic States Eval: %s\n", statesEvalStr.c_str());
-		TRH::STATES_EVALUATED_IN_HEURISTIC += statesEval;
+		Planner::FF::STATES_EVALUATED_IN_HEURISTIC += statesEval;
 	}
 	pos = result.find(H_VAL_DELIM);
 	if (pos == -1) {
@@ -63,7 +63,7 @@ double TRH::getHeuristic(PDDL::PDDLState state) {
 	printf("%s\n", h_val_str.c_str());
 	double hval = stod(h_val_str);
 	int planPos = result.find(H_PLAN_DELIM);
-	if (planPos != -1) {
+	if ((planPos != -1) && (hval == 0.0)) {
 		string plan = result.substr(planPos + H_PLAN_DELIM.size(), pos);
 		cout << plan << endl;
 	}
