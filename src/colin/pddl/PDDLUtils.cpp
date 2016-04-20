@@ -15,6 +15,7 @@
 #include "PDDLUtils.h"
 #include "PDDLStateFactory.h"
 
+#include "../globals.h"
 #include "../RPGBuilder.h"
 #include "../../VALfiles/TimSupport.h"
 
@@ -22,8 +23,9 @@ using namespace std;
 
 namespace PDDL {
 
-std::string TIL_ACTION_PREFIX = "at-";
-char TIL_STRING_DELIM = '-';
+const std::string TIL_ACTION_PREFIX = "at-";
+const char TIL_STRING_DELIM = '-';
+const double ACCURACY = EPSILON/10.0;
 
 //PDDL Type Helper Functions
 
@@ -530,7 +532,7 @@ std::list<const Planner::FFEvent *> getTILActions(
 		int found = eventName.substr(0, TIL_ACTION_PREFIX.size()).find(
 				TIL_ACTION_PREFIX);
 
-		if ((event->maxDuration == event->minDuration == 0)
+		if ((fabs(event->maxDuration - event->minDuration) < ACCURACY)
 				&& (event->time_spec == VAL::time_spec::E_AT_START)
 				&& (found >= 0)) {
 			tilActions.push_back(event);
