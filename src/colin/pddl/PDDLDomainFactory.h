@@ -11,12 +11,23 @@
 #include "Proposition.h"
 #include "TIL.h"
 #include "PendingAction.h"
+#include "PDDLDomain.h"
+
+#include "../minimalstate.h"
+
+using namespace std;
 
 namespace PDDL {
 class PDDLDomainFactory {
 private:
 	//Singleton Instance
 	static PDDLDomainFactory * INSTANCE;
+
+	//constants
+	static const std::string TIL_ACHIEVED_PROPOSITION;
+	static const std::string INITIAL_ACTION_COMPLETE_PROPOSITION_NAME;
+	static const PDDL::Proposition INITIAL_ACTION_COMPLETE_PROPOSITION;
+	
 	//Private constructor
 	PDDLDomainFactory(const VAL::domain * domain);
 	//Singleton
@@ -26,52 +37,61 @@ private:
 	PDDLDomainFactory& operator=(PDDLDomainFactory const&) {
 	}
 	;
-	//Instance Vars
-	std::string types;
-	std::string domainPredicates;
-	std::string functions;
-	std::list<std::pair<std::string, std::string> > constants;
-	std::string domainOperators;
 
-	std::string getHeader(const VAL::domain * domain, bool deTILed);
-	std::string getDomainRequirementsString(VAL::pddl_req_flag flags,
+	//Instance Vars
+	list<PDDL::PDDLObject> types;
+	list<PDDL::Proposition> domainPredicates;
+	list<PDDL::Proposition> functions;
+	std::list<std::pair<std::string, std::string> > constants;
+	list<std::string> domainOperators;
+
+	//Private Functions
+	list<string> getDomainRequirements(VAL::pddl_req_flag flags,
 			bool deTILed);
-	std::string getTypes(const VAL::pddl_type_list * types);
-	std::string getPredicates(const std::list<PendingAction> & pendingActions =
+	list<PDDL::PDDLObject> getTypes(const VAL::pddl_type_list * types);
+
+	list<PDDL::Proposition> getPredicates(const std::list<PendingAction> & pendingActions =
 			std::list<PendingAction>(),
-			const std::list<TIL> & tils = std::list<TIL>());
-	std::string getDomainPredicates(const VAL::pred_decl_list * predicates);
-	std::string getFunctions(const VAL::func_decl_list * functions);
+			const std::list<PDDL::Proposition> & tilPredicates = std::list<PDDL::Proposition>(),
+			const std::list<PDDL::Proposition> & tilRequiredObjects = std::list<PDDL::Proposition>());
+	
+	list<PDDL::Proposition> getDomainPredicates(const VAL::pred_decl_list * predicates);
+	list<PDDL::Proposition> getFunctions(const VAL::func_decl_list * functions);
 	std::list<std::pair<std::string, std::string> > getConstantsFromDomain(
 			const VAL::const_symbol_list * constants);
-	std::string getConstantsString();
-	std::string getDomainOperators(const VAL::operator_list * operators);
-	std::ostream & getDurativeAction(const VAL::durative_action * action,
-			std::ostream & output);
-	std::ostream & getAction(const VAL::action * action, std::ostream & output);
-	std::string getConditions(const VAL::goal * goal, bool isForDurativeAction);
+	list<std::string> getDomainOperators(const VAL::operator_list * operators);
+	list<string> getActions(const std::list<PendingAction> & pendingActions,
+	std::list<string> deTILedActions);
+	std::string getDurativeAction(const VAL::durative_action * action);
+	std::string getAction(const VAL::action * action);
 	std::string getInitialAction();
-	std::string getdeTILedActions(std::list<TIL> tils);
+	list<string> getdeTILedActions(std::list<TIL> tils,
+		std::list<PDDL::Proposition> & tilActionPreconditions, 
+		std::list<PDDL::Proposition> & tilRequiredObjects,
+		std::list<PDDL::Proposition> & tilRequiredObjectsParameterised);
 	std::string getdeTILedAction(const TIL & til,
-			std::list<PDDL::Proposition> * tilActionPreconditions);
-	std::string getPendingActions(
+		std::list<PDDL::Proposition> & tilActionPreconditions, 
+		std::list<PDDL::Proposition> & tilRequiredObjects,
+		std::list<PDDL::Proposition> & tilRequiredObjectsParameterised);
+	list<string> getPendingActions(
 			const std::list<PendingAction> & pendingActions);
-	std::string getTerminationString();
+	std::string getConditions(const VAL::goal * goal, bool isForDurativeAction);
+	std::list<PDDL::TIL> getTILs(const Planner::MinimalState & state, double timestamp, 
+			std::set<PDDLObject> & objectSymbolTable);
 public:
-	static PDDLDomainFactory * getInstance();
-	static const std::string TIL_ACHIEVED_PROPOSITION;
+	//FIXME: Does this need to be public
 	static const std::string REQUIRED_PROPOSITION;
-	static const std::string INITIAL_ACTION_REQUIRED_PROPOSITION;
-	static const std::string INITIAL_ACTION_COMPLETE_PROPOSITION;
+	static PDDLDomainFactory * getInstance();
 
-	std::string getDomainString(const VAL::domain * domain,
+	//Needs to be public so PDDLStateFactory can use it to generate state
+	inline std::list<std::pair<std::string, std::string> > getConstants() {return constants;}
+
+	PDDL::PDDLDomain getDomain(const VAL::domain * domain,
 			const std::list<PendingAction> & pendingActions);
-	std::string getDeTILedDomainString(const VAL::domain * domain,
-			const std::list<TIL> & tils,
-			const std::list<PendingAction> & pendingActions);
-	std::list<std::pair<std::string, std::string> > getConstants() {
-		return constants;
-	}
+
+	PDDL::PDDLDomain getDeTILedDomain(
+		const VAL::domain * domain, const Planner::MinimalState & state,
+		double timestamp, const std::list<PendingAction> & pendingActions);
 };
 }
 

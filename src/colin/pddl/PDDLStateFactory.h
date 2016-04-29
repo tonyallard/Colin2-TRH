@@ -28,11 +28,15 @@ public:
 
 	PDDLStateFactory(const Planner::MinimalState & initialState, std::list<std::pair<std::string, std::string> > constants);
 
-	PDDLState getPDDLState(const Planner::MinimalState & state,
-			std::list<Planner::FFEvent>& plan, double timestamp,
-			double heuristic);
-	std::list<PDDL::Proposition> getPropositions(
-					const Planner::MinimalState & state, std::set<PDDLObject> & objectSymbolTable);
+	// PDDLState getPDDLState(const Planner::MinimalState & state,
+	// 		std::list<Planner::FFEvent>& plan, double timestamp,
+	// 		double heuristic);
+	PDDLState getDeTILedPDDLState(const Planner::MinimalState & state,
+			std::list<Planner::FFEvent>& plan, double timestamp, double heuristic,
+			std::list<PDDL::Proposition> & tilPredicates, 
+			std::list<PDDL::Proposition> & tilRequiredObjects,
+			std::set<PDDLObject> & tilObjectSymbolTable);
+
 private:
 	std::list<std::pair<std::string, std::string> > constants;
 	std::list<PDDL::Proposition> staticPropositions;
@@ -41,7 +45,8 @@ private:
 	std::list<PDDL::Proposition> goals;
 	PDDL::Metric metric;
 
-
+	std::list<PDDL::Proposition> getPropositions(
+					const Planner::MinimalState & state, std::set<PDDLObject> & objectSymbolTable);
 	std::list<PDDL::Proposition> getStaticPropositions(
 			std::list<PDDL::Proposition> & dynamicLiterals, std::set<PDDLObject> & objectSymbolTable);
 	std::list<PDDL::PNE> getPNEs(const Planner::MinimalState & state, std::set<PDDLObject> & objectSymbolTable);
@@ -50,12 +55,10 @@ private:
 	std::list<PDDL::Proposition> getPropositionalGoals();
 	PDDL::Metric getMetric();
 
-	std::list<PDDL::TIL> getTILs(const Planner::MinimalState & state,
-			double timestamp, std::set<PDDLObject> & objectSymbolTable);
-
-	void addRequiredPropositionsForTILs(
-				std::list<PDDL::TIL> & tils,
-				std::list<Proposition> & propositions);
+	void addTILPropositions(
+		const std::list<PDDL::Proposition> & requiredObjects,
+		const std::list<PDDL::Proposition> & tilPredicates,
+		std::list<Proposition> & propositions);
 
 	std::list<PDDL::PendingAction> getPendingActions(
 			const Planner::MinimalState & state, double timestamp, std::set<PDDLObject> & objectSymbolTable);

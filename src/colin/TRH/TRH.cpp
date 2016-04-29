@@ -3,9 +3,17 @@
 #include <iostream>
 #include <cstdio>
 #include <memory>
+#include <sstream>
 
 #include "TRH.h"
+#include "PDDLDomain.h"
+#include "PDDLState.h"
+#include "PDDLDomainFactory.h"
+#include "PendingAction.h"
+#include "Proposition.h"
+#include "PDDLObject.h"
 #include "../FFSolver.h"
+
 
 namespace TRH {
 
@@ -26,16 +34,13 @@ TRH * TRH::getInstance() {
 	return INSTANCE;
 }
 
-double TRH::getHeuristic(PDDL::PDDLState state) {
+double TRH::getHeuristic(const Planner::MinimalState & state,
+		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory) {
 
     Planner::FF::STATES_EVALUATED++;
+	writeTempStates(state, plan, timestamp, heuristic, pddlFactory);
+
 	clock_t begin_time = clock();
-	string filePath = "";
-	string fileName = "temp";
-	state.writeDeTILedStateToFile(filePath, fileName);
-	state.writeDeTILedDomainToFile(filePath, fileName);
-	TRH::TRH::TIME_SPENT_IN_PRINTING_TO_FILE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
-	begin_time = clock();
 	std::shared_ptr<FILE> pipe(popen(H_CMD, "r"), pclose);
 	TRH::TRH::TIME_SPENT_IN_HEURISTIC += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
 	if (!pipe)
@@ -69,4 +74,40 @@ double TRH::getHeuristic(PDDL::PDDLState state) {
 	}
 	return hval;
 }
+
+void TRH::writeTempStates(const Planner::MinimalState & state,
+		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
+		PDDL::PDDLStateFactory pddlFactory) {
+       clock_t begin_time = clock();
+
+    /*Generate Domain*/
+
+    //Shared data
+    std::list<PDDL::PendingAction> pendingActions;
+
+    //Domain
+    PDDL::PDDLDomain domain = PDDL::PDDLDomainFactory::getInstance()->getDeTILedDomain(
+    		VAL::current_analysis->the_domain, state, timestamp,
+			pendingActions);
+
+    std::list<PDDL::Proposition> tilRequiredObjects = domain.getTILRequiredObjects();
+    std::list<PDDL::Proposition> tilPredicates = domain.getTILPredicates();
+    std::set<PDDL::PDDLObject> tilObjectSymbolTable = domain.getTILObjectSymbolTable();
+
+    //State
+    PDDL::PDDLState pddlState = pddlFactory.getDeTILedPDDLState(state, plan, timestamp, 
+        	heuristic, tilPredicates, tilRequiredObjects, tilObjectSymbolTable);
+        		
+    TRH::TRH::TIME_SPENT_CONVERTING_PDDL_STATE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
+        
+    //Write State/Domain to disk for heuristic computation
+    begin_time = clock();
+	string filePath = "";
+	string stateFileName = "temp";
+	string domainFileName = "tempdomain";
+	pddlState.writeDeTILedStateToFile(filePath, stateFileName);
+	domain.writeToFile(filePath, domainFileName);
+	TRH::TRH::TIME_SPENT_IN_PRINTING_TO_FILE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
+}
+
 }

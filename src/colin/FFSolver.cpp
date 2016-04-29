@@ -1585,10 +1585,8 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
 
     if (FF::USE_TRH) {
         //Use TRH Heuristic
-        const clock_t begin_time = clock();
-        PDDL::PDDLState tempState = pddlFactory.getPDDLState(theState.getInnerState(), header, theState.timeStamp, 0);
-        TRH::TRH::TIME_SPENT_CONVERTING_PDDL_STATE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
-        h = TRH::TRH::getInstance()->getHeuristic(tempState);
+        h = TRH::TRH::getInstance()->getHeuristic(theState.getInnerState(), header, 
+                theState.timeStamp, 0, pddlFactory);
     } else {
         //Use RPG Heuristic
         if (considerCache) {
@@ -5440,13 +5438,12 @@ Solution FF::search(bool & reachedGoal)
     auto_ptr<StatesToDelete> statesKept(new StatesToDelete());
 
     if (ffDebug || true) cout << "Initial heuristic = " << bestHeuristic.heuristicValue << "\n";
-
     // If the problem is unsolveable in the relaxed sense then it is unsolveable
     if (bestHeuristic.heuristicValue == -1.0) {
         reachedGoal = false;
         return workingBestSolution;
     }
-
+    exit(0);
     // If the inital state is the goal
    if (bestHeuristic.heuristicValue == 0.0) {
        //Save EHC Performance

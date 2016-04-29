@@ -9,6 +9,9 @@
 #define COLIN_TRH_TRH_H_
 
 #include "PDDLState.h"
+#include "PDDLStateFactory.h"
+#include "../minimalstate.h"
+#include "../FFEvent.h"
 
 using namespace std;
 
@@ -20,6 +23,8 @@ private:
 	static const string H_STATES_EVAL_DELIM;
 	static const string H_PLAN_DELIM;
 	static TRH * INSTANCE;
+	void writeTempStates(const Planner::MinimalState & state,
+		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory);
 	//Singleton
 	TRH() {
 	}
@@ -32,7 +37,8 @@ private:
 	;
 public:
 	static TRH * getInstance();
-	double getHeuristic(PDDL::PDDLState state);
+	double getHeuristic(const Planner::MinimalState & state,
+		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory);
 	static double TIME_SPENT_IN_HEURISTIC;
 	static double TIME_SPENT_IN_PRINTING_TO_FILE;
 	static double TIME_SPENT_CONVERTING_PDDL_STATE;

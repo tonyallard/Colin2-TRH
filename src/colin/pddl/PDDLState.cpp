@@ -6,7 +6,7 @@
  */
 #include <sstream>
 #include <fstream>
-
+ 
 #include "PDDLState.h"
 #include "PDDLDomainFactory.h"
 
@@ -18,13 +18,6 @@ string PDDLState::toString() {
 
 	output << getLiteralString();
 	output << getPNEString();
-
-	// TILs to String
-	list<TIL>::const_iterator tilItr = tils.begin();
-	const list<TIL>::const_iterator tileItrEnd = tils.end();
-	for (; tilItr != tileItrEnd; tilItr++) {
-		output << *tilItr << "\n";
-	}
 	return output.str();
 }
 
@@ -60,16 +53,6 @@ std::string PDDLState::getPNEString() {
 	return output.str();
 }
 
-std::string PDDLState::getDomainString() {
-	return PDDLDomainFactory::getInstance()->getDomainString(VAL::current_analysis->the_domain,
-			pendingActions);
-}
-
-string PDDLState::getDeTiledDomainString() {
-	return PDDLDomainFactory::getInstance()->getDeTILedDomainString(
-			VAL::current_analysis->the_domain, tils, pendingActions);
-}
-
 string PDDLState::getPlanPrefixString() {
 	ostringstream output;
 	std::list<std::string>::const_iterator actionItr = planPrefix.begin();
@@ -78,20 +61,6 @@ string PDDLState::getPlanPrefixString() {
 	for (; actionItr != actionItrEnd; actionItr++) {
 		output << ";" << *actionItr << "\n";
 	}
-	return output.str();
-}
-
-std::string PDDLState::getTILObjectString() {
-	ostringstream output;
-	if (!tils.size()) {
-		return output.str();
-	}
-	output << "\t\t";
-	std::list<TIL>::const_iterator tilItr = tils.begin();
-	for (; tilItr != tils.end(); tilItr++) {
-		output << tilItr->getName() << " ";
-	}
-	output << "- TIL\n";
 	return output.str();
 }
 
@@ -106,11 +75,11 @@ std::string PDDLState::getGoalString() {
 
 std::string PDDLState::getTILGoalString() {
 	ostringstream output;
-	if (!tils.size()) {
+	if (!tilAchievedPredicates.size()) {
 		return output.str();
 	}
-	std::list<TIL>::const_iterator tilItr = tils.begin();
-	for (; tilItr != tils.end(); tilItr++) {
+	std::list<Proposition>::const_iterator tilItr = tilAchievedPredicates.begin();
+	for (; tilItr != tilAchievedPredicates.end(); tilItr++) {
 		output << "(" << tilItr->getName() << ") ";
 	}
 	return output.str();
@@ -121,21 +90,21 @@ void PDDLState::writeStateToFile(string filePath, string fileName) {
 	ostringstream fullFilePath;
 	fullFilePath << filePath << fileName << ".pddl";
 	myFile.open(fullFilePath.str());
-	myFile << ";time stamp: " << timestamp << "\n";
-	myFile << ";heuristic: " << heuristic << "\n";
-	myFile << ";plan prefix\n";
-	myFile << getPlanPrefixString() << "\n";
-	myFile << "(define (problem " << fileName << ")\n";
+	myFile << ";time stamp: " << timestamp << endl;
+	myFile << ";heuristic: " << heuristic << endl;
+	myFile << ";plan prefix" << endl;
+	myFile << getPlanPrefixString() << endl;
+	myFile << "(define (problem " << fileName << ")" << endl;
 	myFile << "\t(:domain " << VAL::current_analysis->the_domain->name << ")"
 			<< std::endl;
 	myFile << "\t(:objects" << std::endl << getObjectSymbolTableString()
 			<< std::endl;
-	myFile << "\t)\n";
-	myFile << "\t(:init\n";
+	myFile << "\t)" << endl;
+	myFile << "\t(:init" << endl;
 	myFile << toString();
-	myFile << "\t)\n";
-	myFile << "\t(:goal (and " << getGoalString() << "))\n";
-	myFile << "\t(:metric " << metric << ")\n";
+	myFile << "\t)" << endl;
+	myFile << "\t(:goal (and " << getGoalString() << "))" << endl;
+	myFile << "\t(:metric " << metric << ")" << endl;
 	myFile << ")";
 	myFile.close();
 }
@@ -146,33 +115,22 @@ void PDDLState::writeDeTILedStateToFile(std::string filePath,
 	ostringstream fullFilePath;
 	fullFilePath << filePath << fileName << ".pddl";
 	myFile.open(fullFilePath.str());
-	myFile << ";time stamp: " << timestamp << "\n";
-	myFile << ";heuristic: " << heuristic << "\n";
-	myFile << ";plan prefix\n";
-	myFile << getPlanPrefixString() << "\n";
-	myFile << "(define (problem " << fileName << ")\n";
+	myFile << ";time stamp: " << timestamp << endl;
+	myFile << ";heuristic: " << heuristic << endl;
+	myFile << ";plan prefix" << endl;
+	myFile << getPlanPrefixString() << endl;
+	myFile << "(define (problem " << fileName << ")" << endl;
 	myFile << "\t(:domain " << VAL::current_analysis->the_domain->name << ")"
 			<< std::endl;
-	myFile << "\t(:objects" << std::endl << getObjectSymbolTableString()
-			<< std::endl;
-	myFile << "\t)\n";
-	myFile << "\t(:init\n";
+	myFile << "\t(:objects" << std::endl << getObjectSymbolTableString();
+	myFile << "\t)" << endl;
+	myFile << "\t(:init" << endl;
 	myFile << getLiteralString() << getPNEString();
-	myFile << "\t)\n";
+	myFile << "\t)" << endl;
 	myFile << "\t(:goal (and " << getGoalString() << " " << getTILGoalString()
-			<< "))\n";
-	myFile << "\t(:metric " << metric << ")\n";
+			<< "))" << endl;
+	myFile << "\t(:metric " << metric << ")" << endl;
 	myFile << ")";
 	myFile.close();
 }
-
-void PDDLState::writeDeTILedDomainToFile(string filePath, string fileName) {
-	ofstream myFile;
-	ostringstream fullFilePath;
-	fullFilePath << filePath << fileName << "domain.pddl";
-	myFile.open(fullFilePath.str());
-	myFile << getDeTiledDomainString();
-	myFile.close();
-}
-
 }

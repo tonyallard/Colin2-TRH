@@ -29,6 +29,8 @@ public:
 	const std::string & getName() const { return name; };
 	const std::list<std::string> & getArguments() const {return arguments; };
 	std::string toParameterisedString(const std::map<const PDDLObject *, std::string> & parameterTable) const;
+	Proposition getParameterisedProposition(
+			const std::map<const PDDLObject *, std::string> & parameterTable) const;
 	friend std::ostream & operator<<(std::ostream & output, const Proposition & proposition);
 	bool operator==(const Proposition & other);
 	static std::string getDecoratedName(const Proposition & proposition);

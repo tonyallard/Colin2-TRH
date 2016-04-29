@@ -14,6 +14,8 @@
 #include "PDDLObject.h"
 #include "PDDLUtils.h"
 #include "PDDLStateFactory.h"
+#include "PropositionFactory.h"
+#include "LiteralFactory.h"
 
 #include "../globals.h"
 #include "../RPGBuilder.h"
@@ -22,10 +24,6 @@
 using namespace std;
 
 namespace PDDL {
-
-const std::string TIL_ACTION_PREFIX = "at-";
-const char TIL_STRING_DELIM = '-';
-const double ACCURACY = EPSILON/10.0;
 
 //PDDL Type Helper Functions
 
@@ -45,11 +43,14 @@ std::string getPDDLTypeString(const VAL::pddl_typed_symbol * type) {
 			output << typeName << " ";
 		}
 		output << ")";
-	} else {
+	} else if (type->type) {
 		string typeName = type->type->getName();
 		std::transform(typeName.begin(), typeName.end(), typeName.begin(),
 				::toupper);
 		output << typeName;
+	} else {
+		//There was no type sepcified, defaulting
+		output << BASE_TYPE_CLASS;
 	}
 	return output.str();
 }
@@ -140,6 +141,8 @@ std::string getExpressionString(const VAL::expression * exp) {
 	std::ostringstream output;
 	const VAL::mul_expression * mulExp =
 			dynamic_cast<const VAL::mul_expression *>(exp);
+	const VAL::div_expression * divExp =
+			dynamic_cast<const VAL::div_expression *>(exp);
 	const VAL::comparison * comp = dynamic_cast<const VAL::comparison *>(exp);
 	const VAL::func_term * func = dynamic_cast<const VAL::func_term *>(exp);
 	const VAL::special_val_expr * specVal =
@@ -154,8 +157,14 @@ std::string getExpressionString(const VAL::expression * exp) {
 	} else if (mulExp) {
 		output << "(* " << getExpressionString(mulExp->getLHS()) << " "
 				<< getExpressionString(mulExp->getRHS()) << ")";
+	} else if (divExp) {
+		output << "(/ " << getExpressionString(divExp->getLHS()) << " "
+				<< getExpressionString(divExp->getRHS()) << ")";
 	} else if (func) {
-		output << "(" << func->getFunction()->getName() << " "
+		string name = func->getFunction()->getName();
+		std::transform(name.begin(), name.end(), name.begin(),
+				::toupper);
+		output << "(" << name << " "
 				<< getArgumentString(func->getArgs()) << ")";
 	} else if (specVal) {
 		if (specVal->getKind() == VAL::special_val::E_HASHT)
@@ -213,15 +222,8 @@ std::string getGoalString(const VAL::goal * goal) {
 		output << "(" << getTimeSpecString(timedGoal->getTime()) << " "
 				<< getGoalString(timedGoal->getGoal()) << ")";
 	} else if (simpleGoal) {
-		output << "(";
-		if (simpleGoal->getPolarity() == VAL::polarity::E_NEG) {
-			output << "not (" << simpleGoal->getProp()->head->getName() << " "
-					<< getArgumentString(simpleGoal->getProp()->args) << ")";
-		} else {
-			output << simpleGoal->getProp()->head->getName() << " "
-					<< getArgumentString(simpleGoal->getProp()->args);
-		}
-		output << ")";
+		PDDL::Literal lit = LiteralFactory::getInstance()->getLiteral(simpleGoal);
+		output << lit;
 	} else if (compGoal) {
 		output << getExpressionString(compGoal);
 	} else if (negGoal) {
@@ -255,16 +257,19 @@ std::string getEffectsString(const VAL::effect_lists * effects) {
 			effects->add_effects.begin();
 	for (; addEffItr != effects->add_effects.end(); addEffItr++) {
 		const VAL::simple_effect* addEffect = *addEffItr;
-		output << "(" << addEffect->prop->head->getName() << " "
-				<< getArgumentString(addEffect->prop->args) << ")";
+		PDDL::Proposition prop = PropositionFactory::getInstance()->
+			getProposition(addEffect->prop);
+		output << prop;
 	}
 	//del effects
 	VAL::pc_list<VAL::simple_effect*>::const_iterator delEffItr =
 			effects->del_effects.begin();
 	for (; delEffItr != effects->del_effects.end(); delEffItr++) {
 		const VAL::simple_effect* delEffect = *delEffItr;
-		output << "(not (" << delEffect->prop->head->getName() << " "
-				<< getArgumentString(delEffect->prop->args) << "))";
+		PDDL::Proposition prop = PropositionFactory::getInstance()->
+			getProposition(delEffect->prop);
+		PDDL::Literal lit = PDDL::Literal(prop, false);
+		output << lit;
 	}
 	//assign effects
 	VAL::pc_list<VAL::assignment*>::const_iterator assignEffItr =
@@ -293,6 +298,12 @@ set<PDDLObject> & extractParameters(Inst::PNE * pne,
 		set<PDDLObject> & parameters,
 		std::list<std::pair<std::string, std::string> > constants) {
 	return extractParameters(pne->getFunc()->getArgs(), parameters, constants);
+}
+
+set<PDDLObject> & extractParameters(VAL::simple_effect* prop,
+		set<PDDLObject> & parameters,
+		std::list<std::pair<std::string, std::string> > constants) {
+	return extractParameters(prop->prop->args, parameters, constants);
 }
 
 std::set<PDDLObject> & extractParameters(const Planner::FakeTILAction * til,
@@ -359,86 +370,6 @@ std::map<const PDDLObject *, std::string> generateParameterTable(
 
 //Action Helper Functions
 
-/**
- * returns the effects of an action which match the time qualified and sign
- */
-std::list<PDDL::Proposition> getActionEffects(int actionID,
-		VAL::time_spec timeQualifier, bool positive) {
-	std::list<Inst::Literal*> effects;
-
-	//Depending on time spec (start or end) add required effects
-	if (timeQualifier == VAL::time_spec::E_AT_START) {
-		if (positive) {
-			effects = Planner::RPGBuilder::getStartPropositionAdds()[actionID];
-		} else {
-			effects =
-					Planner::RPGBuilder::getStartPropositionDeletes()[actionID];
-		}
-	} else if (timeQualifier == VAL::time_spec::E_AT_END) {
-		if (positive) {
-			effects = Planner::RPGBuilder::getEndPropositionAdds()[actionID];
-		} else {
-			effects = Planner::RPGBuilder::getEndPropositionDeletes()[actionID];
-		}
-	} else {
-		std::cerr << "This case not catered for.";
-	}
-	return getPropositions(&effects);
-}
-
-std::list<PDDL::Literal> getActionConditions(int actionID,
-		VAL::time_spec timeQualifier) {
-	std::list<Inst::Literal*> positiveConditions;
-	std::list<Inst::Literal*> negativeConditions;
-	//Add invariant (over all) conditions regardless
-	//Positive First
-	std::list<Inst::Literal*> tmpConditions =
-			Planner::RPGBuilder::getInvariantPropositionalPreconditions()[actionID];
-	positiveConditions.insert(positiveConditions.end(), tmpConditions.begin(),
-			tmpConditions.end());
-	//Then Negative
-	tmpConditions =
-			Planner::RPGBuilder::getInvariantNegativePropositionalPreconditions()[actionID];
-	negativeConditions.insert(negativeConditions.end(), tmpConditions.begin(),
-			tmpConditions.end());
-
-	//Depending on time spec (start or end) add required conditions
-
-	if (timeQualifier == VAL::time_spec::E_AT_START) {
-		//Positive First
-		tmpConditions =
-				Planner::RPGBuilder::getStartPropositionalPreconditions()[actionID];
-		positiveConditions.insert(positiveConditions.end(),
-				tmpConditions.begin(), tmpConditions.end());
-		//Then Negative
-		tmpConditions =
-				Planner::RPGBuilder::getStartNegativePropositionalPreconditions()[actionID];
-		negativeConditions.insert(negativeConditions.end(),
-				tmpConditions.begin(), tmpConditions.end());
-	} else if (timeQualifier == VAL::time_spec::E_AT_END) {
-		//Positive First
-		tmpConditions =
-				Planner::RPGBuilder::getEndPropositionalPreconditions()[actionID];
-		positiveConditions.insert(positiveConditions.end(),
-				tmpConditions.begin(), tmpConditions.end());
-		//Then Negative
-		tmpConditions =
-				Planner::RPGBuilder::getEndNegativePropositionalPreconditions()[actionID];
-		negativeConditions.insert(negativeConditions.end(),
-				tmpConditions.begin(), tmpConditions.end());
-	} else {
-		std::cerr << "This case not catered for.";
-	}
-
-	std::list<PDDL::Literal> literals;
-	std::list<PDDL::Literal> tmpLiterals = PDDL::getLiterals(
-			&positiveConditions, true);
-	literals.insert(literals.end(), tmpLiterals.begin(), tmpLiterals.end());
-	tmpLiterals = PDDL::getLiterals(&negativeConditions, false);
-	literals.insert(literals.end(), tmpLiterals.begin(), tmpLiterals.end());
-	return literals;
-}
-
 std::string getActionName(int actionNum) {
 	std::ostringstream output;
 	Inst::instantiatedOp* action = Planner::RPGBuilder::getInstantiatedOp(
@@ -452,24 +383,6 @@ std::string getActionName(int actionNum) {
 		output << "-" << ((*action->getEnv())[*paramItr])->getName();
 	}
 	return output.str();
-}
-
-std::map<std::string, std::string> getActionParameters(int actionNum) {
-	std::map<std::string, std::string> output;
-	Inst::instantiatedOp* action = Planner::RPGBuilder::getInstantiatedOp(
-			actionNum);
-	VAL::FastEnvironment::const_iterator paramItr = action->getEnv()->begin();
-	char letter = 'a';
-	for (; paramItr != action->getEnv()->end(); paramItr++) {
-		ostringstream var;
-		var << "?" << static_cast<char>(letter);
-		string varType = (*paramItr)->type->getName();
-		std::transform(varType.begin(), varType.end(), varType.begin(),
-				::toupper);
-		output[var.str()] = varType;
-		letter++;
-	}
-	return output;
 }
 
 bool supported(const PDDL::Proposition * proposition,
@@ -546,6 +459,7 @@ std::list<const Planner::FFEvent *> getTILActions(
 
 PDDL::PDDLObject getPDDLObject(const VAL::pddl_typed_symbol * pddlType) {
 	string name = pddlType->getName();
+	std::transform(name.begin(), name.end(), name.begin(), ::toupper);
 	list<string> type;
 	if (pddlType->either_types) {
 		VAL::pddl_type_list::const_iterator typeItr =
@@ -556,57 +470,33 @@ PDDL::PDDLObject getPDDLObject(const VAL::pddl_typed_symbol * pddlType) {
 					paramType.begin(), ::toupper);
 			type.push_back(paramType);
 		}
-	} else {
+	} else if (pddlType->type) {
 		string paramType = pddlType->type->getName();
 		std::transform(paramType.begin(), paramType.end(), paramType.begin(),
 				::toupper);
 		type.push_back(paramType);
+	} else {
+		//There was no type sepcified, defaulting
+		type.push_back(BASE_TYPE_CLASS);
 	}
 	return PDDLObject(name, type);;
 }
 
-std::list<PDDL::Proposition> getPropositions(
-		std::list<Inst::Literal*> * literals) {
-	std::list<PDDL::Proposition> pddlLiterals;
-	std::list<Inst::Literal*>::const_iterator litItr = literals->begin();
-	const std::list<Inst::Literal*>::const_iterator litItrEnd = literals->end();
-	for (; litItr != litItrEnd; litItr++) {
-		PDDL::Proposition lit = getProposition(*litItr);
-		pddlLiterals.push_back(lit);
-	}
-	return pddlLiterals;
-}
-
-PDDL::Proposition getProposition(const Inst::Literal * aLiteral) {
-	std::string name = aLiteral->getProp()->head->getName();
-	std::list<std::string> variables;
-	VAL::parameter_symbol_list::const_iterator argItr =
-			aLiteral->getProp()->args->begin();
-	const VAL::parameter_symbol_list::const_iterator argItrEnd =
-			aLiteral->getProp()->args->end();
-	for (; argItr != argItrEnd; argItr++) {
-		variables.push_back(((*aLiteral->getEnv())[*argItr])->getName());
-	}
-	return PDDL::Proposition(name, variables);
-}
-
-std::list<PDDL::Literal> getLiterals(std::list<Inst::Literal*> * propositions,
-		bool positive) {
-	std::list<PDDL::Literal> literals;
-	std::list<Inst::Literal*>::const_iterator propItr = propositions->begin();
-	const std::list<Inst::Literal*>::const_iterator propItrEnd =
-			propositions->end();
-
-	for (; propItr != propItrEnd; propItr++) {
-		PDDL::Literal literal = getLiteral(*propItr, positive);
-		literals.push_back(literal);
-	}
-	return literals;
-}
-
-PDDL::Literal getLiteral(const Inst::Literal * aProposition, bool positive) {
-	PDDL::Proposition proposition = PDDL::getProposition(aProposition);
-	return PDDL::Literal(proposition, positive);
+PDDL::Proposition getFunction(const VAL::func_decl * func) {
+	string name = func->getFunction()->getName();
+	std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+	list<string> arguments;
+	VAL::typed_symbol_list<VAL::var_symbol>::const_iterator argItr =
+			func->getArgs()->begin();
+	for (; argItr != func->getArgs()->end(); argItr++) {
+		const VAL::var_symbol * arg = *argItr;
+		ostringstream argStr;
+		string argName = arg->getName();
+		std::transform(argName.begin(), argName.end(), argName.begin(), ::toupper);
+		argStr << "?" << argName << " - " << PDDL::getPDDLTypeString(*argItr);
+		arguments.push_back(argStr.str());
+	} 
+	return PDDL::Proposition(name, arguments);
 }
 
 PDDL::PNE getPNE(const Inst::PNE * aPNE, double value) {
@@ -638,7 +528,8 @@ PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp,
 	for (; tilAddLitInt != tilAddLitIntEnd; tilAddLitInt++) {
 		Inst::Literal * literal = (*tilAddLitInt);
 		parameters = PDDL::extractParameters(literal, parameters, constants);
-		PDDL::Proposition lit = PDDL::getProposition(literal);
+		PDDL::Proposition lit = PropositionFactory::getInstance()->
+			getProposition(literal);
 		addEffects.push_back(lit);
 	}
 
@@ -650,7 +541,8 @@ PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp,
 	for (; tilDelLitInt != tilDelLitIntEnd; tilDelLitInt++) {
 		Inst::Literal * literal = (*tilDelLitInt);
 		parameters = PDDL::extractParameters(literal, parameters, constants);
-		PDDL::Proposition lit = PDDL::getProposition(literal);
+		PDDL::Proposition lit = PropositionFactory::getInstance()->
+			getProposition(literal);
 		delEffects.push_back(lit);
 	}
 	return PDDL::TIL(addEffects, delEffects, timestamp, parameters);
@@ -659,7 +551,8 @@ PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp,
 PDDL::PendingProposition getPendingProposition(const Inst::Literal * aLiteral,
 		std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions,
 		double timestamp, bool addEffect) {
-	PDDL::Proposition literal = PDDL::getProposition(aLiteral);
+	PDDL::Proposition literal = PropositionFactory::getInstance()->
+		getProposition(aLiteral);
 	PendingProposition pendingLiteral(literal.getName(), literal.getArguments(),
 			conditions, timestamp, addEffect);
 	return pendingLiteral;
@@ -735,105 +628,105 @@ bool isBefore(const Planner::FFEvent * event, const Planner::FFEvent * before,
  * Those not marked as good via the previous process are
  * output as bad states.
  */
-void printStates(
-		std::map<std::list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> > visitedPDDLStates,
-		std::list<std::list<Planner::FFEvent>> plans) {
-	static int stateCount = 0;
-	//Cycle through all plans found
-	std::list<std::list<Planner::FFEvent>>::const_iterator planItr =
-			plans.begin();
-	const std::list<std::list<Planner::FFEvent>>::const_iterator planItrEnd =
-			plans.end();
-	//Cycle through all plans
-	for (; planItr != planItrEnd; planItr++) {
+// void printStates(
+// 		std::map<std::list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> > visitedPDDLStates,
+// 		std::list<std::list<Planner::FFEvent>> plans) {
+// 	static int stateCount = 0;
+// 	//Cycle through all plans found
+// 	std::list<std::list<Planner::FFEvent>>::const_iterator planItr =
+// 			plans.begin();
+// 	const std::list<std::list<Planner::FFEvent>>::const_iterator planItrEnd =
+// 			plans.end();
+// 	//Cycle through all plans
+// 	for (; planItr != planItrEnd; planItr++) {
 
-		std::list<Planner::FFEvent> plan = *planItr;
-		// Cycle through events within plan and print out good states.
-		std::list<Planner::FFEvent>::const_iterator eventItr = plan.begin();
-		const list<Planner::FFEvent>::const_iterator eventItrEnd = plan.end();
-		list<Planner::FFEvent> partialSolutionPlan;
-		int processedEvents = 0;
-		for (; eventItr != eventItrEnd; eventItr++) {
-			Planner::FFEvent event = *eventItr;
-			partialSolutionPlan.push_back(event);
+// 		std::list<Planner::FFEvent> plan = *planItr;
+// 		// Cycle through events within plan and print out good states.
+// 		std::list<Planner::FFEvent>::const_iterator eventItr = plan.begin();
+// 		const list<Planner::FFEvent>::const_iterator eventItrEnd = plan.end();
+// 		list<Planner::FFEvent> partialSolutionPlan;
+// 		int processedEvents = 0;
+// 		for (; eventItr != eventItrEnd; eventItr++) {
+// 			Planner::FFEvent event = *eventItr;
+// 			partialSolutionPlan.push_back(event);
 
-			//Find state generated from this action
-			std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator visitItr =
-					visitedPDDLStates.begin();
-			std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator visitItrEnd =
-					visitedPDDLStates.end();
-			for (; visitItr != visitItrEnd; visitItr++) {
-				std::list<Planner::FFEvent> partPlan = visitItr->first;
-				// If the partial plans are different sizes already there is no match
-				if (partPlan.size() != partialSolutionPlan.size()) {
-					continue;
-				}
-				//Cycle through events leading to this state to determine if the partial plans match
-				std::list<Planner::FFEvent>::const_iterator solnItr =
-						partialSolutionPlan.begin();
-				std::list<Planner::FFEvent>::const_iterator searchItr =
-						partPlan.begin();
-				bool same = true;
-				for (; searchItr != partPlan.end(); solnItr++, searchItr++) {
-					Planner::FFEvent solutionEvent = *solnItr;
-					Planner::FFEvent searchEvent = *searchItr;
-					if (solutionEvent.id != searchEvent.id) {
-						same = false;
-						break;
-					}
-				}
-				if (!same) {
-					//Not a good state - partial plans don't match
-					continue;
-				}
-				// This is a good state
-				PDDL::PDDLState & state = visitItr->second.first;
-				visitItr->second.second = true;
-				std::ostringstream filePath;
-				std::ostringstream fileName;
-				filePath << "states/";
-				fileName << "GoodState" << (stateCount++);
-				state.writeDeTILedStateToFile(filePath.str(), fileName.str());
-				state.writeDeTILedDomainToFile(filePath.str(), fileName.str());
-			}
-			processedEvents++;
-		}
-	}
-	//Cycle through those states that were not good
-	int numGoodStates = 0;
-	int numBadStates = 0;
-	int numGoodPendingAction = 0;
-	int numBadPendingAction = 0;
-	std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator it =
-			visitedPDDLStates.begin();
-	std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator end =
-			visitedPDDLStates.end();
-	for (; it != end; ++it) {
-		std::pair<PDDL::PDDLState, bool> statePair = it->second;
-		if (!statePair.second) {
-			PDDL::PDDLState & state = statePair.first;
-			std::ostringstream filePath;
-			std::ostringstream fileName;
-			filePath << "states/";
-			fileName << "BadState" << (stateCount++);
-			state.writeDeTILedStateToFile(filePath.str(), fileName.str());
-			state.writeDeTILedDomainToFile(filePath.str(), fileName.str());
-			numBadStates++;
-			if ((it->first.size() % 2) != 0) {
-				numBadPendingAction++;
-			}
-		} else {
-			numGoodStates++;
-			if ((it->first.size() % 2) != 0) {
-				numGoodPendingAction++;
-			}
-		}
-	}
-	cout << "There are: " << visitedPDDLStates.size() << " states in total."
-			<< std::endl;
-	cout << numGoodStates << " Good States (" << numGoodPendingAction
-			<< " with pending actions). " << numBadStates << " Bad States ("
-			<< numBadPendingAction << " with pending actions)." << endl;
-}
+// 			//Find state generated from this action
+// 			std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator visitItr =
+// 					visitedPDDLStates.begin();
+// 			std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator visitItrEnd =
+// 					visitedPDDLStates.end();
+// 			for (; visitItr != visitItrEnd; visitItr++) {
+// 				std::list<Planner::FFEvent> partPlan = visitItr->first;
+// 				// If the partial plans are different sizes already there is no match
+// 				if (partPlan.size() != partialSolutionPlan.size()) {
+// 					continue;
+// 				}
+// 				//Cycle through events leading to this state to determine if the partial plans match
+// 				std::list<Planner::FFEvent>::const_iterator solnItr =
+// 						partialSolutionPlan.begin();
+// 				std::list<Planner::FFEvent>::const_iterator searchItr =
+// 						partPlan.begin();
+// 				bool same = true;
+// 				for (; searchItr != partPlan.end(); solnItr++, searchItr++) {
+// 					Planner::FFEvent solutionEvent = *solnItr;
+// 					Planner::FFEvent searchEvent = *searchItr;
+// 					if (solutionEvent.id != searchEvent.id) {
+// 						same = false;
+// 						break;
+// 					}
+// 				}
+// 				if (!same) {
+// 					//Not a good state - partial plans don't match
+// 					continue;
+// 				}
+// 				// This is a good state
+// 				PDDL::PDDLState & state = visitItr->second.first;
+// 				visitItr->second.second = true;
+// 				std::ostringstream filePath;
+// 				std::ostringstream fileName;
+// 				filePath << "states/";
+// 				fileName << "GoodState" << (stateCount++);
+// 				state.writeDeTILedStateToFile(filePath.str(), fileName.str());
+// 				state.writeDeTILedDomainToFile(filePath.str(), fileName.str());
+// 			}
+// 			processedEvents++;
+// 		}
+// 	}
+// 	//Cycle through those states that were not good
+// 	int numGoodStates = 0;
+// 	int numBadStates = 0;
+// 	int numGoodPendingAction = 0;
+// 	int numBadPendingAction = 0;
+// 	std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator it =
+// 			visitedPDDLStates.begin();
+// 	std::map<list<Planner::FFEvent>, std::pair<PDDL::PDDLState, bool> >::iterator end =
+// 			visitedPDDLStates.end();
+// 	for (; it != end; ++it) {
+// 		std::pair<PDDL::PDDLState, bool> statePair = it->second;
+// 		if (!statePair.second) {
+// 			PDDL::PDDLState & state = statePair.first;
+// 			std::ostringstream filePath;
+// 			std::ostringstream fileName;
+// 			filePath << "states/";
+// 			fileName << "BadState" << (stateCount++);
+// 			state.writeDeTILedStateToFile(filePath.str(), fileName.str());
+// 			state.writeDeTILedDomainToFile(filePath.str(), fileName.str());
+// 			numBadStates++;
+// 			if ((it->first.size() % 2) != 0) {
+// 				numBadPendingAction++;
+// 			}
+// 		} else {
+// 			numGoodStates++;
+// 			if ((it->first.size() % 2) != 0) {
+// 				numGoodPendingAction++;
+// 			}
+// 		}
+// 	}
+// 	cout << "There are: " << visitedPDDLStates.size() << " states in total."
+// 			<< std::endl;
+// 	cout << numGoodStates << " Good States (" << numGoodPendingAction
+// 			<< " with pending actions). " << numBadStates << " Bad States ("
+// 			<< numBadPendingAction << " with pending actions)." << endl;
+// }
 
 }

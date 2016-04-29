@@ -1430,6 +1430,7 @@ public:
     static PNE* getPNE(const int & i) {
         assert(i >= 0);
         assert(i < (int) pnes.size());
+
         return pnes[i];
     };
     static int getPNECount() {

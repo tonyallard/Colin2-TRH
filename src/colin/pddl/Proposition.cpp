@@ -49,6 +49,34 @@ std::string Proposition::toParameterisedString(
 	return output.str();
 }
 
+Proposition Proposition::getParameterisedProposition(
+		const std::map<const PDDLObject *, std::string> & parameterTable) const {
+	string name = name;
+	list<string> args;
+	std::list<std::string>::const_iterator argItr = arguments.begin();
+	const std::list<std::string>::const_iterator argItrEnd = arguments.end();
+	for (; argItr != argItrEnd; argItr++) {
+		bool found = false;
+		// Find the corresponding parameters
+		std::map<const PDDLObject *, std::string>::const_iterator paramItr = parameterTable.begin();
+		for (; paramItr != parameterTable.end(); paramItr++) {
+			std::pair<const PDDLObject *, std::string> param = *paramItr;
+			if (param.first->getName().compare(*argItr) == 0) {
+				args.push_back(param.second);
+				found = true;
+			}
+		}
+		//Must be a constant
+		if (!found) {
+			string constant = *argItr;
+			std::transform(constant.begin(), constant.end(), constant.begin(),
+							::toupper);
+			args.push_back(constant);
+		}
+	}
+	return Proposition(name, args);
+}
+
 std::ostream & operator<<(std::ostream & output,
 		const Proposition & proposition) {
 	output << "(" << proposition.name << " ";
