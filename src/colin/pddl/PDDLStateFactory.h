@@ -32,10 +32,12 @@ public:
 	// 		std::list<Planner::FFEvent>& plan, double timestamp,
 	// 		double heuristic);
 	PDDLState getDeTILedPDDLState(const Planner::MinimalState & state,
-			std::list<Planner::FFEvent>& plan, double timestamp, double heuristic,
-			std::list<PDDL::Proposition> & tilPredicates, 
-			std::list<PDDL::Proposition> & tilRequiredObjects,
-			std::set<PDDLObject> & tilObjectSymbolTable);
+			const std::list<Planner::FFEvent>& plan,
+			double timestamp, double heuristic,
+			const std::list<PDDL::Proposition> & tilPredicates,
+			const std::list<PDDL::Proposition> & tilRequiredObjects,
+			const std::list<PDDL::Proposition> & pendingActionRequiredObjects,
+			const std::set<PDDLObject> & tilObjectSymbolTable);
 
 private:
 	std::list<std::pair<std::string, std::string> > constants;
@@ -60,22 +62,9 @@ private:
 		const std::list<PDDL::Proposition> & tilPredicates,
 		std::list<Proposition> & propositions);
 
-	std::list<PDDL::PendingAction> getPendingActions(
-			const Planner::MinimalState & state, double timestamp, std::set<PDDLObject> & objectSymbolTable);
-
 	void addRequiredPropositionsForPendingActions(
-			const std::list<PendingAction> & pendingActions,
+			const std::list<PDDL::Proposition> & pendingActionRequiredObjects,
 			std::list<Proposition> & propositions);
-	std::list<Proposition> getRequiredPropositions(
-			const std::set<PDDLObject> & parameters, std::string actionName);
-
-	/*Methods to get condition literals*/
-	std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > getConditions(
-			int actionID, std::set<PDDLObject> & parameters);
-
-	std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > convertLiterals_AddSignAndTime(
-			std::list<Inst::Literal*> literals, VAL::time_spec timeQualifier,
-			bool isPositive, std::set<PDDLObject> & parameters);
 
 };
 

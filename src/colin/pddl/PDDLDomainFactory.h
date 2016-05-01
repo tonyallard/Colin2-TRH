@@ -24,6 +24,7 @@ private:
 	static PDDLDomainFactory * INSTANCE;
 
 	//constants
+	static const std::string REQUIRED_PROPOSITION;
 	static const std::string TIL_ACHIEVED_PROPOSITION;
 	static const std::string INITIAL_ACTION_COMPLETE_PROPOSITION_NAME;
 	static const PDDL::Proposition INITIAL_ACTION_COMPLETE_PROPOSITION;
@@ -73,14 +74,24 @@ private:
 		std::list<PDDL::Proposition> & tilActionPreconditions, 
 		std::list<PDDL::Proposition> & tilRequiredObjects,
 		std::list<PDDL::Proposition> & tilRequiredObjectsParameterised);
-	list<string> getPendingActions(
-			const std::list<PendingAction> & pendingActions);
+	std::list<PDDL::PendingAction> getPendingActions(
+			const Planner::MinimalState & state, double timestamp,
+			std::set<PDDLObject> & objectSymbolTable,
+			list<PDDL::Proposition> & pendingActionRequiredObjects);
+	list<string> getPendingActions(const std::list<PendingAction> & pendingActions);
+	std::list<PDDL::Proposition> getPendingActionRequiredObjectPropositions(
+			string actionName, std::set<PDDLObject> parameters);
 	std::string getConditions(const VAL::goal * goal, bool isForDurativeAction);
 	std::list<PDDL::TIL> getTILs(const Planner::MinimalState & state, double timestamp, 
 			std::set<PDDLObject> & objectSymbolTable);
+	/*Methods to get condition literals*/
+	std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > getConditions(
+			int actionID, std::set<PDDLObject> & parameters);
+	std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > convertLiterals_AddSignAndTime(
+			std::list<Inst::Literal*> literals, VAL::time_spec timeQualifier,
+			bool isPositive, std::set<PDDLObject> & parameters);
+
 public:
-	//FIXME: Does this need to be public
-	static const std::string REQUIRED_PROPOSITION;
 	static PDDLDomainFactory * getInstance();
 
 	//Needs to be public so PDDLStateFactory can use it to generate state
@@ -91,7 +102,7 @@ public:
 
 	PDDL::PDDLDomain getDeTILedDomain(
 		const VAL::domain * domain, const Planner::MinimalState & state,
-		double timestamp, const std::list<PendingAction> & pendingActions);
+		double timestamp);
 };
 }
 

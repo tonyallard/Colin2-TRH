@@ -27,7 +27,6 @@ private:
 	std::list<Proposition> literals;
 	std::list<PNE> pnes;
 	std::list<PDDL::Proposition> tilAchievedPredicates;
-	std::list<PendingAction> pendingActions;
 	std::list<Proposition> goals;
 	PDDL::Metric metric;
 	std::list<string> planPrefix;
@@ -39,13 +38,13 @@ private:
 public:
 	PDDLState(std::set<PDDLObject> objectSymbolTable,
 			std::list<Proposition> literals, std::list<Proposition> tilAchievedPredicates,
-			std::list<PNE> pnes, std::list<PendingAction> pendingActions,
-			std::list<Proposition> goals, Metric metric, std::list<string> planPrefix,
+			std::list<PNE> pnes, std::list<Proposition> goals,
+			Metric metric, std::list<string> planPrefix,
 			double heuristic, double timestamp) :
 					objectSymbolTable(objectSymbolTable), literals(literals), 
 					tilAchievedPredicates(tilAchievedPredicates), pnes(pnes), 
-					pendingActions(pendingActions), goals(goals), metric(metric), 
-					planPrefix(planPrefix), heuristic(heuristic), timestamp(timestamp) {
+					goals(goals), metric(metric), planPrefix(planPrefix),
+					heuristic(heuristic), timestamp(timestamp) {
 	}
 	;
 	std::string toString();

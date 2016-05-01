@@ -5443,7 +5443,7 @@ Solution FF::search(bool & reachedGoal)
         reachedGoal = false;
         return workingBestSolution;
     }
-    exit(0);
+
     // If the inital state is the goal
    if (bestHeuristic.heuristicValue == 0.0) {
        //Save EHC Performance

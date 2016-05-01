@@ -10,15 +10,26 @@
 
 #include "PendingAction.h"
 #include "PDDLUtils.h"
-#include "PDDLDomainFactory.h"
 
 using namespace std;
 namespace PDDL {
 
+list<PDDL::Proposition> PendingAction::getRequiredPropositionsParameterised() const {
+
+	list<PDDL::Proposition> requiredProps;
+	map<const PDDLObject *, string> parameters = PDDL::generateParameterTable(this->parameters);
+	list<PDDL::Proposition>::const_iterator reqItr = requiredObjects.begin();
+	for (; reqItr != requiredObjects.end(); reqItr++) {
+		PDDL::Proposition propParameterised = reqItr->getParameterisedProposition(parameters, true);
+		requiredProps.push_back(propParameterised);
+	}
+	return requiredProps;
+}
+
 std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 	map<const PDDLObject *, string> parameterTable =
 			PDDL::generateParameterTable(action.parameters);
-	output << "\t(:durative-action " << action.name << "\n";
+	output << "\t(:durative-action " << action.name << endl;
 	output << "\t\t:parameters (";
 	map<const PDDLObject *, string>::const_iterator paramItr =
 			parameterTable.begin();
@@ -27,16 +38,11 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 				<< " ";
 	}
 	output << ")\n";
-	output << "\t\t:duration (= ?duration " << action.timestamp << ")\n";
-	output << "\t\t:condition (and \n";
+	output << "\t\t:duration (= ?duration " << action.timestamp << ")" << endl;
+	output << "\t\t:condition (and " << endl;
 	//Add pre-condition on initial action
-	output << "\t\t\t(at start (initial-action-complete))\n";
-	//Add pre-conditions for required parameters
-	paramItr = parameterTable.begin();
-	for (; paramItr != parameterTable.end(); paramItr++) {
-		output << "\t\t\t(at start (" << PDDLDomainFactory::REQUIRED_PROPOSITION << "-" << action.name
-				<< " " << paramItr->second << "))" << std::endl;
-	}
+	output << "\t\t\t(at start (initial-action-complete))" << endl;
+
 	std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > >::const_iterator condItr =
 			action.conditions.begin();
 	const std::list<
@@ -45,12 +51,7 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 	for (; condItr != condItrEnd; condItr++) {
 		std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > cond =
 				*condItr;
-		// Check the type of condition
-		if (cond.second.first == VAL::time_spec::E_AT_END) {
-			output << "\t\t\t(at end ";
-		} else if (cond.second.first == VAL::time_spec::E_OVER_ALL) {
-			output << "\t\t\t(over all ";
-		}
+		output << "\t\t\t(" << getTimeSpecString(cond.second.first) << " ";
 		// Check if it is a negative condition
 		if (!cond.second.second) {
 			output << "(not ";
@@ -61,42 +62,41 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 		if (!cond.second.second) {
 			output << ") ";
 		}
-		output << ")\n";
+		output << ")" << endl;
 	}
-	output << "\t\t)\n";
-	output << "\t\t:effect (and\n";
-	//Add effects for required parameters
-	paramItr = parameterTable.begin();
-	for (; paramItr != parameterTable.end(); paramItr++) {
-		output << "\t\t\t(at start (not (" << PDDLDomainFactory::REQUIRED_PROPOSITION << "-" << action.name
-				<< " " << paramItr->second << ")))" << std::endl;
-	}
-	//first get propositional effects
+	output << "\t\t)" << endl;
+	output << "\t\t:effect (and" << endl;
+
+	//output propositional effects
 	//Adds
-	std::list<PDDL::Proposition>::const_iterator litItr =
+	std::list<std::pair<Proposition, VAL::time_spec> >::const_iterator litItr =
 			action.literalAddEffects.begin();
-	std::list<PDDL::Proposition>::const_iterator litItrEnd =
+	std::list<std::pair<Proposition, VAL::time_spec> >::const_iterator litItrEnd =
 			action.literalAddEffects.end();
 	for (; litItr != litItrEnd; litItr++) {
-		output << "\t\t\t(at end "
-				<< litItr->toParameterisedString(parameterTable) << ")\n";
+		output << "\t\t\t(" << getTimeSpecString(litItr->second) << " ";
+		output << litItr->first.toParameterisedString(parameterTable) << ")"
+				<< endl;
 	}
 	//Dels
 	litItr = action.literalDelEffects.begin();
 	litItrEnd = action.literalDelEffects.end();
 	for (; litItr != litItrEnd; litItr++) {
-		output << "\t\t\t(at end (not "
-				<< litItr->toParameterisedString(parameterTable) << "))\n";
+		output << "\t\t\t(" << getTimeSpecString(litItr->second) << " (not "
+				<< litItr->first.toParameterisedString(parameterTable)
+				<< "))\n";
 	}
 	//second get pne effects
-	std::list<PDDL::PNE>::const_iterator pneItr = action.pneEffects.begin();
-	const std::list<PDDL::PNE>::const_iterator pneItrEnd =
+	std::list<std::pair<PNE, VAL::time_spec> >::const_iterator pneItr =
+			action.pneEffects.begin();
+	const std::list<std::pair<PNE, VAL::time_spec> >::const_iterator pneItrEnd =
 			action.pneEffects.end();
 	for (; pneItr != pneItrEnd; pneItr++) {
-		output << "\t\t\t(at end " << pneItr->toActionEffectString(parameterTable)
-				<< ")\n";
+		output << "\t\t\t(" << getTimeSpecString(pneItr->second) << " ";
+		output << pneItr->first.toActionEffectString(parameterTable) << ")"
+				<< endl;
 	}
-	output << "\n\t\t)\n\t)\n";
+	output << "\t\t)" << endl << "\t)" << endl;
 	return output;
 }
 }

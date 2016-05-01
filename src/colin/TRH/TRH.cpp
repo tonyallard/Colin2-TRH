@@ -59,6 +59,11 @@ double TRH::getHeuristic(const Planner::MinimalState & state,
 		printf("Heuristic States Eval: %s\n", statesEvalStr.c_str());
 		Planner::FF::STATES_EVALUATED_IN_HEURISTIC += statesEval;
 	}
+	int planPos = result.find(H_PLAN_DELIM);
+		if (planPos != -1) {
+			string plan = result.substr(planPos + H_PLAN_DELIM.size(), pos);
+			cout << plan << endl;
+		}
 	pos = result.find(H_VAL_DELIM);
 	if (pos == -1) {
 		cerr << "Problem was unsolvable - therefore max heuristic" << endl;
@@ -67,7 +72,7 @@ double TRH::getHeuristic(const Planner::MinimalState & state,
 	string h_val_str = result.substr(pos + H_VAL_DELIM.size());
 	printf("%s\n", h_val_str.c_str());
 	double hval = stod(h_val_str);
-	int planPos = result.find(H_PLAN_DELIM);
+	planPos = result.find(H_PLAN_DELIM);
 	if ((planPos != -1) && (hval == 0.0)) {
 		string plan = result.substr(planPos + H_PLAN_DELIM.size(), pos);
 		cout << plan << endl;
@@ -82,21 +87,19 @@ void TRH::writeTempStates(const Planner::MinimalState & state,
 
     /*Generate Domain*/
 
-    //Shared data
-    std::list<PDDL::PendingAction> pendingActions;
-
     //Domain
     PDDL::PDDLDomain domain = PDDL::PDDLDomainFactory::getInstance()->getDeTILedDomain(
-    		VAL::current_analysis->the_domain, state, timestamp,
-			pendingActions);
+    		VAL::current_analysis->the_domain, state, timestamp);
 
+    //Shared data
     std::list<PDDL::Proposition> tilRequiredObjects = domain.getTILRequiredObjects();
     std::list<PDDL::Proposition> tilPredicates = domain.getTILPredicates();
-    std::set<PDDL::PDDLObject> tilObjectSymbolTable = domain.getTILObjectSymbolTable();
+    std::list<PDDL::Proposition> pendingActionRequiredObjects = domain.getPendingActionRequiredObjects();
+    std::set<PDDL::PDDLObject> domainObjectSymbolTable = domain.getDomainObjectSymbolTable();
 
     //State
     PDDL::PDDLState pddlState = pddlFactory.getDeTILedPDDLState(state, plan, timestamp, 
-        	heuristic, tilPredicates, tilRequiredObjects, tilObjectSymbolTable);
+        	heuristic, tilPredicates, tilRequiredObjects, pendingActionRequiredObjects, domainObjectSymbolTable);
         		
     TRH::TRH::TIME_SPENT_CONVERTING_PDDL_STATE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
         

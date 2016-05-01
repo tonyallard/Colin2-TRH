@@ -95,7 +95,7 @@ PDDL::PendingPNE getPendingPNE(vector<double> minValue, vector<double> maxValue,
 		double minDur, double maxDur);
 
 //Plan Helper Functions
-std::list<std::string> getPlanPrefix(std::list<Planner::FFEvent>& plan);
+std::list<std::string> getPlanPrefix(const std::list<Planner::FFEvent>& plan);
 bool isAfter(const Planner::FFEvent * event, const Planner::FFEvent * after,
 		std::list<Planner::FFEvent> * plan);
 bool isBefore(const Planner::FFEvent * event, const Planner::FFEvent * before,

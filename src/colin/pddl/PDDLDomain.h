@@ -33,8 +33,8 @@ private:
 	list<std::string> actions;
 	list<PDDL::Proposition> tilPredicates;
 	list<PDDL::Proposition> tilRequiredObjects;
-	set<PDDLObject> tilObjectSymbolTable;
-	// list<PDDL::Proposition> pendingActionRequiredObjects;
+	set<PDDLObject> domainObjectSymbolTable;
+	list<PDDL::Proposition> pendingActionRequiredObjects;
 
 	string getHeaderString() const;
 	string getRequirementsString() const;
@@ -60,10 +60,12 @@ public:
 					list<PDDL::Proposition> predicates,	list<PDDL::Proposition> functions, 
 					std::list<std::pair<std::string, std::string> > constants, list<std::string> actions,
 					list<PDDL::Proposition> tilPredicates, list<PDDL::Proposition> tilRequiredObjects,
-					set<PDDLObject> tilObjectSymbolTable) : name(name), requirements(requirements), types(types),
+					list<PDDL::Proposition> pendingActionRequiredObjects, set<PDDLObject> domainObjectSymbolTable) :
+					name(name), requirements(requirements), types(types),
 					predicates(predicates), functions(functions), 
 					constants(constants), actions(actions), tilPredicates(tilPredicates), 
-					tilRequiredObjects(tilRequiredObjects), tilObjectSymbolTable(tilObjectSymbolTable) {};
+					tilRequiredObjects(tilRequiredObjects), pendingActionRequiredObjects(pendingActionRequiredObjects),
+					domainObjectSymbolTable(domainObjectSymbolTable) {};
 	inline std::string getName() {return name;}
 	inline const list<string> & getRequirements() {return requirements;}
 	inline const list<PDDL::PDDLObject> & getTypes() {return types;}
@@ -73,8 +75,8 @@ public:
 	inline const list<std::string> & getActions() {return actions;}
 	inline const list<PDDL::Proposition> & getTILPredicates() {return tilPredicates;}
 	inline const list<PDDL::Proposition> & getTILRequiredObjects() {return tilRequiredObjects;}
-	inline const set<PDDLObject> & getTILObjectSymbolTable() {return tilObjectSymbolTable;}
-	// inline const list<PDDL::Proposition> & getPendingActionRequiredObjects() {return pendingActionRequiredObjects;}
+	inline const list<PDDL::Proposition> & getPendingActionRequiredObjects() {return pendingActionRequiredObjects;}
+	inline const set<PDDLObject> & getDomainObjectSymbolTable() {return domainObjectSymbolTable;}
 	std::string toString() const;
 	void writeToFile(std::string filePath, std::string fileName);
 	friend std::ostream & operator<<(std::ostream & output, const PDDLDomain & domain);

@@ -35,24 +35,29 @@ private:
 	double timestamp;
 	std::string name;
 	std::set<PDDLObject> parameters;
-	std::list<Proposition> literalAddEffects;
-	std::list<Proposition> literalDelEffects;
-	std::list<PNE> pneEffects;
+	std::list<std::pair<Proposition, VAL::time_spec> > literalAddEffects;
+	std::list<std::pair<Proposition, VAL::time_spec> > literalDelEffects;
+	std::list<std::pair<PNE, VAL::time_spec> > pneEffects;
 	std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions;
+	std::list<PDDL::Proposition> requiredObjects;
 
-	map<const PDDLObject *, string> generateParameterTable() const;
+	std::list<PDDL::Proposition> getRequiredObjectPropositions() const;
 
 public:
-	PendingAction(std::string name, std::set<PDDLObject> parameters, std::list<Proposition> literalAddEffects, std::list<Proposition> literalDelEffects,
-			std::list<PNE> pneEffects,
+	PendingAction(std::string name, std::set<PDDLObject> parameters,
+			std::list<std::pair<Proposition, VAL::time_spec> >  literalAddEffects,
+			std::list<std::pair<Proposition, VAL::time_spec> >  literalDelEffects,
+			std::list<std::pair<PNE, VAL::time_spec> > pneEffects,
 			std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions,
+			std::list<PDDL::Proposition> requiredObjects,
 			double timestamp) :
 			name(name), parameters(parameters), literalAddEffects(literalAddEffects), literalDelEffects(literalDelEffects), pneEffects(pneEffects), conditions(
-					conditions), timestamp(timestamp) {
+					conditions), requiredObjects(requiredObjects), timestamp(timestamp) {
 	}
 	;
 	const std::string & getName() const { return name; };
 	const std::set<PDDLObject> & getParameters() const {return parameters; };
+	std::list<PDDL::Proposition> getRequiredPropositionsParameterised() const;
 	friend std::ostream & operator<<(std::ostream & output,
 			const PendingAction & action);
 };

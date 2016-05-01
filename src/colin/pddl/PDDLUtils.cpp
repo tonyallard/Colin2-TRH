@@ -479,7 +479,7 @@ PDDL::PDDLObject getPDDLObject(const VAL::pddl_typed_symbol * pddlType) {
 		//There was no type sepcified, defaulting
 		type.push_back(BASE_TYPE_CLASS);
 	}
-	return PDDLObject(name, type);;
+	return PDDLObject(name, type);
 }
 
 PDDL::Proposition getFunction(const VAL::func_decl * func) {
@@ -547,7 +547,7 @@ PDDL::PendingProposition getPendingProposition(const Inst::Literal * aLiteral,
 
 //Plan Helper Functions
 
-std::list<std::string> getPlanPrefix(std::list<Planner::FFEvent>& plan) {
+std::list<std::string> getPlanPrefix(const std::list<Planner::FFEvent>& plan) {
 	std::list<std::string> prefix;
 	std::list<Planner::FFEvent>::const_iterator eventItr = plan.begin();
 	const std::list<Planner::FFEvent>::const_iterator eventItrEnd = plan.end();
