@@ -258,7 +258,7 @@ std::string getEffectsString(const VAL::effect_lists * effects) {
 	for (; addEffItr != effects->add_effects.end(); addEffItr++) {
 		const VAL::simple_effect* addEffect = *addEffItr;
 		PDDL::Proposition prop = PropositionFactory::getInstance()->
-			getProposition(addEffect->prop);
+			getProposition(addEffect->prop, true);
 		output << prop;
 	}
 	//del effects
@@ -267,7 +267,7 @@ std::string getEffectsString(const VAL::effect_lists * effects) {
 	for (; delEffItr != effects->del_effects.end(); delEffItr++) {
 		const VAL::simple_effect* delEffect = *delEffItr;
 		PDDL::Proposition prop = PropositionFactory::getInstance()->
-			getProposition(delEffect->prop);
+			getProposition(delEffect->prop, true);
 		PDDL::Literal lit = PDDL::Literal(prop, false);
 		output << lit;
 	}
@@ -497,19 +497,6 @@ PDDL::Proposition getFunction(const VAL::func_decl * func) {
 		arguments.push_back(argStr.str());
 	} 
 	return PDDL::Proposition(name, arguments);
-}
-
-PDDL::PNE getPNE(const Inst::PNE * aPNE, double value) {
-	string name = aPNE->getFunc()->getFunction()->getName();
-	std::list<string> arguments;
-	VAL::parameter_symbol_list::const_iterator argItr =
-			aPNE->getFunc()->getArgs()->begin();
-	const VAL::parameter_symbol_list::const_iterator argItrEnd =
-			aPNE->getFunc()->getArgs()->end();
-	for (; argItr != argItrEnd; argItr++) {
-		arguments.push_back((*argItr)->getName());
-	}
-	return PDDL::PNE(name, arguments, value);
 }
 
 PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp,

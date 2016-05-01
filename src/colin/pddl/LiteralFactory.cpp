@@ -25,7 +25,7 @@ LiteralFactory * LiteralFactory::getInstance() {
 
 PDDL::Literal LiteralFactory::getLiteral(const VAL::simple_goal * goal){
 	PDDL::Proposition prop = PropositionFactory::getInstance()->
-		getProposition(goal->getProp());
+		getProposition(goal->getProp(), true, false);
 	bool positive = goal->getPolarity() != VAL::polarity::E_NEG;
 	return Literal(prop, positive);
 }

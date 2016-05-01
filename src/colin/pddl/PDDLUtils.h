@@ -82,7 +82,6 @@ double extractTILTimeStamp(const Planner::FFEvent * tilEvent);
 PDDL::PDDLObject getPDDLObject(const VAL::pddl_typed_symbol * pddlType);
 PDDL::Proposition getFunction(const VAL::func_decl * func);
 std::list<std::string> getParameters(VAL::typed_symbol_list<VAL::parameter_symbol> * params);
-PDDL::PNE getPNE(const Inst::PNE * aPNE, double value);
 
 PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp,
 		std::list<std::pair<std::string, std::string> > constants = std::list<

@@ -25,19 +25,21 @@ PropositionFactory * PropositionFactory::getInstance() {
 }
 
 list<PDDL::Proposition> PropositionFactory::getPropositions(
-		const list<Inst::Literal*> * literals) {
+		const list<Inst::Literal*> * literals,
+		bool isTemplate /* = false */, bool showType /*= false*/) {
 	list<PDDL::Proposition> pddlLiterals;
 	list<Inst::Literal*>::const_iterator litItr = literals->begin();
 	const list<Inst::Literal*>::const_iterator litItrEnd = literals->end();
 	for (; litItr != litItrEnd; litItr++) {
-		PDDL::Proposition lit = getProposition(*litItr);
+		PDDL::Proposition lit = getProposition(*litItr, isTemplate, showType);
 		pddlLiterals.push_back(lit);
 	}
 	return pddlLiterals;
 }
 
-PDDL::Proposition PropositionFactory::getProposition(const Inst::Literal * aLiteral) {
-	return getProposition(aLiteral->getProp());
+PDDL::Proposition PropositionFactory::getProposition(const Inst::Literal * aLiteral,
+		bool isTemplate /* = false */, bool showType /*= false*/) {
+	return getProposition(aLiteral->getProp(), isTemplate, showType);
 }
 
 /**
@@ -46,29 +48,19 @@ PDDL::Proposition PropositionFactory::getProposition(const Inst::Literal * aLite
 PDDL::Proposition PropositionFactory::getProposition(const VAL::pred_decl * predicate) {
 	string name = predicate->getPred()->getName();
 	transform(name.begin(), name.end(), name.begin(), ::toupper);
-	list<string> variables = getParameters(predicate->getArgs(), true);
-
-	// VAL::typed_symbol_list<VAL::var_symbol>::const_iterator argItr =
-	// 		predicate->getArgs()->begin();
-	// for (; argItr != predicate->getArgs()->end(); argItr++) {
-	// 	ostringstream argument;
-	// 	string argName = (*argItr)->getName();
-	// 	transform(argName.begin(), argName.end(), argName.begin(), ::toupper);
-	// 	argument << "?" << argName << " - " << PDDL::getPDDLTypeString(*argItr);
-	// 	variables.push_back(argument.str());
-	// }
+	list<string> variables = getParameters(predicate->getArgs(), true, true);
 	return PDDL::Proposition(name, variables);
 }
 
-PDDL::Proposition PropositionFactory::getProposition(const VAL::proposition * prop) {
+PDDL::Proposition PropositionFactory::getProposition(const VAL::proposition * prop, bool isTemplate, bool showType) {
 	string name = prop->head->getName();
 	transform(name.begin(), name.end(), name.begin(), ::toupper);
-	list<string> parameters = getParameters(prop->args);
+	list<string> parameters = getParameters(prop->args, isTemplate, showType);
 	return PDDL::Proposition(name, parameters);
 }
 
 list<string> PropositionFactory::getParameters(
-	const VAL::parameter_symbol_list * params, bool variables /* = false */) {
+	const VAL::parameter_symbol_list * params, bool isTemplate /* = false */, bool showType /*= false*/) {
 	
 	list<string> parameters;
 	VAL::parameter_symbol_list::const_iterator argItr =
@@ -76,13 +68,13 @@ list<string> PropositionFactory::getParameters(
 	const VAL::parameter_symbol_list::const_iterator argItrEnd =
 			params->end();
 	for (; argItr != argItrEnd; argItr++) {
-		parameters.push_back(getParameter(*argItr, variables));
+		parameters.push_back(getParameter(*argItr, isTemplate, showType));
 	}
 	return parameters;
 }
 
 list<string> PropositionFactory::getParameters(
-	const VAL::var_symbol_list * params, bool variables /* = false */) {
+	const VAL::var_symbol_list * params, bool isTemplate /* = false */, bool showType /*= false*/) {
 	
 	list<string> parameters;
 	VAL::var_symbol_list::const_iterator argItr =
@@ -90,17 +82,20 @@ list<string> PropositionFactory::getParameters(
 	const VAL::var_symbol_list::const_iterator argItrEnd =
 			params->end();
 	for (; argItr != argItrEnd; argItr++) {
-		parameters.push_back(getParameter(*argItr, variables));
+		parameters.push_back(getParameter(*argItr, isTemplate, showType));
 	}
 	return parameters;
 }
 
-string PropositionFactory::getParameter(VAL::pddl_typed_symbol * symbol, bool variables) {
+string PropositionFactory::getParameter(VAL::pddl_typed_symbol * symbol, bool isTemplate, bool showType) {
 	string argName = symbol->getName();
 	transform(argName.begin(), argName.end(), argName.begin(), ::toupper);
 	//if this is a variable argument
-	if (variables) {
-		return "?" + argName + " - " + PDDL::getPDDLTypeString(symbol);
+	if (isTemplate) {
+		argName = "?" + argName;
+	}
+	if (showType) {
+		argName += " - " + PDDL::getPDDLTypeString(symbol);
 	}
 	return argName;
 }

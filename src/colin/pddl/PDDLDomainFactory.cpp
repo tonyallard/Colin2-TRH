@@ -397,7 +397,7 @@ string PDDLDomainFactory::getdeTILedAction(const TIL & til,
 		PDDL::Proposition paramRequired(propName.str(), args);
 		requiredObjects.push_back(paramRequired);
 		tilRequiredObjectsParameterised.push_back(
-			paramRequired.getParameterisedProposition(parameterTable));
+			paramRequired.getParameterisedProposition(parameterTable, true));
 		paramNum++;
 	}
 	output << ")" << endl;

@@ -12,7 +12,8 @@ set(libPDDL_SRCS
 	PropositionFactory.cpp
 	Literal.cpp
 	LiteralFactory.cpp
-	PNE.cpp	
+	PNE.cpp
+	PNEFactory.cpp
 	TIL.cpp
 	PendingProposition.cpp    
 	PendingPNE.cpp

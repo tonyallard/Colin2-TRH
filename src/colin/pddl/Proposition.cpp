@@ -50,8 +50,8 @@ std::string Proposition::toParameterisedString(
 }
 
 Proposition Proposition::getParameterisedProposition(
-		const std::map<const PDDLObject *, std::string> & parameterTable) const {
-	string name = name;
+		const std::map<const PDDLObject *, std::string> & parameterTable, bool showTypes /*= false*/) const {
+	string name = this->name;
 	list<string> args;
 	std::list<std::string>::const_iterator argItr = arguments.begin();
 	const std::list<std::string>::const_iterator argItrEnd = arguments.end();
@@ -62,7 +62,11 @@ Proposition Proposition::getParameterisedProposition(
 		for (; paramItr != parameterTable.end(); paramItr++) {
 			std::pair<const PDDLObject *, std::string> param = *paramItr;
 			if (param.first->getName().compare(*argItr) == 0) {
-				args.push_back(param.second);
+				string argName = param.second;
+				if (showTypes) {
+					argName += " - " + param.first->getTypeString();
+				}
+				args.push_back(argName);
 				found = true;
 			}
 		}
