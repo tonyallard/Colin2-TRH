@@ -17,7 +17,6 @@ namespace PDDL {
 list<PDDL::Proposition> PendingAction::getRequiredPropositionsParameterised() const {
 
 	list<PDDL::Proposition> requiredProps;
-	map<const PDDLObject *, string> parameters = PDDL::generateParameterTable(this->parameters);
 	list<PDDL::Proposition>::const_iterator reqItr = requiredObjects.begin();
 	for (; reqItr != requiredObjects.end(); reqItr++) {
 		PDDL::Proposition propParameterised = reqItr->getParameterisedProposition(parameters, true);
@@ -27,14 +26,13 @@ list<PDDL::Proposition> PendingAction::getRequiredPropositionsParameterised() co
 }
 
 std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
-	map<const PDDLObject *, string> parameterTable =
-			PDDL::generateParameterTable(action.parameters);
+	const map<PDDLObject, string> & parameterTable = action.getParameters();
 	output << "\t(:durative-action " << action.name << endl;
 	output << "\t\t:parameters (";
-	map<const PDDLObject *, string>::const_iterator paramItr =
+	map<PDDLObject, string>::const_iterator paramItr =
 			parameterTable.begin();
 	for (; paramItr != parameterTable.end(); paramItr++) {
-		output << paramItr->second << " - " << paramItr->first->getTypeString()
+		output << paramItr->second << " - " << paramItr->first.getTypeString()
 				<< " ";
 	}
 	output << ")\n";

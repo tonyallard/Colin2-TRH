@@ -66,7 +66,7 @@ set<PDDLObject> & extractParameters(
 		const VAL::parameter_symbol_list * parameter_symbol_list,
 		set<PDDLObject> & parameters,
 		std::list<std::pair<std::string, std::string> > constants);
-std::map<const PDDLObject *, std::string> generateParameterTable(
+std::map<PDDLObject, std::string> generateParameterTable(
 		const std::set<PDDLObject> & parameters);
 
 //Action Helper Functions

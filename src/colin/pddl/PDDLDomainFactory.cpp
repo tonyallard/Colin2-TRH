@@ -373,7 +373,7 @@ string PDDLDomainFactory::getdeTILedAction(const TIL & til,
 	std::list<string> arguments;
 	PDDL::Proposition tilLit(til.getName(), arguments);
 	//Find all parameters for this TIL Action and generate the paramtable
-	std::map<const PDDLObject *, std::string> parameterTable =
+	std::map<PDDLObject, std::string> parameterTable =
 			PDDL::generateParameterTable(til.getParameters());
 	//List of objects that are required
 	std::list<PDDL::Proposition> requiredObjects;
@@ -383,18 +383,18 @@ string PDDLDomainFactory::getdeTILedAction(const TIL & til,
 	output << "\t(:action " << til.getName() << endl;
 	//Add parameters and create the required predicates on the way
 	output << "\t\t:parameters( ";
-	std::map<const PDDLObject *, std::string>::const_iterator paramItr =
+	std::map<PDDLObject, std::string>::const_iterator paramItr =
 			parameterTable.begin();
 	int paramNum = 1;
 	for (; paramItr != parameterTable.end(); paramItr++) {
-		output << paramItr->second << " - " << paramItr->first->getTypeString()
+		output << paramItr->second << " - " << paramItr->first.getTypeString()
 				<< " ";
 		//Proposition to ensure correct objects are used
 		ostringstream propName;
 		propName << PDDLDomainFactory::REQUIRED_PROPOSITION << "-"
 				<< til.getName() << "-" << paramNum;
 		std::list<std::string> args;
-		args.push_back(paramItr->first->getName());
+		args.push_back(paramItr->first.getName());
 		PDDL::Proposition paramRequired(propName.str(), args);
 		requiredObjects.push_back(paramRequired);
 		tilRequiredObjectsParameterised.push_back(
@@ -586,8 +586,10 @@ std::list<PDDL::PendingAction> PDDLDomainFactory::getPendingActions(
 
 		// insert all parameters into master table
 		objectSymbolTable.insert(parameters.begin(), parameters.end());
+		//Generate symbol table for this action
+		map<PDDLObject, string> parameterTable = PDDL::generateParameterTable(parameters);
 
-		PendingAction pendingAction(name, parameters, propositionalAddEffects,
+		PendingAction pendingAction(name, parameterTable, propositionalAddEffects,
 				propositionalDelEffects, pneEffects, conditions, requiredObjects, minDur);
 
 		pendingActions.push_back(pendingAction);

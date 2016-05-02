@@ -59,11 +59,11 @@ double TRH::getHeuristic(const Planner::MinimalState & state,
 		printf("Heuristic States Eval: %s\n", statesEvalStr.c_str());
 		Planner::FF::STATES_EVALUATED_IN_HEURISTIC += statesEval;
 	}
-	int planPos = result.find(H_PLAN_DELIM);
-		if (planPos != -1) {
-			string plan = result.substr(planPos + H_PLAN_DELIM.size(), pos);
-			cout << plan << endl;
-		}
+	// int planPos = result.find(H_PLAN_DELIM);
+	// 	if (planPos != -1) {
+	// 		string plan = result.substr(planPos + H_PLAN_DELIM.size(), pos);
+	// 		cout << plan << endl;
+	// 	}
 	pos = result.find(H_VAL_DELIM);
 	if (pos == -1) {
 		cerr << "Problem was unsolvable - therefore max heuristic" << endl;
@@ -72,7 +72,7 @@ double TRH::getHeuristic(const Planner::MinimalState & state,
 	string h_val_str = result.substr(pos + H_VAL_DELIM.size());
 	printf("%s\n", h_val_str.c_str());
 	double hval = stod(h_val_str);
-	planPos = result.find(H_PLAN_DELIM);
+	int planPos = result.find(H_PLAN_DELIM);
 	if ((planPos != -1) && (hval == 0.0)) {
 		string plan = result.substr(planPos + H_PLAN_DELIM.size(), pos);
 		cout << plan << endl;
@@ -83,7 +83,8 @@ double TRH::getHeuristic(const Planner::MinimalState & state,
 void TRH::writeTempStates(const Planner::MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory) {
-       clock_t begin_time = clock();
+    
+    clock_t begin_time = clock();
 
     /*Generate Domain*/
 

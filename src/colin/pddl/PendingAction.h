@@ -34,7 +34,7 @@ class PendingAction {
 private:
 	double timestamp;
 	std::string name;
-	std::set<PDDLObject> parameters;
+	map<PDDLObject, string> parameters;
 	std::list<std::pair<Proposition, VAL::time_spec> > literalAddEffects;
 	std::list<std::pair<Proposition, VAL::time_spec> > literalDelEffects;
 	std::list<std::pair<PNE, VAL::time_spec> > pneEffects;
@@ -44,7 +44,7 @@ private:
 	std::list<PDDL::Proposition> getRequiredObjectPropositions() const;
 
 public:
-	PendingAction(std::string name, std::set<PDDLObject> parameters,
+	PendingAction(std::string name, map<PDDLObject, string> parameters,
 			std::list<std::pair<Proposition, VAL::time_spec> >  literalAddEffects,
 			std::list<std::pair<Proposition, VAL::time_spec> >  literalDelEffects,
 			std::list<std::pair<PNE, VAL::time_spec> > pneEffects,
@@ -56,7 +56,7 @@ public:
 	}
 	;
 	const std::string & getName() const { return name; };
-	const std::set<PDDLObject> & getParameters() const {return parameters; };
+	const map<PDDLObject, string> & getParameters() const {return parameters; };
 	std::list<PDDL::Proposition> getRequiredPropositionsParameterised() const;
 	friend std::ostream & operator<<(std::ostream & output,
 			const PendingAction & action);

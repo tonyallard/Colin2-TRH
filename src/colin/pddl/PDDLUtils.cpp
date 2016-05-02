@@ -350,19 +350,19 @@ set<PDDLObject> & extractParameters(
 	return parameters;
 }
 
-std::map<const PDDLObject *, std::string> generateParameterTable(
+std::map<PDDLObject, std::string> generateParameterTable(
 		const std::set<PDDLObject> & parameters) {
-	map<const PDDLObject *, string> parameterTable;
+	map<PDDLObject, string> parameterTable;
 	//FIXME: means that there can only be 24 parameters before we create errors
 	char letter = 'a';
 	std::set<PDDLObject>::const_iterator paramItr = parameters.begin();
 	for (; paramItr != parameters.end(); paramItr++) {
-		const PDDLObject * pddlObj = &(*paramItr);
+		PDDLObject pddlObj = *paramItr;
 		std::ostringstream paramVar;
 		paramVar << "?" << static_cast<char>(letter);
 		letter++;
 		parameterTable.insert(
-				std::pair<const PDDLObject *, std::string>(pddlObj,
+				std::pair<PDDLObject, std::string>(pddlObj,
 						paramVar.str()));
 	}
 	return parameterTable;

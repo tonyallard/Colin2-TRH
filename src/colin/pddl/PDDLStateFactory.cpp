@@ -74,7 +74,7 @@ PDDLState PDDLStateFactory::getDeTILedPDDLState(
 
 	addRequiredPropositionsForPendingActions(pendingActionRequiredObjects,
 			propositions);
-	addTILPropositions(tilRequiredObjects, tilPredicates, propositions);
+	addTILPropositions(tilRequiredObjects, propositions);
 
 	std::list<string> planPrefix = getPlanPrefix(plan);
 	PDDLState theState(objectSymbolTable, propositions, tilPredicates, pnes,
@@ -263,14 +263,10 @@ std::list<PDDL::PNE> PDDLStateFactory::getStaticPNEs(
  */
 void PDDLStateFactory::addTILPropositions(
 		const std::list<PDDL::Proposition> & requiredObjects,
-		const std::list<PDDL::Proposition> & tilPredicates,
 		std::list<Proposition> & propositions) {
 	//TIL Object Required Predicates
 	propositions.insert(propositions.end(), requiredObjects.begin(),
 			requiredObjects.end());
-	//TIL Achieved Predicates
-	propositions.insert(propositions.end(), tilPredicates.begin(),
-			tilPredicates.end());
 }
 
 }

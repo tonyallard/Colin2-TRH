@@ -59,7 +59,6 @@ private:
 
 	void addTILPropositions(
 		const std::list<PDDL::Proposition> & requiredObjects,
-		const std::list<PDDL::Proposition> & tilPredicates,
 		std::list<Proposition> & propositions);
 
 	void addRequiredPropositionsForPendingActions(
