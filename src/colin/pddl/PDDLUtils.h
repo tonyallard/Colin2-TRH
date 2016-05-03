@@ -18,8 +18,6 @@
 #include "Literal.h"
 #include "PNE.h"
 #include "TIL.h"
-#include "PendingProposition.h"
-#include "PendingPNE.h"
 #include "PDDLState.h"
 
 #include "../instantiation.h"
@@ -44,6 +42,8 @@ std::string getArgumentString(
 		const VAL::typed_symbol_list<VAL::parameter_symbol> * arguments);
 std::string getOperatorString(VAL::comparison_op op);
 std::string getAssignmentString(VAL::assign_op op);
+std::string getOperandString(const Planner::RPGBuilder::Operand & operand,
+		const std::map<PDDL::PDDLObject, std::string> & parameterTable);
 std::string getExpressionString(const VAL::expression * exp);
 std::string getTimeSpecString(VAL::time_spec time_spec);
 std::string getGoalString(const VAL::goal * goal);
@@ -86,13 +86,6 @@ std::list<std::string> getParameters(VAL::typed_symbol_list<VAL::parameter_symbo
 PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp,
 		std::list<std::pair<std::string, std::string> > constants = std::list<
 				std::pair<std::string, std::string> >());
-PDDL::PendingProposition getPendingProposition(const Inst::Literal * aLiteral,
-		std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions,
-		double timestamp, bool isPositive);
-PDDL::PendingPNE getPendingPNE(vector<double> minValue, vector<double> maxValue,
-		int numeric,
-		std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions,
-		double minDur, double maxDur);
 
 //Plan Helper Functions
 std::list<std::string> getPlanPrefix(const std::list<Planner::FFEvent>& plan);

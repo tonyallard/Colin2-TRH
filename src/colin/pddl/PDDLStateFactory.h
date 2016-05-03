@@ -13,9 +13,7 @@
 
 #include "PDDLObject.h"
 #include "Proposition.h"
-#include "PendingPNE.h"
 #include "PDDLState.h"
-#include "PendingProposition.h"
 
 #include "../minimalstate.h"
 #include "../RPGBuilder.h"

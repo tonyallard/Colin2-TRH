@@ -85,14 +85,13 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 				<< "))\n";
 	}
 	//second get pne effects
-	std::list<std::pair<PNE, VAL::time_spec> >::const_iterator pneItr =
+	std::list<std::pair<PNEEffect, VAL::time_spec> >::const_iterator pneItr =
 			action.pneEffects.begin();
-	const std::list<std::pair<PNE, VAL::time_spec> >::const_iterator pneItrEnd =
+	const std::list<std::pair<PNEEffect, VAL::time_spec> >::const_iterator pneItrEnd =
 			action.pneEffects.end();
 	for (; pneItr != pneItrEnd; pneItr++) {
 		output << "\t\t\t(" << getTimeSpecString(pneItr->second) << " ";
-		output << pneItr->first.toActionEffectString(parameterTable) << ")"
-				<< endl;
+		output << *pneItr << ")"	<< endl;
 	}
 	output << "\t\t)" << endl << "\t)" << endl;
 	return output;

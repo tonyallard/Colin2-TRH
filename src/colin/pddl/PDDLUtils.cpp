@@ -16,6 +16,7 @@
 #include "PDDLStateFactory.h"
 #include "PropositionFactory.h"
 #include "LiteralFactory.h"
+#include "PNEFactory.h"
 
 #include "../globals.h"
 #include "../RPGBuilder.h"
@@ -135,6 +136,44 @@ std::string getAssignmentString(VAL::assign_op op) {
 		return "*=";
 		break;
 	};
+}
+
+string getOperandString(const Planner::RPGBuilder::Operand & operand,
+		const map<PDDLObject, string> & parameterTable) {
+	switch (operand.numericOp) {
+	case Planner::RPGBuilder::math_op::NE_ADD:
+		return "+";
+		break;
+	case Planner::RPGBuilder::math_op::NE_SUBTRACT:
+		return "-";
+		break;
+	case Planner::RPGBuilder::math_op::NE_MULTIPLY:
+		return "*";
+		break;
+	case Planner::RPGBuilder::math_op::NE_DIVIDE:
+		return "/";
+		break;
+	case Planner::RPGBuilder::math_op::NE_CONSTANT:
+		ostringstream output;
+		output << operand.constantValue;
+		return output.str();
+		break;
+	case Planner::RPGBuilder::math_op::NE_FLUENT: {
+		if (operand.fluentValue < 0) {
+			return "?duration ";
+		} else {
+			Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(operand.fluentValue);
+			PDDL::PNE pne = PNEFactory::getInstance()->getPNE(aPNE, 0);
+			return pne.toActionEffectString(parameterTable);
+		}
+		break;
+	}
+	default:
+		cerr
+				<< "Something went wrong printing numeric effect. Unhandled math operation."
+				<< endl;
+		return 0;
+	}
 }
 
 std::string getExpressionString(const VAL::expression * exp) {
@@ -533,16 +572,6 @@ PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp,
 		delEffects.push_back(lit);
 	}
 	return PDDL::TIL(addEffects, delEffects, timestamp, parameters);
-}
-
-PDDL::PendingProposition getPendingProposition(const Inst::Literal * aLiteral,
-		std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions,
-		double timestamp, bool addEffect) {
-	PDDL::Proposition literal = PropositionFactory::getInstance()->
-		getProposition(aLiteral);
-	PendingProposition pendingLiteral(literal.getName(), literal.getArguments(),
-			conditions, timestamp, addEffect);
-	return pendingLiteral;
 }
 
 //Plan Helper Functions

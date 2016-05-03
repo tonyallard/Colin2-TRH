@@ -1192,6 +1192,10 @@ public:
         return actionsToRPGNumericInvariants;
     }
     
+    static vector<list<NumericEffect> > & getActionsToEndNumericEffects() {
+    	return actionsToEndNumericEffects;
+    }
+
     static vector<list<int> > & getEndPreNumerics() {
         return actionsToRPGNumericEndPreconditions;
     }

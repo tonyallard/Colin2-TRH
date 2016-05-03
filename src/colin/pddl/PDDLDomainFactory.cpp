@@ -494,6 +494,9 @@ std::list<PDDL::PendingAction> PDDLDomainFactory::getPendingActions(
 			state.startedActions.end();
 	for (; saItr != saItrEnd; saItr++) {
 
+		std::string name = PDDL::getActionName(saItr->first);
+		cout << name << endl;
+
 		std::set<PDDLObject> parameters;
 
 		//For each action get its conditions
@@ -538,29 +541,19 @@ std::list<PDDL::PendingAction> PDDLDomainFactory::getPendingActions(
 		}
 
 		// PNEs Added by Action
-		std::list<std::pair<PDDL::PNE, VAL::time_spec> > pneEffects;
-		std::list<int> numerics =
-				Planner::RPGBuilder::getEndEffNumerics()[saItr->first];
-		std::list<int>::const_iterator numItr = numerics.begin();
-		const std::list<int>::const_iterator numItrEnd = numerics.end();
-		for (; numItr != numItrEnd; numItr++) {
-			//Get the numeric effect information
-			Planner::RPGBuilder::RPGNumericEffect & effect =
-					Planner::RPGBuilder::getNumericEff()[*numItr];
-			//Apply the numeric effect to get new fluent values
-			pair<double, double> result = effect.applyEffectMinMax(
-					state.secondMin, state.secondMax, minDur, maxDur);
-			//Determine the PNE that the values belong
-			Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(effect.fluentIndex);
-			PDDL::PNE pne = PNEFactory::getInstance()->getPNE(aPNE,
-					result.first);
-			pneEffects.push_back(
-					std::pair<PDDL::PNE, VAL::time_spec>(pne,
-							VAL::time_spec::E_AT_END));
-			//Ensure the parameteres of the PNE are captured
-			parameters = extractParameters(aPNE, parameters, constants);
+		std::list<std::pair<PDDL::PNEEffect, VAL::time_spec> > pneEffects;
+		list<Planner::RPGBuilder::NumericEffect> endNumEffects =
+				Planner::RPGBuilder::getActionsToEndNumericEffects()[saItr->first];
+		list<Planner::RPGBuilder::NumericEffect>::const_iterator numEffItr =
+				endNumEffects.begin();
+		for (; numEffItr != endNumEffects.end(); numEffItr++) {
+			Planner::RPGBuilder::NumericEffect numEff = *numEffItr;
+			Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(numEff.fluentIndex);
+			string name = aPNE->getHead()->getName();
+			PNEEffect pneEffect(name, numEff.op, numEff.formula);
+			pneEffects.push_back(std::pair<PDDL::PNE, VAL::time_spec>(pneEffect,
+					VAL::time_spec::E_AT_END));
 		}
-		std::string name = PDDL::getActionName(saItr->first);
 		//Get Pending Action Required Objects
 		list<PDDL::Proposition> requiredObjects =
 				getPendingActionRequiredObjectPropositions(name, parameters);
@@ -587,10 +580,12 @@ std::list<PDDL::PendingAction> PDDLDomainFactory::getPendingActions(
 		// insert all parameters into master table
 		objectSymbolTable.insert(parameters.begin(), parameters.end());
 		//Generate symbol table for this action
-		map<PDDLObject, string> parameterTable = PDDL::generateParameterTable(parameters);
+		map<PDDLObject, string> parameterTable = PDDL::generateParameterTable(
+				parameters);
 
-		PendingAction pendingAction(name, parameterTable, propositionalAddEffects,
-				propositionalDelEffects, pneEffects, conditions, requiredObjects, minDur);
+		PendingAction pendingAction(name, parameterTable,
+				propositionalAddEffects, propositionalDelEffects, pneEffects,
+				conditions, requiredObjects, minDur);
 
 		pendingActions.push_back(pendingAction);
 	}
@@ -667,8 +662,10 @@ std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > PDDLDomain
 	/*Postconditions*/
 	std::list<Inst::Literal*> positivePostConditions =
 			Planner::RPGBuilder::getEndPropositionalPreconditions()[actionID];
+	cout << "Positive Size: " << positivePostConditions.size() << endl;
 	std::list<Inst::Literal*> negativePostConditions =
 			Planner::RPGBuilder::getEndNegativePropositionalPreconditions()[actionID];
+	cout << "Negative Size: " << negativePostConditions.size() << endl;
 
 	std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > tempConditions =
 			convertLiterals_AddSignAndTime(positivePostConditions,
@@ -684,8 +681,15 @@ std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > PDDLDomain
 	/*Invariant Conditions*/
 	std::list<Inst::Literal*> positiveInvariantConditions =
 			Planner::RPGBuilder::getInvariantPropositionalPreconditions()[actionID];
+
+	cout << "Positive Invars Size: " << positiveInvariantConditions.size()
+			<< endl;
 	std::list<Inst::Literal*> negativeInvariantConditions =
 			Planner::RPGBuilder::getInvariantNegativePropositionalPreconditions()[actionID];
+
+	cout << "Negative Invars Size: " << negativeInvariantConditions.size()
+			<< endl;
+
 	tempConditions = convertLiterals_AddSignAndTime(positiveInvariantConditions,
 			VAL::time_spec::E_OVER_ALL, true, parameters);
 	conditions.insert(conditions.end(), tempConditions.begin(),

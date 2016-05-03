@@ -16,7 +16,7 @@
 
 #include "PDDLObject.h"
 #include "Proposition.h"
-#include "PNE.h"
+#include "PNEEffect.h"
 #include "ptree.h"
 
 using namespace std;
@@ -37,7 +37,7 @@ private:
 	map<PDDLObject, string> parameters;
 	std::list<std::pair<Proposition, VAL::time_spec> > literalAddEffects;
 	std::list<std::pair<Proposition, VAL::time_spec> > literalDelEffects;
-	std::list<std::pair<PNE, VAL::time_spec> > pneEffects;
+	std::list<std::pair<PNEEffect, VAL::time_spec> > pneEffects;
 	std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions;
 	std::list<PDDL::Proposition> requiredObjects;
 
@@ -47,7 +47,7 @@ public:
 	PendingAction(std::string name, map<PDDLObject, string> parameters,
 			std::list<std::pair<Proposition, VAL::time_spec> >  literalAddEffects,
 			std::list<std::pair<Proposition, VAL::time_spec> >  literalDelEffects,
-			std::list<std::pair<PNE, VAL::time_spec> > pneEffects,
+			std::list<std::pair<PNEEffect, VAL::time_spec> > pneEffects,
 			std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions,
 			std::list<PDDL::Proposition> requiredObjects,
 			double timestamp) :

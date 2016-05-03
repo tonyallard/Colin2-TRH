@@ -16,7 +16,7 @@ namespace PDDL {
 std::string PNE::toActionEffectString(
 		const map<PDDLObject, string> & parameterTable) const {
 	ostringstream output;
-	output << "(assign (" << name << " ";
+	output << "(" << name << " ";
 	std::list<std::string>::const_iterator argItr = arguments.begin();
 	const std::list<std::string>::const_iterator argItrEnd = arguments.end();
 	for (; argItr != argItrEnd; argItr++) {
@@ -29,7 +29,7 @@ std::string PNE::toActionEffectString(
 			}
 		}
 	}
-	output << ") " << value << ")";
+	output << ")";
 	return output.str();
 }
 

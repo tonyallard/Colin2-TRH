@@ -15,8 +15,6 @@ set(libPDDL_SRCS
 	PNE.cpp
 	PNEFactory.cpp
 	TIL.cpp
-	PendingProposition.cpp    
-	PendingPNE.cpp
 	PendingAction.cpp
 	Metric.cpp
 	PDDLUtils.cpp
