@@ -154,13 +154,15 @@ string getOperandString(const Planner::RPGBuilder::Operand & operand,
 		return "/";
 		break;
 	case Planner::RPGBuilder::math_op::NE_CONSTANT:
+	{
 		ostringstream output;
 		output << operand.constantValue;
 		return output.str();
 		break;
+	}
 	case Planner::RPGBuilder::math_op::NE_FLUENT: {
 		if (operand.fluentValue < 0) {
-			return "?duration ";
+			return "?duration";
 		} else {
 			Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(operand.fluentValue);
 			PDDL::PNE pne = PNEFactory::getInstance()->getPNE(aPNE, 0);
@@ -168,13 +170,33 @@ string getOperandString(const Planner::RPGBuilder::Operand & operand,
 		}
 		break;
 	}
+	case Planner::RPGBuilder::math_op::NE_VIOLATION:
 	default:
 		cerr
-				<< "Something went wrong printing numeric effect. Unhandled math operation."
+				<< "Something went wrong printing numeric effect. Unhandled math operation (ID: " << operand.numericOp << ")."
 				<< endl;
 		return 0;
 	}
 }
+
+bool isOperator(const Planner::RPGBuilder::Operand & operand) {
+	if ((operand.numericOp == Planner::RPGBuilder::math_op::NE_ADD) ||
+			(operand.numericOp == Planner::RPGBuilder::math_op::NE_SUBTRACT) ||
+			(operand.numericOp == Planner::RPGBuilder::math_op::NE_MULTIPLY) ||
+			(operand.numericOp == Planner::RPGBuilder::math_op::NE_DIVIDE)) {
+		return true;
+	}
+	return false;
+}
+
+bool isOperand(const Planner::RPGBuilder::Operand & operand) {
+	if ((operand.numericOp == Planner::RPGBuilder::math_op::NE_CONSTANT) ||
+			(operand.numericOp == Planner::RPGBuilder::math_op::NE_FLUENT)) {
+		return true;
+	}
+	return false;
+}
+
 
 std::string getExpressionString(const VAL::expression * exp) {
 	std::ostringstream output;

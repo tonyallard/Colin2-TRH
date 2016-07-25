@@ -44,6 +44,8 @@ std::string getOperatorString(VAL::comparison_op op);
 std::string getAssignmentString(VAL::assign_op op);
 std::string getOperandString(const Planner::RPGBuilder::Operand & operand,
 		const std::map<PDDL::PDDLObject, std::string> & parameterTable);
+bool isOperator(const Planner::RPGBuilder::Operand & operand);
+bool isOperand(const Planner::RPGBuilder::Operand & operand);
 std::string getExpressionString(const VAL::expression * exp);
 std::string getTimeSpecString(VAL::time_spec time_spec);
 std::string getGoalString(const VAL::goal * goal);

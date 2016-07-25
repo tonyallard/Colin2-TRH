@@ -13,6 +13,8 @@ set(libPDDL_SRCS
 	Literal.cpp
 	LiteralFactory.cpp
 	PNE.cpp
+	ExpressionTree.cpp
+	PNEEffect.cpp
 	PNEFactory.cpp
 	TIL.cpp
 	PendingAction.cpp

@@ -32,7 +32,7 @@ public:
 		name(name), op(op), equation(equation) {
 	}
 	;
-	friend std::ostream & operator<<(std::ostream & output, const PNEEffect & pneEffect);
+	friend std::ostream & operator<<(std::ostream & output, const PDDL::PNEEffect & pneEffect);
 
 };
 }

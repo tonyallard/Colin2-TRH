@@ -112,7 +112,7 @@ void TRH::writeTempStates(const Planner::MinimalState & state,
 	pddlState.writeDeTILedStateToFile(filePath, stateFileName);
 	domain.writeToFile(filePath, domainFileName);
 	TRH::TRH::TIME_SPENT_IN_PRINTING_TO_FILE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
-	if (oneShot > 0) {
+	if (oneShot > 1) {
 		exit(0);
 	}
 	oneShot++;
