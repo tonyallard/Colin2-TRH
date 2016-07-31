@@ -91,7 +91,7 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 			action.pneEffects.end();
 	for (; pneItr != pneItrEnd; pneItr++) {
 		output << "\t\t\t(" << getTimeSpecString(pneItr->second) << " ";
-		output << pneItr->first << ")" << endl;
+		output << pneItr->first.toParameterisedString(parameterTable) << ")" << endl;
 	}
 	output << "\t\t)" << endl << "\t)" << endl;
 	return output;

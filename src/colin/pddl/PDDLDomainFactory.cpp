@@ -549,9 +549,10 @@ std::list<PDDL::PendingAction> PDDLDomainFactory::getPendingActions(
 		for (; numEffItr != endNumEffects.end(); numEffItr++) {
 			Planner::RPGBuilder::NumericEffect numEff = *numEffItr;
 			Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(numEff.fluentIndex);
-			string name = aPNE->getHead()->getName();
-			const map<PDDLObject, string> parameterTable;
-			PNEEffect pneEffect(name, numEff.op, numEff.formula);
+			parameters = extractParameters(aPNE, parameters, constants);
+			parameters = extractParameters(&numEff.formula, parameters, constants);
+			PDDL::PNE pne = PNEFactory::getInstance()->getPNE(aPNE, 0);
+			PNEEffect pneEffect(pne, numEff.op, numEff.formula);
 			pneEffects.push_back(std::pair<PDDL::PNEEffect, VAL::time_spec>(pneEffect,
 					VAL::time_spec::E_AT_END));
 		}

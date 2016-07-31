@@ -77,7 +77,7 @@ double TRH::getHeuristic(const Planner::MinimalState & state,
 		string plan = result.substr(planPos + H_PLAN_DELIM.size(), pos);
 		cout << plan << endl;
 	}
-	return 16;//hval;
+	return hval;
 }
 
 void TRH::writeTempStates(const Planner::MinimalState & state,
@@ -112,7 +112,8 @@ void TRH::writeTempStates(const Planner::MinimalState & state,
 	pddlState.writeDeTILedStateToFile(filePath, stateFileName);
 	domain.writeToFile(filePath, domainFileName);
 	TRH::TRH::TIME_SPENT_IN_PRINTING_TO_FILE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
-	if (oneShot > 1) {
+	if (oneShot > 4) {
+		cerr << "Exiting..." << endl;
 		exit(0);
 	}
 	oneShot++;

@@ -21,6 +21,7 @@ namespace PDDL {
 
 struct Node {
 	string element;
+	bool isOp;
 	struct Node *left, *right;
 };
 

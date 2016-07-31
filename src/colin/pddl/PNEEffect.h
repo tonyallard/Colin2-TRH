@@ -13,6 +13,7 @@
 #include <map>
 
 #include "PDDLObject.h"
+#include "PNE.h"
 #include "../RPGBuilder.h"
 
 using namespace std;
@@ -23,15 +24,15 @@ class PNEEffect {
 
 private:
 	VAL::assign_op op;
-	string name;
+	PDDL::PNE effectVar;
 	list<Planner::RPGBuilder::Operand> equation;
-	map<PDDLObject, string> parameterTable;
 
 public:
-	PNEEffect(string name, VAL::assign_op op, list<Planner::RPGBuilder::Operand> equation) :
-		name(name), op(op), equation(equation) {
+	PNEEffect(PDDL::PNE effectVar, VAL::assign_op op, list<Planner::RPGBuilder::Operand> equation) :
+		effectVar(effectVar), op(op), equation(equation) {
 	}
 	;
+	std::string toParameterisedString(map<PDDLObject, string> parameterTable) const;
 	friend std::ostream & operator<<(std::ostream & output, const PDDL::PNEEffect & pneEffect);
 
 };

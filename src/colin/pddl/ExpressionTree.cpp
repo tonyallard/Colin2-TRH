@@ -62,6 +62,7 @@ ExpressionTree * ExpressionTree::postfix2expTree(
 			newNode->left = op2;
 			newNode->right = op1;
 			newNode->element = getOperandString(*formItr, parameterTable);
+			newNode->isOp = true;
 			expTree->push(newNode);
 		}
 		/*
@@ -71,6 +72,7 @@ ExpressionTree * ExpressionTree::postfix2expTree(
 		else if (isOperand(formItr->numericOp)) {
 			newNode = new Node();
 			newNode->element = getOperandString(*formItr, parameterTable);
+			newNode->isOp = false;
 			expTree->push(newNode);
 		}
 	}
@@ -80,10 +82,15 @@ ExpressionTree * ExpressionTree::postfix2expTree(
 string ExpressionTree::preOrder(const Node * x) {
 	ostringstream output;
 	if (x != NULL) {
-		output << "(" << x->element << " ";
+		if (x->isOp) {
+			output << "(";
+		}
+		output << x->element << " ";
 		output << preOrder(x->left);
 		output << preOrder(x->right);
-		output << ")";
+		if (x->isOp) {
+			output << ")";
+		}
 	}
 	return output.str();
 }

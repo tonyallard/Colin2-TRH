@@ -5,7 +5,7 @@
  *      Author: tony
  */
 
-#include <vector>
+#include <sstream>
 
 #include "PNEEffect.h"
 #include "PDDLUtils.h"
@@ -18,14 +18,26 @@ std::ostream & operator<<(std::ostream & output,
 	//Effect on fluent
 	output << "(" << getAssignmentString(pneEffect.op);
 	//Fluent Name
-	output << " (" << pneEffect.name << ") ";
-	//Convert equation for RPN (postfix) to PN (prefix)
-	ExpressionTree * expTree = ExpressionTree::postfix2expTree(pneEffect.equation,
-			pneEffect.parameterTable);
-	output << ExpressionTree::preOrder(expTree->getExpRoot());
+	output << pneEffect.effectVar;
 	//Closing parenthesis
 	output << ")";
 	return output;
+}
+
+std::string PNEEffect::toParameterisedString(
+		map<PDDLObject, string> parameterTable) const {
+	ostringstream output;
+	//Effect on fluent
+	output << "(" << getAssignmentString(op) << " ";
+	//Fluent Name
+	output << effectVar.toActionEffectString(parameterTable) << " ";
+	//Convert equation for RPN (postfix) to PN (prefix)
+	ExpressionTree * expTree = ExpressionTree::postfix2expTree(equation,
+			parameterTable);
+	output << ExpressionTree::preOrder(expTree->getExpRoot());
+	//Closing parenthesis
+	output << ")";
+	return output.str();
 }
 
 }

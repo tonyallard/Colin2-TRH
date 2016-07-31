@@ -30,7 +30,7 @@ namespace PDDL {
 
 const std::string TIL_ACTION_PREFIX = "at-";
 const char TIL_STRING_DELIM = '-';
-const double ACCURACY = EPSILON/10.0;
+const double ACCURACY = EPSILON / 10.0;
 const std::string BASE_TYPE_CLASS = "OBJECT";
 const std::string DEFAULT_METRIC_PNE = "total-time";
 
@@ -58,6 +58,10 @@ std::set<PDDLObject> & extractParameters(Inst::Literal * literal,
 std::set<PDDLObject> & extractParameters(Inst::PNE * pne,
 		set<PDDLObject> & parameters,
 		std::list<std::pair<std::string, std::string> > constants);
+set<PDDLObject> & extractParameters(
+		std::list<Planner::RPGBuilder::Operand> * formula,
+		set<PDDLObject> & parameters,
+		std::list<std::pair<std::string, std::string> > constants);
 set<PDDLObject> & extractParameters(VAL::simple_effect * prop,
 		set<PDDLObject> & parameters,
 		std::list<std::pair<std::string, std::string> > constants);
@@ -83,7 +87,8 @@ double extractTILTimeStamp(const Planner::FFEvent * tilEvent);
 //Basic conversion functions
 PDDL::PDDLObject getPDDLObject(const VAL::pddl_typed_symbol * pddlType);
 PDDL::Proposition getFunction(const VAL::func_decl * func);
-std::list<std::string> getParameters(VAL::typed_symbol_list<VAL::parameter_symbol> * params);
+std::list<std::string> getParameters(
+		VAL::typed_symbol_list<VAL::parameter_symbol> * params);
 
 PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp,
 		std::list<std::pair<std::string, std::string> > constants = std::list<

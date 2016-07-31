@@ -361,6 +361,21 @@ set<PDDLObject> & extractParameters(Inst::PNE * pne,
 	return extractParameters(pne->getFunc()->getArgs(), parameters, constants);
 }
 
+set<PDDLObject> & extractParameters(std::list<Planner::RPGBuilder::Operand> * formula,
+		set<PDDLObject> & parameters,
+		std::list<std::pair<std::string, std::string> > constants) {
+	std::list<Planner::RPGBuilder::Operand>::const_iterator formItr = formula->begin();
+	for (; formItr != formula->end(); formItr++) {
+		if (formItr->numericOp == Planner::RPGBuilder::math_op::NE_FLUENT) {
+			if (formItr->fluentValue > 0) {
+				Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(formItr->fluentValue);
+				parameters = extractParameters(aPNE, parameters, constants);
+			}
+		}
+	}
+	return parameters;
+}
+
 set<PDDLObject> & extractParameters(VAL::simple_effect* prop,
 		set<PDDLObject> & parameters,
 		std::list<std::pair<std::string, std::string> > constants) {
