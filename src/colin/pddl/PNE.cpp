@@ -14,22 +14,22 @@ using namespace std;
 namespace PDDL {
 
 std::string PNE::toActionEffectString(
-		const map<const PDDLObject *, string> & parameterTable) const {
+		const map<PDDLObject, string> & parameterTable) const {
 	ostringstream output;
-	output << "(assign (" << name << " ";
+	output << "(" << name << " ";
 	std::list<std::string>::const_iterator argItr = arguments.begin();
 	const std::list<std::string>::const_iterator argItrEnd = arguments.end();
 	for (; argItr != argItrEnd; argItr++) {
 		// Find the corresponding parameters
-		std::map<const PDDLObject *, std::string>::const_iterator paramItr =
+		std::map<PDDLObject, std::string>::const_iterator paramItr =
 				parameterTable.begin();
 		for (; paramItr != parameterTable.end(); paramItr++) {
-			if (paramItr->first->getName().compare(*argItr) == 0) {
+			if (paramItr->first.getName().compare(*argItr) == 0) {
 				output << paramItr->second << " ";
 			}
 		}
 	}
-	output << ") " << value << ")";
+	output << ")";
 	return output.str();
 }
 

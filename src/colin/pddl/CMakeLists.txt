@@ -9,16 +9,20 @@ include_directories(${val_SOURCE_DIR} ${val_SOURCE_DIR}/parsing)
 set(libPDDL_SRCS
 	PDDLObject.cpp
 	Proposition.cpp
+	PropositionFactory.cpp
 	Literal.cpp
-	PNE.cpp	
+	LiteralFactory.cpp
+	PNE.cpp
+	ExpressionTree.cpp
+	PNEEffect.cpp
+	PNEFactory.cpp
 	TIL.cpp
-	PendingProposition.cpp    
-	PendingPNE.cpp
 	PendingAction.cpp
 	Metric.cpp
+	PDDLUtils.cpp
+	PDDLDomain.cpp
 	PDDLState.cpp
 	PDDLDomainFactory.cpp
-	PDDLUtils.cpp
 	PDDLStateFactory.cpp
 )
 

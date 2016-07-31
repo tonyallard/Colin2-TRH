@@ -31,7 +31,7 @@
 
 #include <sys/times.h>
 
-#include "PDDLUtils.h"
+#include "TRH.h"
 
 #include <sstream>
 
@@ -356,6 +356,10 @@ int main(int argc, char * argv[])
                 RPGHeuristic::printRPGAsDot = true;
                 break;
             }
+            case '3': {
+                FF::USE_TRH = false;
+                break;
+            }
             #ifdef POPF3ANALYSIS
             case 'n': {
                 Globals::optimiseSolutionQuality = true;
@@ -443,7 +447,6 @@ int main(int argc, char * argv[])
 #endif
     } else {
         planAndConstraints = FF::search(reachesGoals);
-        PDDL::printStates(FF::visitedPDDLStates, FF::plans);
     }
 
     if (spSoln) {
@@ -466,8 +469,19 @@ int main(int argc, char * argv[])
                 #endif
             } else {
                 cout << ";;;; Solution Found\n";
-                cout << "; States evaluated: " << RPGHeuristic::statesEvaluated << endl;
-                cout << "; Cost: " << planAndConstraints.quality << endl;
+                cout << "#; States evaluated: " << Planner::FF::STATES_EVALUATED << endl;
+                cout << "#; Heuristic States Evaluated: " << Planner::FF::STATES_EVALUATED_IN_HEURISTIC << endl;
+                cout << "#; Time spent converting PDDL state: " << TRH::TRH::TIME_SPENT_CONVERTING_PDDL_STATE << "s." << endl;
+                cout << "#; Time spent printing state to file: " << TRH::TRH::TIME_SPENT_IN_PRINTING_TO_FILE << "s." << endl;
+                cout << "#; Time spent in heuristic: " << TRH::TRH::TIME_SPENT_IN_HEURISTIC << "s." << endl;
+                cout << "#; Cost: " << planAndConstraints.quality << endl;
+                cout << "#; EHC Performance Histogram: " << FF::EHC_PERFORMANCE_HISTOGRAM.size() << endl;
+                map<int, int>::iterator ehcPerfItr = FF::EHC_PERFORMANCE_HISTOGRAM.begin();
+                for (; ehcPerfItr != FF::EHC_PERFORMANCE_HISTOGRAM.end(); ehcPerfItr++) {
+                	pair<int,int> counter = *ehcPerfItr;
+                	cout << "#; " << counter.first << ": " << counter.second << endl;
+                }
+                cout << endl;
             }
             
             FFEvent::printPlan(*spSoln);

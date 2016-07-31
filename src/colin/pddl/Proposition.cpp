@@ -21,7 +21,7 @@ namespace PDDL {
  * Should probably use the contants table to confirm this.
  */
 std::string Proposition::toParameterisedString(
-		const std::map<const PDDLObject *, std::string> & parameterTable) const {
+		const std::map<PDDLObject, std::string> & parameterTable) const {
 	std::ostringstream output;
 	output << "(" << name << " ";
 	std::list<std::string>::const_iterator argItr = arguments.begin();
@@ -29,10 +29,10 @@ std::string Proposition::toParameterisedString(
 	for (; argItr != argItrEnd; argItr++) {
 		bool found = false;
 		// Find the corresponding parameters
-		std::map<const PDDLObject *, std::string>::const_iterator paramItr = parameterTable.begin();
+		std::map<PDDLObject, std::string>::const_iterator paramItr = parameterTable.begin();
 		for (; paramItr != parameterTable.end(); paramItr++) {
-			std::pair<const PDDLObject *, std::string> param = *paramItr;
-			if (param.first->getName().compare(*argItr) == 0) {
+			std::pair<PDDLObject, std::string> param = *paramItr;
+			if (param.first.getName().compare(*argItr) == 0) {
 				output << param.second << " ";
 				found = true;
 			}
@@ -47,6 +47,38 @@ std::string Proposition::toParameterisedString(
 	}
 	output << ")";
 	return output.str();
+}
+
+Proposition Proposition::getParameterisedProposition(
+		const std::map<PDDLObject, std::string> & parameterTable, bool showTypes /*= false*/) const {
+	string name = this->name;
+	list<string> args;
+	std::list<std::string>::const_iterator argItr = arguments.begin();
+	const std::list<std::string>::const_iterator argItrEnd = arguments.end();
+	for (; argItr != argItrEnd; argItr++) {
+		bool found = false;
+		// Find the corresponding parameters
+		std::map<PDDLObject, std::string>::const_iterator paramItr = parameterTable.begin();
+		for (; paramItr != parameterTable.end(); paramItr++) {
+			std::pair<PDDLObject, std::string> param = *paramItr;
+			if (param.first.getName().compare(*argItr) == 0) {
+				string argName = param.second;
+				if (showTypes) {
+					argName += " - " + param.first.getTypeString();
+				}
+				args.push_back(argName);
+				found = true;
+			}
+		}
+		//Must be a constant
+		if (!found) {
+			string constant = *argItr;
+			std::transform(constant.begin(), constant.end(), constant.begin(),
+							::toupper);
+			args.push_back(constant);
+		}
+	}
+	return Proposition(name, args);
 }
 
 std::ostream & operator<<(std::ostream & output,

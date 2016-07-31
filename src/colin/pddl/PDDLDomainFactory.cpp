@@ -8,20 +8,32 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <list>
 
 #include "ptree.h"
 
 #include "PDDLDomainFactory.h"
 #include "TIL.h"
 #include "PDDLUtils.h"
+#include "PropositionFactory.h"
+#include "PNEFactory.h"
+#include "ExpressionTree.h"
+
+#include "../FakeTILAction.h"
+#include "../RPGBuilder.h"
 
 using namespace std;
+
 namespace PDDL {
 
-const std::string PDDLDomainFactory::TIL_ACHIEVED_PROPOSITION = "til-achieved";
-const std::string PDDLDomainFactory::REQUIRED_PROPOSITION = "required";
-const std::string PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION =
+const string PDDLDomainFactory::TIL_ACHIEVED_PROPOSITION = "til-achieved";
+const string PDDLDomainFactory::REQUIRED_PROPOSITION = "required";
+const string PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION_NAME =
 		"initial-action-complete";
+const PDDL::Proposition PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION(
+		PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION_NAME,
+		list<string>());
+
 PDDLDomainFactory * PDDLDomainFactory::INSTANCE = NULL;
 
 PDDLDomainFactory * PDDLDomainFactory::getInstance() {
@@ -39,158 +51,168 @@ PDDLDomainFactory::PDDLDomainFactory(const VAL::domain * domain) {
 	domainOperators = getDomainOperators(domain->ops);
 }
 
-std::string PDDLDomainFactory::getDomainString(const VAL::domain * domain,
+PDDL::PDDLDomain PDDLDomainFactory::getDomain(const VAL::domain * domain,
 		const std::list<PendingAction> & pendingActions) {
-	ostringstream output;
-	output << getHeader(domain, false) << types << getPredicates() << functions
-			<< getConstantsString() << domainOperators
-			<< getPendingActions(pendingActions) << getTerminationString();
-	return output.str();
+	string name = domain->name;
+	list<string> requirements = getDomainRequirements(domain->req, false);
+	list<PDDL::Proposition> predicates = getPredicates(pendingActions);
+	return PDDLDomain(name, requirements, types, predicates, functions,
+			constants, domainOperators);
 }
 
-std::string PDDLDomainFactory::getDeTILedDomainString(
-		const VAL::domain * domain, const std::list<TIL> & tils,
-		const std::list<PendingAction> & pendingActions) {
-	ostringstream output;
+PDDL::PDDLDomain PDDLDomainFactory::getDeTILedDomain(const VAL::domain * domain,
+		const Planner::MinimalState & state, double timestamp) {
+
+	//Construct De-TILed Features
+	list<string> deTILedActions;
+	std::list<PDDL::Proposition> tilPredicates;
+	std::list<PDDL::Proposition> tilRequiredObjects;
+	std::set<PDDLObject> domainObjectSymbolTable;
+	std::list<PDDL::Proposition> tilRequiredObjectsParameterised;
+	list<PDDL::Proposition> pendingActionRequiredObjects;
+
+	std::list<TIL> tils = getTILs(state, timestamp, domainObjectSymbolTable);
 	bool hasTils = tils.size();
-	output << getHeader(domain, hasTils) << types
-			<< getPredicates(pendingActions, tils) << functions
-			<< getConstantsString() << domainOperators << getInitialAction()
-			<< getPendingActions(pendingActions);
 	if (hasTils) {
-		output << getdeTILedActions(tils);
+		deTILedActions = getdeTILedActions(tils, tilPredicates,
+				tilRequiredObjects, tilRequiredObjectsParameterised);
 	}
-	output << getTerminationString();
-	return output.str();
+	std::list<PDDL::PendingAction> pendingActions = getPendingActions(state,
+			timestamp, domainObjectSymbolTable, pendingActionRequiredObjects);
+
+	//Construct the remainder of the domain
+	string name = domain->name;
+	list<string> requirements = getDomainRequirements(domain->req, hasTils);
+	list<PDDL::PDDLObject> types = getTypes(domain->types);
+	list<PDDL::Proposition> predicates = getPredicates(pendingActions,
+			tilPredicates, tilRequiredObjectsParameterised);
+	list<string> actions = getActions(pendingActions, deTILedActions);
+
+	return PDDLDomain(name, requirements, types, predicates, functions,
+			constants, actions, tilPredicates, tilRequiredObjects,
+			pendingActionRequiredObjects, domainObjectSymbolTable);
 }
 
-std::string PDDLDomainFactory::getHeader(const VAL::domain * domain,
+list<string> PDDLDomainFactory::getDomainRequirements(VAL::pddl_req_flag flags,
 		bool deTILed) {
-	ostringstream output;
-	output << "(define (domain " << domain->name << ")" << endl;
-	string requirements = getDomainRequirementsString(domain->req, deTILed);
-	output << "\t(:requirements " << requirements << ")" << std::endl;
-	return output.str();
-}
-
-std::string PDDLDomainFactory::getDomainRequirementsString(
-		VAL::pddl_req_flag flags, bool deTILed) {
-	string result;
-
-	if (flags & VAL::E_EQUALITY)
-		result += ":equality ";
+	list<string> result;
+	//Explicitly Add Equality because
+	//They are used in de-tiled domains (for de-tiled actions)
+	if ((flags & VAL::E_EQUALITY) || deTILed)
+		result.push_back(":equality ");
 	if (flags & VAL::E_STRIPS)
-		result += ":strips ";
+		result.push_back(":strips ");
 	if (flags & VAL::E_TYPING)
-		result += ":typing ";
+		result.push_back(":typing ");
 	if (flags & VAL::E_DISJUNCTIVE_PRECONDS)
-		result += ":disjunctive-preconditions ";
+		result.push_back(":disjunctive-preconditions ");
 	if (flags & VAL::E_EXT_PRECS)
-		result += ":existential-preconditions ";
+		result.push_back(":existential-preconditions ");
 	if (flags & VAL::E_UNIV_PRECS)
-		result += ":universal-preconditions ";
+		result.push_back(":universal-preconditions ");
 	if (flags & VAL::E_COND_EFFS)
-		result += ":conditional-effects ";
+		result.push_back(":conditional-effects ");
 	if (flags & VAL::E_NFLUENTS)
-		result += ":fluents ";
+		result.push_back(":fluents ");
 	if (flags & VAL::E_OFLUENTS)
-		result += ":object-fluents ";
+		result.push_back(":object-fluents ");
 	if (flags & VAL::E_ACTIONCOSTS)
-		result += ":action-costs ";
+		result.push_back(":action-costs ");
 	if (flags & VAL::E_DURATIVE_ACTIONS)
-		result += ":durative-actions ";
+		result.push_back(":durative-actions ");
 	if (flags & VAL::E_DURATION_INEQUALITIES)
-		result += ":duration-inequalities ";
+		result.push_back(":duration-inequalities ");
 	if (flags & VAL::E_CONTINUOUS_EFFECTS)
-		result += ":continuous-effects ";
-	if (flags & VAL::E_NEGATIVE_PRECONDITIONS)
-		result += ":negative-preconditions ";
+		result.push_back(":continuous-effects ");
+	//Explicitly Add Negative PreConditions because
+	//They are used in de-tiled domains (for de-tiled actions)
+	if ((flags & VAL::E_NEGATIVE_PRECONDITIONS) || deTILed)
+		result.push_back(":negative-preconditions ");
 	if (flags & VAL::E_DERIVED_PREDICATES)
-		result += ":derived-predicates ";
+		result.push_back(":derived-predicates ");
 	//If deTiled ignore TIL requirement
 	if ((flags & VAL::E_TIMED_INITIAL_LITERALS) && !deTILed)
-		result += ":timed-initial-literals ";
+		result.push_back(":timed-initial-literals ");
 	if (flags & VAL::E_PREFERENCES)
-		result += ":preferences ";
+		result.push_back(":preferences ");
 	if (flags & VAL::E_CONSTRAINTS)
-		result += ":constraints ";
+		result.push_back(":constraints ");
 	if (flags & VAL::E_TIME)
-		result += ":time ";
+		result.push_back(":time ");
 	return result;
 }
 
-std::string PDDLDomainFactory::getTypes(const VAL::pddl_type_list * types) {
-	ostringstream output;
+list<PDDL::PDDLObject> PDDLDomainFactory::getTypes(
+		const VAL::pddl_type_list * types) {
+	list<PDDL::PDDLObject> typeList;
 	if (types) {
-		output << "\t(:types" << endl;
 		VAL::pddl_type_list::const_iterator typeItr = types->begin();
 		for (; typeItr != types->end(); typeItr++) {
 			const VAL::pddl_type * type = *typeItr;
-			string name = type->getName();
-			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-			output << "\t\t" << name << " - " << getPDDLTypeString(type)
-					<< endl;
+			PDDL::PDDLObject pddlObject = getPDDLObject(type);
+			typeList.push_back(pddlObject);
 		}
-		output << "\t)" << endl;
 	}
-	return output.str();
+	return typeList;
 }
 
-std::string PDDLDomainFactory::getDomainPredicates(
+list<PDDL::Proposition> PDDLDomainFactory::getDomainPredicates(
 		const VAL::pred_decl_list * predicates) {
-	ostringstream output;
+	list<PDDL::Proposition> domainPropositions;
 	//get standard domain predicates
 	VAL::pred_decl_list::const_iterator predItr = predicates->begin();
 	for (; predItr != predicates->end(); predItr++) {
 		const VAL::pred_decl * predicate = *predItr;
-		output << "\t\t(" << predicate->getPred()->getName() << " ";
-		output << getArgumentString(predicate->getArgs());
-		output << ")" << endl;
+		PDDL::Proposition domProp =
+				PropositionFactory::getInstance()->getProposition(predicate);
+		domainPropositions.push_back(domProp);
 	}
-	return output.str();
+	return domainPropositions;
 }
 
-std::string PDDLDomainFactory::getPredicates(
+list<PDDL::Proposition> PDDLDomainFactory::getPredicates(
 		const std::list<PendingAction> & pendingActions /*=empty list*/,
-		const std::list<TIL> & tils /*=empty list*/) {
-	ostringstream output;
-	output << "\t(:predicates" << endl;
+		const std::list<PDDL::Proposition> & tilPredicates /*=empty list*/,
+		const std::list<PDDL::Proposition> & tilRequiredObjects /*=empty list*/) {
+	list<PDDL::Proposition> propositions;
+
 	//Add Domain Predicates
-	output << domainPredicates;
+	propositions.insert(propositions.end(), domainPredicates.begin(),
+			domainPredicates.end());
 	//Add Predicates for de-TILed Actions
-	std::list<TIL>::const_iterator tilItr = tils.begin();
-	for (; tilItr != tils.end(); tilItr++) {
-		output << "\t\t(" << tilItr->getName() << ")\n";
-	}
+	//This ensures correct TIL ordering
+	propositions.insert(propositions.end(), tilPredicates.begin(),
+			tilPredicates.end());
 	//Add Required Predicates for Partial Actions
 	if (pendingActions.size()) {
 		std::list<PendingAction>::const_iterator pendActItr =
 				pendingActions.begin();
 		for (; pendActItr != pendingActions.end(); pendActItr++) {
-			output << "\t\t(" << PDDLDomainFactory::REQUIRED_PROPOSITION << "-"
-					<< pendActItr->getName() << " ?x - object)\n";
+			list<PDDL::Proposition> requiredPredicates =
+					pendActItr->getRequiredPropositionsParameterised();
+			propositions.insert(propositions.end(), requiredPredicates.begin(),
+					requiredPredicates.end());
 		}
 	}
+	//Add Required Predicates for De-TILed Actions
+	//This ensures the correct Objects are used for a TIL
+	propositions.insert(propositions.end(), tilRequiredObjects.begin(),
+			tilRequiredObjects.end());
+
 	//Add Initial Action Predicate
-	output << "\t\t(" << PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION
-			<< ")\n";
-	output << "\t)\n";
-	return output.str();
+	propositions.push_back(INITIAL_ACTION_COMPLETE_PROPOSITION);
+	return propositions;
 }
 
-std::string PDDLDomainFactory::getFunctions(
+list<PDDL::Proposition> PDDLDomainFactory::getFunctions(
 		const VAL::func_decl_list * functions) {
-	ostringstream output;
-	output << "\t(:functions" << endl;
+	list<PDDL::Proposition> functionList;
 	VAL::func_decl_list::const_iterator funcItr = functions->begin();
 	for (; funcItr != functions->end(); funcItr++) {
-		const VAL::func_decl * func = *funcItr;
-		output << "\t\t(" << func->getFunction()->getName() << " ";
-		output << getArgumentString(func->getArgs());
-		output << ")" << endl;
+		PDDL::Proposition function = getFunction(*funcItr);
+		functionList.push_back(function);
 	}
-	output << "\t)" << endl;
-	return output.str();
+	return functionList;
 }
 
 std::list<std::pair<std::string, std::string> > PDDLDomainFactory::getConstantsFromDomain(
@@ -209,25 +231,10 @@ std::list<std::pair<std::string, std::string> > PDDLDomainFactory::getConstantsF
 	}
 	return constantList;
 }
-std::string PDDLDomainFactory::getConstantsString() {
-	ostringstream output;
-	if (constants.size()) {
-		output << "\t(:constants" << endl;
-		std::list<std::pair<std::string, std::string> >::const_iterator constItr =
-				constants.begin();
-		for (; constItr != constants.end(); constItr++) {
-			std::pair<std::string, std::string> constant = *constItr;
-			output << "\t\t" << constant.first << " - " << constant.second
-					<< endl;
-		}
-		output << "\t)" << endl;
-	}
-	return output.str();
-}
 
-std::string PDDLDomainFactory::getDomainOperators(
+list<string> PDDLDomainFactory::getDomainOperators(
 		const VAL::operator_list * operators) {
-	ostringstream output;
+	list<string> domOperators;
 	VAL::operator_list::const_iterator opsItr = operators->begin();
 	for (; opsItr != operators->end(); opsItr++) {
 		const VAL::operator_ * op = *opsItr;
@@ -236,16 +243,35 @@ std::string PDDLDomainFactory::getDomainOperators(
 				dynamic_cast<const VAL::durative_action *>(op);
 		const VAL::action * action = dynamic_cast<const VAL::action *>(op);
 		if (dur_action) {
-			getDurativeAction(dur_action, output);
+			domOperators.push_back(getDurativeAction(dur_action));
 		} else {
-			getAction(action, output);
+			domOperators.push_back(getAction(action));
 		}
 	}
-	return output.str();
+	return domOperators;
 }
 
-std::ostream & PDDLDomainFactory::getDurativeAction(
-		const VAL::durative_action * action, std::ostream & output) {
+list<string> PDDLDomainFactory::getActions(
+		const std::list<PendingAction> & pendingActions,
+		std::list<string> deTILedActions) {
+	list<string> actions;
+	//Add Domain Operators
+	actions.insert(actions.end(), domainOperators.begin(),
+			domainOperators.end());
+	//Add Initial Action
+	actions.push_back(getInitialAction());
+	//Add Pending Actions
+	list<string> pendingActionList = getPendingActions(pendingActions);
+	actions.insert(actions.end(), pendingActionList.begin(),
+			pendingActionList.end());
+	//Add deTILed Actions
+	actions.insert(actions.end(), deTILedActions.begin(), deTILedActions.end());
+	return actions;
+}
+
+string PDDLDomainFactory::getDurativeAction(
+		const VAL::durative_action * action) {
+	ostringstream output;
 	//get header
 	output << "\t(:durative-action " << action->name->getName() << endl;
 	//get parameters
@@ -258,30 +284,30 @@ std::ostream & PDDLDomainFactory::getDurativeAction(
 			dynamic_cast<const VAL::comparison *>(duration->getGoal());
 	output << "\t\t:duration " << getExpressionString(durationalGoal) << endl;
 	//get conditions
-	output << "\t\t:condition" << endl << getConditions(action->precondition, true)
-			<< endl;
+	output << "\t\t:condition" << endl
+			<< getConditions(action->precondition, true) << endl;
 	//get effects
 	output << "\t\t:effect" << endl << getEffectsString(action->effects)
 			<< endl;
-	output << "\t)" << endl;
-	return output;
+	output << "\t)";
+	return output.str();
 }
 
-std::ostream & PDDLDomainFactory::getAction(const VAL::action * action,
-		std::ostream & output) {
+string PDDLDomainFactory::getAction(const VAL::action * action) {
+	ostringstream output;
 	//get header
 	output << "\t(:action " << action->name->getName() << endl;
 	//get parameters
 	output << "\t\t:parameters (" << getArgumentString(action->parameters)
 			<< ")" << endl;
 	//get preconditions
-	output << "\t\t:precondition" << endl << getConditions(action->precondition, false)
-			<< endl;
+	output << "\t\t:precondition" << endl
+			<< getConditions(action->precondition, false) << endl;
 	//get effects
 	output << "\t\t:effect" << endl << getEffectsString(action->effects)
 			<< endl;
-	output << "\t)" << endl;
-	return output;
+	output << "\t)";
+	return output.str();
 }
 
 std::string PDDLDomainFactory::getConditions(const VAL::goal * goal,
@@ -291,10 +317,10 @@ std::string PDDLDomainFactory::getConditions(const VAL::goal * goal,
 	if (conjGoal) {
 		output << "\t\t\t(and " << endl;
 		if (isForDurativeAction) {
-			output << "\t\t\t\t(at start ("
-					<< INITIAL_ACTION_COMPLETE_PROPOSITION << "))" << std::endl;
+			output << "\t\t\t\t(at start "
+					<< INITIAL_ACTION_COMPLETE_PROPOSITION << ")" << std::endl;
 		} else {
-			output << "\t\t\t\t(" << INITIAL_ACTION_COMPLETE_PROPOSITION << ")"
+			output << "\t\t\t\t" << INITIAL_ACTION_COMPLETE_PROPOSITION
 					<< std::endl;
 		}
 		VAL::goal_list::const_iterator goalItr = conjGoal->getGoals()->begin();
@@ -305,8 +331,8 @@ std::string PDDLDomainFactory::getConditions(const VAL::goal * goal,
 		output << "\t\t\t)" << endl;
 	} else {
 		output << "\t\t\t(and " << endl;
-		output << "\t\t\t\t(at start (" << INITIAL_ACTION_COMPLETE_PROPOSITION
-				<< "))" << std::endl;
+		output << "\t\t\t\t(at start " << INITIAL_ACTION_COMPLETE_PROPOSITION
+				<< ")" << std::endl;
 		output << getGoalString(goal);
 	}
 	return output.str();
@@ -316,66 +342,98 @@ std::string PDDLDomainFactory::getInitialAction() {
 	ostringstream output;
 	output << "\t(:action init-action" << endl;
 	output << "\t\t:parameters()" << endl << "\t\t:precondition ( )" << endl
-			<< "\t\t:effect " << endl << "\t\t\t("
-			<< PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << ")"
-			<< endl << "\t)" << endl;
+			<< "\t\t:effect " << endl << "\t\t\t"
+			<< PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << endl
+			<< "\t)";
 	return output.str();
 }
 
-string PDDLDomainFactory::getdeTILedActions(std::list<TIL> tils) {
+list<string> PDDLDomainFactory::getdeTILedActions(std::list<TIL> tils,
+		std::list<PDDL::Proposition> & tilActionPreconditions,
+		std::list<PDDL::Proposition> & tilRequiredObjects,
+		std::list<PDDL::Proposition> & tilRequiredObjectsParameterised) {
 	//sort list by timestamp
 	tils.sort(PDDL::TIL::TILTimestampComparator);
-	//list to hold previous TIL predicates
-	std::list<PDDL::Proposition> tilActionPreconditions;
 	//Look at each TIL one at a time;
-	ostringstream output;
+	list<string> actions;
 	std::list<TIL>::const_iterator tilItr = tils.begin();
 	const std::list<TIL>::const_iterator tilItrEnd = tils.end();
 	for (; tilItr != tilItrEnd; tilItr++) {
-		output << getdeTILedAction(*tilItr, &tilActionPreconditions) << endl;
+		string deTILedAction = getdeTILedAction(*tilItr, tilActionPreconditions,
+				tilRequiredObjects, tilRequiredObjectsParameterised);
+		actions.push_back(deTILedAction);
 	}
-	return output.str();
+	return actions;
 }
 
 string PDDLDomainFactory::getdeTILedAction(const TIL & til,
-		std::list<PDDL::Proposition> * tilActionPreconditions) {
+		std::list<PDDL::Proposition> & tilActionPreconditions,
+		std::list<PDDL::Proposition> & tilRequiredObjects,
+		std::list<PDDL::Proposition> & tilRequiredObjectsParameterised) {
 	//Create special proposition for this TIL
 	std::list<string> arguments;
 	PDDL::Proposition tilLit(til.getName(), arguments);
-
-	//Determine Parameters
-	std::map<const PDDLObject *, std::string> parameterTable =
+	//Find all parameters for this TIL Action and generate the paramtable
+	std::map<PDDLObject, std::string> parameterTable =
 			PDDL::generateParameterTable(til.getParameters());
+	//List of objects that are required
+	std::list<PDDL::Proposition> requiredObjects;
 
 	//Generate action string
 	ostringstream output;
 	output << "\t(:action " << til.getName() << endl;
+	//Add parameters and create the required predicates on the way
 	output << "\t\t:parameters( ";
-	std::map<const PDDLObject *, std::string>::const_iterator paramItr =
+	std::map<PDDLObject, std::string>::const_iterator paramItr =
 			parameterTable.begin();
+	int paramNum = 1;
 	for (; paramItr != parameterTable.end(); paramItr++) {
-		output << paramItr->second << " - " << paramItr->first->getTypeString()
+		output << paramItr->second << " - " << paramItr->first.getTypeString()
 				<< " ";
+		//Proposition to ensure correct objects are used
+		ostringstream propName;
+		propName << PDDLDomainFactory::REQUIRED_PROPOSITION << "-"
+				<< til.getName() << "-" << paramNum;
+		std::list<std::string> args;
+		args.push_back(paramItr->first.getName());
+		PDDL::Proposition paramRequired(propName.str(), args);
+		requiredObjects.push_back(paramRequired);
+		tilRequiredObjectsParameterised.push_back(
+				paramRequired.getParameterisedProposition(parameterTable,
+						true));
+		paramNum++;
 	}
 	output << ")" << endl;
+
+	// Pre-conditions
 	output << "\t\t:precondition (and" << endl;
 	//Add requirement for initial action
-	output << "\t\t\t("
-			<< PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << ")"
+	output << "\t\t\t" << PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION
 			<< std::endl;
 	//Add requiredment that TIL hasn't happened (one shot)
-	output << "\t\t\t(not (" << til.getName() << "))" << std::endl;
+	//TODO: This is pretty much redundant given the required predicates
+	output << "\t\t\t(not " << tilLit << ")" << std::endl;
 	//Add requirement for past TILs to have been achieved
-	if (tilActionPreconditions->size()) {
+	if (tilActionPreconditions.size()) {
 		std::list<PDDL::Proposition>::const_iterator preItr =
-				tilActionPreconditions->begin();
+				tilActionPreconditions.begin();
 		const std::list<PDDL::Proposition>::const_iterator preItrEnd =
-				tilActionPreconditions->end();
+				tilActionPreconditions.end();
 		for (; preItr != preItrEnd; preItr++) {
 			output << "\t\t\t" << preItr->toParameterisedString(parameterTable)
 					<< endl;
 		}
 	}
+
+	//Add predicates to ensure correct objects are used
+	std::list<PDDL::Proposition>::const_iterator reqObjItr =
+			requiredObjects.begin();
+	for (; reqObjItr != requiredObjects.end(); reqObjItr++) {
+		output << "\t\t\t" << reqObjItr->toParameterisedString(parameterTable)
+				<< endl;
+	}
+
+	//Add Effects
 	output << "\t\t)" << endl;
 	output << "\t\t:effect (and" << endl;
 	std::list<PDDL::Proposition>::const_iterator addItr =
@@ -387,8 +445,12 @@ string PDDLDomainFactory::getdeTILedAction(const TIL & til,
 				<< endl;
 	}
 	// add special predicate to indicate that the til is complete
+	// This is the one shot to remove the TIL requirement
+	//TODO: This is pretty much redundant given tracking of objects
 	output << "\t\t\t" << tilLit << endl;
 
+	// Del Effects
+	// Add predicates to make cargo unavailable
 	std::list<PDDL::Proposition>::const_iterator delItr =
 			til.getDelEffects().begin();
 	const std::list<PDDL::Proposition>::const_iterator delItrEnd =
@@ -397,27 +459,268 @@ string PDDLDomainFactory::getdeTILedAction(const TIL & til,
 		output << "\t\t\t(not " << delItr->toParameterisedString(parameterTable)
 				<< ")" << endl;
 	}
-	output << "\t\t)" << endl << "\t)" << endl;
+
+	//Remove Predicates that required certain objects
+	reqObjItr = requiredObjects.begin();
+	for (; reqObjItr != requiredObjects.end(); reqObjItr++) {
+		output << "\t\t\t(not "
+				<< reqObjItr->toParameterisedString(parameterTable) << ")"
+				<< endl;
+	}
+
+	//Footer
+	output << "\t\t)" << endl << "\t)";
 	//Add the TIL Proposition to the list of preconditions for future TILS
 	//This retains precedence ordering of TILs
-	tilActionPreconditions->push_back(tilLit);
+	tilActionPreconditions.push_back(tilLit);
+	//Add required objects to domain list
+	tilRequiredObjects.insert(tilRequiredObjects.end(), requiredObjects.begin(),
+			requiredObjects.end());
 	return output.str();
 }
 
-std::string PDDLDomainFactory::getPendingActions(
+/**
+ * Get the actions in a state that are in the middle of executing.
+ * For example the start snap action has been executed, but not the end snap action
+ */
+std::list<PDDL::PendingAction> PDDLDomainFactory::getPendingActions(
+		const Planner::MinimalState & state, double timestamp,
+		std::set<PDDLObject> & objectSymbolTable,
+		list<PDDL::Proposition> & pendingActionRequiredObjects) {
+	std::list<PendingAction> pendingActions;
+	//Cycle through Facts held up by executing actions (these are effects coming into play)
+	std::map<int, std::set<int> >::const_iterator saItr =
+			state.startedActions.begin();
+	const std::map<int, std::set<int> >::const_iterator saItrEnd =
+			state.startedActions.end();
+	for (; saItr != saItrEnd; saItr++) {
+
+		std::string name = PDDL::getActionName(saItr->first);
+
+		std::set<PDDLObject> parameters;
+
+		//For each action get its conditions
+		std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions =
+				getConditions(saItr->first, parameters);
+
+		// Get action duration
+		double minDur = Planner::RPGBuilder::getOpMinDuration(saItr->first, 1);
+		double maxDur = Planner::RPGBuilder::getOpMaxDuration(saItr->first, 1);
+
+		// Literals Added by Action
+		std::list<std::pair<PDDL::Proposition, VAL::time_spec> > propositionalAddEffects;
+		std::list<Inst::Literal*> adds =
+				Planner::RPGBuilder::getEndPropositionAdds()[saItr->first];
+		std::list<Inst::Literal*>::const_iterator addItr = adds.begin();
+		const std::list<Inst::Literal*>::const_iterator addItrEnd = adds.end();
+		for (; addItr != addItrEnd; addItr++) {
+			const VAL::proposition * realProp = (*addItr)->toProposition();
+			parameters = extractParameters(*addItr, parameters, constants);
+			Proposition prop =
+					PropositionFactory::getInstance()->getProposition(realProp);
+			propositionalAddEffects.push_back(
+					std::pair<PDDL::Proposition, VAL::time_spec>(prop,
+							VAL::time_spec::E_AT_END));
+		}
+
+		// Literals Deleted by Action
+		std::list<std::pair<PDDL::Proposition, VAL::time_spec> > propositionalDelEffects;
+		std::list<Inst::Literal*> deletes =
+				Planner::RPGBuilder::getEndPropositionDeletes()[saItr->first];
+		std::list<Inst::Literal*>::const_iterator delItr = deletes.begin();
+		const std::list<Inst::Literal*>::const_iterator delItrEnd =
+				deletes.end();
+		for (; delItr != delItrEnd; delItr++) {
+			const VAL::proposition * realProp = (*addItr)->toProposition();
+			parameters = extractParameters(*delItr, parameters, constants);
+			Proposition prop =
+					PropositionFactory::getInstance()->getProposition(realProp);
+			propositionalDelEffects.push_back(
+					std::pair<PDDL::Proposition, VAL::time_spec>(prop,
+							VAL::time_spec::E_AT_END));
+		}
+
+		// PNEs Added by Action
+		std::list<std::pair<PDDL::PNEEffect, VAL::time_spec> > pneEffects;
+		list<Planner::RPGBuilder::NumericEffect> endNumEffects =
+				Planner::RPGBuilder::getActionsToEndNumericEffects()[saItr->first];
+		list<Planner::RPGBuilder::NumericEffect>::const_iterator numEffItr =
+				endNumEffects.begin();
+		for (; numEffItr != endNumEffects.end(); numEffItr++) {
+			Planner::RPGBuilder::NumericEffect numEff = *numEffItr;
+			Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(numEff.fluentIndex);
+			parameters = extractParameters(aPNE, parameters, constants);
+			parameters = extractParameters(&numEff.formula, parameters, constants);
+			PDDL::PNE pne = PNEFactory::getInstance()->getPNE(aPNE, 0);
+			PNEEffect pneEffect(pne, numEff.op, numEff.formula);
+			pneEffects.push_back(std::pair<PDDL::PNEEffect, VAL::time_spec>(pneEffect,
+					VAL::time_spec::E_AT_END));
+		}
+		//Get Pending Action Required Objects
+		list<PDDL::Proposition> requiredObjects =
+				getPendingActionRequiredObjectPropositions(name, parameters);
+		//Add required objects to conditions and effects
+		list<PDDL::Proposition>::const_iterator reqObjItr =
+				requiredObjects.begin();
+		for (; reqObjItr != requiredObjects.end(); reqObjItr++) {
+
+			std::pair<VAL::time_spec, bool> required(VAL::time_spec::E_AT_START,
+					true);
+			VAL::time_spec notRequiredTimeSpec = VAL::time_spec::E_AT_END;
+
+			pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > requiredCondition(
+					*reqObjItr, required);
+			pair<PDDL::Proposition, VAL::time_spec> notRequiredEffect(
+					*reqObjItr, notRequiredTimeSpec);
+			conditions.push_back(requiredCondition);
+			propositionalDelEffects.push_back(notRequiredEffect);
+		}
+		//Insert all required objects into master list for state
+		pendingActionRequiredObjects.insert(pendingActionRequiredObjects.end(),
+				requiredObjects.begin(), requiredObjects.end());
+
+		// insert all parameters into master table
+		objectSymbolTable.insert(parameters.begin(), parameters.end());
+		//Generate symbol table for this action
+		map<PDDLObject, string> parameterTable = PDDL::generateParameterTable(
+				parameters);
+
+		PendingAction pendingAction(name, parameterTable,
+				propositionalAddEffects, propositionalDelEffects, pneEffects,
+				conditions, requiredObjects, minDur);
+
+		pendingActions.push_back(pendingAction);
+	}
+	return pendingActions;
+}
+
+list<string> PDDLDomainFactory::getPendingActions(
 		const std::list<PendingAction> & pendingActions) {
-	ostringstream output;
+	list<string> pendingActionList;
 	std::list<PendingAction>::const_iterator actItr = pendingActions.begin();
 	const std::list<PendingAction>::const_iterator actItrEnd =
 			pendingActions.end();
 	for (; actItr != actItrEnd; actItr++) {
-		output << (*actItr) << endl;
+		ostringstream pendingAction;
+		pendingAction << *actItr;
+		pendingActionList.push_back(pendingAction.str());
 	}
-	return output.str();
+	return pendingActionList;
 }
 
-std::string PDDLDomainFactory::getTerminationString() {
-	return ")";
+std::list<PDDL::Proposition> PDDLDomainFactory::getPendingActionRequiredObjectPropositions(
+		string actionName, std::set<PDDLObject> parameters) {
+	list<PDDL::Proposition> requiredObjects;
+	std::set<PDDLObject>::const_iterator paramItr = parameters.begin();
+	int paramNum = 1;
+	for (; paramItr != parameters.end(); paramItr++) {
+		ostringstream name;
+		name << PDDLDomainFactory::REQUIRED_PROPOSITION << "-" << actionName
+				<< "-" << paramNum;
+		paramNum++;
+		list<string> params;
+		string param = paramItr->getName();
+		transform(param.begin(), param.end(), param.begin(), ::toupper);
+		params.push_back(param);
+		PDDL::Proposition prop(name.str(), params);
+		requiredObjects.push_back(prop);
+	}
+	return requiredObjects;
+}
+
+std::list<PDDL::TIL> PDDLDomainFactory::getTILs(
+		const Planner::MinimalState & state, double timestamp,
+		std::set<PDDLObject> & objectSymbolTable) {
+
+	std::list<PDDL::TIL> tils;
+
+	//Cycle thourgh TILs
+	list<Planner::FakeTILAction> theTILs = Planner::RPGBuilder::getTILs();
+	std::list<Planner::FakeTILAction>::const_iterator tilItr = theTILs.begin();
+	const std::list<Planner::FakeTILAction>::const_iterator tilItrEnd =
+			theTILs.end();
+	for (; tilItr != tilItrEnd; tilItr++) {
+		const Planner::FakeTILAction * tilAction = &(*tilItr);
+		//Make sure the TIL is still current
+		if (tilAction->duration <= timestamp) {
+			continue;
+		}
+
+		PDDL::extractParameters(tilAction, objectSymbolTable, constants);
+		PDDL::TIL til = PDDL::getTIL(*tilAction, timestamp, constants);
+		tils.push_back(til);
+	}
+	return tils;
+}
+
+/**
+ * Get all conditions and return parameters
+ */
+std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > PDDLDomainFactory::getConditions(
+		int actionID, std::set<PDDLObject> & parameters) {
+
+	std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions;
+
+	/*Postconditions*/
+	std::list<Inst::Literal*> positivePostConditions =
+			Planner::RPGBuilder::getEndPropositionalPreconditions()[actionID];
+	std::list<Inst::Literal*> negativePostConditions =
+			Planner::RPGBuilder::getEndNegativePropositionalPreconditions()[actionID];
+
+	std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > tempConditions =
+			convertLiterals_AddSignAndTime(positivePostConditions,
+					VAL::time_spec::E_AT_END, true, parameters);
+	conditions.insert(conditions.end(), tempConditions.begin(),
+			tempConditions.end());
+
+	tempConditions = convertLiterals_AddSignAndTime(negativePostConditions,
+			VAL::time_spec::E_AT_END, false, parameters);
+	conditions.insert(conditions.end(), tempConditions.begin(),
+			tempConditions.end());
+
+	/*Invariant Conditions*/
+	std::list<Inst::Literal*> positiveInvariantConditions =
+			Planner::RPGBuilder::getInvariantPropositionalPreconditions()[actionID];
+
+	std::list<Inst::Literal*> negativeInvariantConditions =
+			Planner::RPGBuilder::getInvariantNegativePropositionalPreconditions()[actionID];
+
+	tempConditions = convertLiterals_AddSignAndTime(positiveInvariantConditions,
+			VAL::time_spec::E_OVER_ALL, true, parameters);
+	conditions.insert(conditions.end(), tempConditions.begin(),
+			tempConditions.end());
+
+	tempConditions = convertLiterals_AddSignAndTime(negativeInvariantConditions,
+			VAL::time_spec::E_OVER_ALL, false, parameters);
+	conditions.insert(conditions.end(), tempConditions.begin(),
+			tempConditions.end());
+	return conditions;
+}
+
+/**
+ * Convert Colin's Literals to our datamodel and add their sign and when they apply, with respect to the action
+ */
+std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > PDDLDomainFactory::convertLiterals_AddSignAndTime(
+		std::list<Inst::Literal*> literals, VAL::time_spec timeQualifier,
+		bool isPositive, std::set<PDDLObject> & parameters) {
+	std::list<pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > > conditions;
+
+	std::list<Inst::Literal*>::const_iterator condItr = literals.begin();
+	std::list<Inst::Literal*>::const_iterator condItrEnd = literals.end();
+
+	for (; condItr != condItrEnd; condItr++) {
+		const VAL::proposition * realCond = (*condItr)->toProposition();
+		//This is required to ensure the parameters are created
+		PDDL::extractParameters(*condItr, parameters, constants);
+		PDDL::Proposition literal =
+				PropositionFactory::getInstance()->getProposition(realCond);
+		conditions.push_back(
+				pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> >(
+						literal,
+						std::pair<VAL::time_spec, bool>(timeQualifier,
+								isPositive)));
+	}
+	return conditions;
 }
 
 }
