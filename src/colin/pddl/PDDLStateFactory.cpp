@@ -30,7 +30,7 @@ PDDLStateFactory::PDDLStateFactory(const Planner::MinimalState & initialState,
 	staticPropositions = getStaticPropositions(stdPropositions,
 			objectParameterTable);
 	std::list<PDDL::PNE> stdPNEs = getPNEs(initialState, objectParameterTable);
-	staticPNEs = getStaticPNEs(stdPNEs);
+	staticPNEs = getStaticPNEs(stdPNEs, objectParameterTable);
 	goals = getPropositionalGoals();
 	metric = getMetric();
 }
@@ -231,7 +231,8 @@ std::list<PDDL::PNE> PDDLStateFactory::getPNEs(
  * FIXME: Does not generate parameter table for propositions created from actual PDDL Parse Tree
  */
 std::list<PDDL::PNE> PDDLStateFactory::getStaticPNEs(
-		std::list<PDDL::PNE> dynamicPNEs) {
+		std::list<PDDL::PNE> dynamicPNEs,
+		std::set<PDDLObject> & objectSymbolTable) {
 	std::list<PDDL::PNE> staticPNEs;
 	/*Look for all other literals, these are ones missed by all
 	 * other checks and requires going back to the original
@@ -250,6 +251,8 @@ std::list<PDDL::PNE> PDDLStateFactory::getStaticPNEs(
 				== dynamicPNEs.end())
 				&& (std::find(staticPNEs.begin(), staticPNEs.end(), pne2)
 						== staticPNEs.end())) {
+			PDDL::extractParameters(pne->getFTerm()->getArgs(), 
+					objectSymbolTable, constants);
 			staticPNEs.push_back(pne2);
 		}
 	}

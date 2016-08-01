@@ -51,7 +51,8 @@ private:
 			std::list<PDDL::Proposition> & dynamicLiterals, std::set<PDDLObject> & objectSymbolTable);
 	std::list<PDDL::PNE> getPNEs(const Planner::MinimalState & state, std::set<PDDLObject> & objectSymbolTable);
 	std::list<PDDL::PNE> getStaticPNEs(
-			std::list<PDDL::PNE> dynamicPNEs);
+			std::list<PDDL::PNE> dynamicPNEs,
+			std::set<PDDLObject> & objectSymbolTable);
 	std::list<PDDL::Proposition> getPropositionalGoals();
 	PDDL::Metric getMetric();
 
