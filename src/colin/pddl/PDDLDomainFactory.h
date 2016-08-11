@@ -26,8 +26,6 @@ private:
 	//constants
 	static const std::string REQUIRED_PROPOSITION;
 	static const std::string TIL_ACHIEVED_PROPOSITION;
-	static const std::string INITIAL_ACTION_COMPLETE_PROPOSITION_NAME;
-	static const PDDL::Proposition INITIAL_ACTION_COMPLETE_PROPOSITION;
 	
 	//Private constructor
 	PDDLDomainFactory(const VAL::domain * domain);
@@ -65,7 +63,6 @@ private:
 	std::list<string> deTILedActions);
 	std::string getDurativeAction(const VAL::durative_action * action);
 	std::string getAction(const VAL::action * action);
-	std::string getInitialAction();
 	list<string> getdeTILedActions(std::list<TIL> tils,
 		std::list<PDDL::Proposition> & tilActionPreconditions, 
 		std::list<PDDL::Proposition> & tilRequiredObjects,

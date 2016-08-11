@@ -51,7 +51,7 @@ double TRH::getHeuristic(const Planner::MinimalState & state,
 	while (!feof(pipe.get())) {
 		if (fgets(buffer, 128, pipe.get()) != NULL)
 			result += buffer;
-		cout << "Read 128 chars: " << buffer << endl;
+		// cout << buffer;
 	}
 	cout << "Completed Reading Buffer!" << endl;
 	int pos = result.find(H_STATES_EVAL_DELIM);
@@ -115,9 +115,9 @@ void TRH::writeTempStates(const Planner::MinimalState & state,
 	pddlState.writeDeTILedStateToFile(filePath, stateFileName);
 	domain.writeToFile(filePath, domainFileName);
 	TRH::TRH::TIME_SPENT_IN_PRINTING_TO_FILE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
-	if (oneShot > 0) {
-		cerr << "Exiting..." << endl;
-		exit(0);
+	if (oneShot > 4) {
+		// cerr << "Exiting..." << endl;
+		// exit(0);
 	}
 	oneShot++;
 }

@@ -38,8 +38,6 @@ std::ostream & operator<<(std::ostream & output, const PendingAction & action) {
 	output << ")\n";
 	output << "\t\t:duration (= ?duration " << action.timestamp << ")" << endl;
 	output << "\t\t:condition (and " << endl;
-	//Add pre-condition on initial action
-	output << "\t\t\t(at start (initial-action-complete))" << endl;
 
 	std::list<std::pair<PDDL::Proposition, std::pair<VAL::time_spec, bool> > >::const_iterator condItr =
 			action.conditions.begin();

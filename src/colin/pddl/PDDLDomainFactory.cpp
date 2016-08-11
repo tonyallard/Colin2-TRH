@@ -28,11 +28,6 @@ namespace PDDL {
 
 const string PDDLDomainFactory::TIL_ACHIEVED_PROPOSITION = "til-achieved";
 const string PDDLDomainFactory::REQUIRED_PROPOSITION = "required";
-const string PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION_NAME =
-		"initial-action-complete";
-const PDDL::Proposition PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION(
-		PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION_NAME,
-		list<string>());
 
 PDDLDomainFactory * PDDLDomainFactory::INSTANCE = NULL;
 
@@ -198,9 +193,7 @@ list<PDDL::Proposition> PDDLDomainFactory::getPredicates(
 	//This ensures the correct Objects are used for a TIL
 	propositions.insert(propositions.end(), tilRequiredObjects.begin(),
 			tilRequiredObjects.end());
-
-	//Add Initial Action Predicate
-	propositions.push_back(INITIAL_ACTION_COMPLETE_PROPOSITION);
+	
 	return propositions;
 }
 
@@ -258,8 +251,6 @@ list<string> PDDLDomainFactory::getActions(
 	//Add Domain Operators
 	actions.insert(actions.end(), domainOperators.begin(),
 			domainOperators.end());
-	//Add Initial Action
-	actions.push_back(getInitialAction());
 	//Add Pending Actions
 	list<string> pendingActionList = getPendingActions(pendingActions);
 	actions.insert(actions.end(), pendingActionList.begin(),
@@ -316,13 +307,6 @@ std::string PDDLDomainFactory::getConditions(const VAL::goal * goal,
 	const VAL::conj_goal * conjGoal = dynamic_cast<const VAL::conj_goal *>(goal);
 	if (conjGoal) {
 		output << "\t\t\t(and " << endl;
-		if (isForDurativeAction) {
-			output << "\t\t\t\t(at start "
-					<< INITIAL_ACTION_COMPLETE_PROPOSITION << ")" << std::endl;
-		} else {
-			output << "\t\t\t\t" << INITIAL_ACTION_COMPLETE_PROPOSITION
-					<< std::endl;
-		}
 		VAL::goal_list::const_iterator goalItr = conjGoal->getGoals()->begin();
 		for (; goalItr != conjGoal->getGoals()->end(); goalItr++) {
 			const VAL::goal * aGoal = *goalItr;
@@ -330,21 +314,8 @@ std::string PDDLDomainFactory::getConditions(const VAL::goal * goal,
 		}
 		output << "\t\t\t)" << endl;
 	} else {
-		output << "\t\t\t(and " << endl;
-		output << "\t\t\t\t(at start " << INITIAL_ACTION_COMPLETE_PROPOSITION
-				<< ")" << std::endl;
 		output << getGoalString(goal);
 	}
-	return output.str();
-}
-
-std::string PDDLDomainFactory::getInitialAction() {
-	ostringstream output;
-	output << "\t(:action init-action" << endl;
-	output << "\t\t:parameters()" << endl << "\t\t:precondition ( )" << endl
-			<< "\t\t:effect " << endl << "\t\t\t"
-			<< PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION << endl
-			<< "\t)";
 	return output.str();
 }
 
@@ -407,9 +378,6 @@ string PDDLDomainFactory::getdeTILedAction(const TIL & til,
 
 	// Pre-conditions
 	output << "\t\t:precondition (and" << endl;
-	//Add requirement for initial action
-	output << "\t\t\t" << PDDLDomainFactory::INITIAL_ACTION_COMPLETE_PROPOSITION
-			<< std::endl;
 	//Add requiredment that TIL hasn't happened (one shot)
 	//TODO: This is pretty much redundant given the required predicates
 	output << "\t\t\t(not " << tilLit << ")" << std::endl;
