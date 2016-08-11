@@ -249,17 +249,6 @@ class Globals
 
 public:
 
-	/**
-	 * This variable is related to the work on minimum relaxations for a TIL relaxed heuristic.
-	 * When this value is false, the planner is running as normal and when it is true the
-	 * planner is being used to determine if a state would lead to the goal or not.
-	 * This achieved by re-invoking the planner with the state in question as the initial state.
-	 *
-	 * Note: currently the planner is setup to transition this value to true if it is false at
-	 * the end of a successful plan found with BFS.
-	 */
-	static bool checkingForGoodState;
-
     /** @brief Global verbosity flag.
      * 
      *  This is a bit-mask, where each bit corresponds to whether

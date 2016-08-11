@@ -143,7 +143,7 @@ FFEvent & FFEvent::operator=(const FFEvent & f)
     lpMinTimestamp = f.lpMinTimestamp;
     lpMaxTimestamp = f.lpMaxTimestamp;
     divisionID = f.divisionID;
-//    needToFinish = f.needToFinish;
+    needToFinish = f.needToFinish;
     
     #ifdef STOCHASTICDURATIONS
     delete stochasticTimestamp;

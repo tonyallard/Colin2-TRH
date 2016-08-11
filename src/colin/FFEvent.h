@@ -65,7 +65,7 @@ public:
     double lpMinTimestamp;
     double lpMaxTimestamp;
     int divisionID;
-//    set<int> needToFinish;
+    set<int> needToFinish;
     
     #ifdef STOCHASTICDURATIONS
     StochasticTimestampData * stochasticTimestamp;
