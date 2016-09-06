@@ -22,6 +22,8 @@ using namespace std;
 
 namespace PDDL {
 
+const std::string PDDLStateFactory::DEFAULT_METRIC_PNE = "total-time";
+
 PDDLStateFactory::PDDLStateFactory(const Planner::MinimalState & initialState,
 		std::list<std::pair<std::string, std::string> > constants) {
 	this->constants = constants;
@@ -90,7 +92,7 @@ PDDL::Metric PDDLStateFactory::getMetric() {
 	for (; varItr != metric->variables.end(); varItr++) {
 		//Colin seems to fill PNE index lists with negative values
 		//if the PNE is total-time, so define explicitly
-		std::string var = "(" + PDDL::DEFAULT_METRIC_PNE + ")";
+		std::string var = "(" + DEFAULT_METRIC_PNE + ")";
 		if ((*varItr >= 0) && (*varItr < Planner::RPGBuilder::getPNECount())) {
 			Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(*varItr);
 			string name = aPNE->getHead()->getName();

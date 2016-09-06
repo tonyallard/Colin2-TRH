@@ -38,6 +38,9 @@ public:
 			const std::set<PDDLObject> & tilObjectSymbolTable);
 
 private:
+	//CLASS CONSTANTS
+	static const std::string DEFAULT_METRIC_PNE;
+	//Object vars
 	std::list<std::pair<std::string, std::string> > constants;
 	std::list<PDDL::Proposition> staticPropositions;
 	std::list<PDDL::PNE> staticPNEs;

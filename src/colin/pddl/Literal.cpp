@@ -35,5 +35,27 @@ bool Literal::operator==(const Literal & other) {
 	return true;
 }
 
+bool Literal::operator!=(const Literal & other) {
+	return !((*this) == other);
+}
+
+bool Literal::operator<(const Literal & other) const{
+	return ((proposition < other.proposition) ||
+		(!(other.proposition < proposition) && 
+			(positive < other.positive)));
+}
+
+bool Literal::operator>(const Literal & other) const{
+	return other < (*this);
+}
+
+bool Literal::operator<=(const Literal & other) const{
+	return !(other < (*this));
+}
+
+bool Literal::operator>=(const Literal & other) const{
+	return !((*this) < other);
+}
+
 }
 

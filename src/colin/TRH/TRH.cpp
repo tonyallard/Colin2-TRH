@@ -51,7 +51,7 @@ double TRH::getHeuristic(const Planner::MinimalState & state,
 	while (!feof(pipe.get())) {
 		if (fgets(buffer, 128, pipe.get()) != NULL)
 			result += buffer;
-		// cout << buffer;
+			// cout << buffer;
 	}
 	cout << "Completed Reading Buffer!" << endl;
 	int pos = result.find(H_STATES_EVAL_DELIM);
@@ -86,7 +86,13 @@ double TRH::getHeuristic(const Planner::MinimalState & state,
 void TRH::writeTempStates(const Planner::MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory) {
-    static int oneShot = 0;
+    // static int oneShot = 0;
+    // if (oneShot++ > 3) {
+    // 	cerr << "Exiting..." << endl;
+    // 	exit(0);
+    // }
+
+
     clock_t begin_time = clock();
 
     /*Generate Domain*/
@@ -115,11 +121,6 @@ void TRH::writeTempStates(const Planner::MinimalState & state,
 	pddlState.writeDeTILedStateToFile(filePath, stateFileName);
 	domain.writeToFile(filePath, domainFileName);
 	TRH::TRH::TIME_SPENT_IN_PRINTING_TO_FILE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
-	if (oneShot > 4) {
-		// cerr << "Exiting..." << endl;
-		// exit(0);
-	}
-	oneShot++;
 }
   
 }

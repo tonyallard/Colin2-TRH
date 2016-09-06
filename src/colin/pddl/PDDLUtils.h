@@ -28,11 +28,7 @@
 
 namespace PDDL {
 
-const std::string TIL_ACTION_PREFIX = "at-";
-const char TIL_STRING_DELIM = '-';
-const double ACCURACY = EPSILON / 10.0;
 const std::string BASE_TYPE_CLASS = "OBJECT";
-const std::string DEFAULT_METRIC_PNE = "total-time";
 
 //PDDL Type helper functions
 std::string getPDDLTypeString(const VAL::pddl_typed_symbol * type);
@@ -81,9 +77,6 @@ bool supported(const PDDL::Proposition * proposition,
 		std::list<PDDL::Proposition> * propositions);
 bool isEqual(const Planner::FFEvent * one, const Planner::FFEvent * two);
 
-//TIL Helper Functions
-double extractTILTimeStamp(const Planner::FFEvent * tilEvent);
-
 //Basic conversion functions
 PDDL::PDDLObject getPDDLObject(const VAL::pddl_typed_symbol * pddlType);
 PDDL::Proposition getFunction(const VAL::func_decl * func);
@@ -99,8 +92,6 @@ std::list<std::string> getPlanPrefix(const std::list<Planner::FFEvent>& plan);
 bool isAfter(const Planner::FFEvent * event, const Planner::FFEvent * after,
 		std::list<Planner::FFEvent> * plan);
 bool isBefore(const Planner::FFEvent * event, const Planner::FFEvent * before,
-		std::list<Planner::FFEvent> * plan);
-std::list<const Planner::FFEvent *> getTILActions(
 		std::list<Planner::FFEvent> * plan);
 
 // void printStates(

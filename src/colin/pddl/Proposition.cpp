@@ -127,5 +127,40 @@ bool Proposition::operator==(const Proposition & other) {
 	return true;
 }
 
+bool Proposition::operator!=(const Proposition & other) {
+	return !((*this) == other);
+}
+
+bool Proposition::operator<(const Proposition & other) const{
+	if (name < other.name) {
+		return true;
+	} else if (!(other.name < name) && 
+		(arguments.size() < other.arguments.size())) {
+		return true;
+	} else if (arguments.size() == other.arguments.size()) {
+		std::list<std::string>::const_iterator argItr = arguments.begin();
+		std::list<std::string>::const_iterator otherArgItr = other.arguments.begin();
+		for (; argItr != arguments.end(); argItr++, otherArgItr++) {
+			if (!(*argItr < *otherArgItr)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
+bool Proposition::operator>(const Proposition & other) const{
+	return other < (*this);
+}
+
+bool Proposition::operator<=(const Proposition & other) const{
+	return !(other < (*this));
+}
+
+bool Proposition::operator>=(const Proposition & other) const{
+	return !((*this) < other);
+}
+
 }
 
