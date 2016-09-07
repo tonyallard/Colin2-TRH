@@ -32,7 +32,6 @@
 
 #include "compressionsafescheduler.h"
 #include "lpscheduler.h"
-#include "ptree.h"
 
 #include "colours.h"
 
@@ -42,18 +41,14 @@
 
 #include <cfloat>
 #include <limits>
-#include <vector>
-#include <sstream>
 
 #include "pddl/PDDLStateFactory.h"
 #include "pddl/PDDLDomainFactory.h"
 #include "TRH/TRH.h"
-#include <ctime>
 
 #include <sys/times.h>
 
 using std::cerr;
-using std::vector;
 
 namespace Planner
 {
@@ -5445,13 +5440,13 @@ Solution FF::search(bool & reachedGoal)
     }
 
     // If the inital state is the goal
-   if (bestHeuristic.heuristicValue == 0.0) {
-       //Save EHC Performance
-       FF::incrementEHCPerformance(EHCSearchStateCount);
-       reachedGoal = true;
-       workingBestSolution.update(list<FFEvent>(), 0, evaluateMetric(initialState.getInnerState(), list<FFEvent>(), false));
-       return workingBestSolution;
-   }
+	if (bestHeuristic.heuristicValue == 0.0) {
+		//Save EHC Performance
+		FF::incrementEHCPerformance(EHCSearchStateCount);
+		reachedGoal = true;
+		workingBestSolution.update(list<FFEvent>(), 0, evaluateMetric(initialState.getInnerState(), list<FFEvent>(), false));
+		return workingBestSolution;
+	}
 
     auto_ptr<list<FFEvent> > bestPlan(new list<FFEvent>());
     {
@@ -5484,13 +5479,13 @@ Solution FF::search(bool & reachedGoal)
     }
 
     if (skipEHC) searchQueue.pop_front();
+
     // Actually search
     while (!searchQueue.empty()) {
         if (Globals::globalVerbosity & 2) cout << "\n--\n";
         // Get next search state
         auto_ptr<SearchQueueItem> currSQI(searchQueue.pop_front());
         currSQI->printPlan();
-
 
         if (currSQI->state()->hasBeenDominated) {
             continue;
@@ -5567,7 +5562,6 @@ Solution FF::search(bool & reachedGoal)
                 if (tsSound) {
                     succ->heuristicValue.makespan = currSQI->heuristicValue.makespan;
                 }
-
             } else { //Action is a start/end snap or instantaneous action
                 //registerFinished(*(succ->state), helpfulActsItr->needToFinish);
                 succ = auto_ptr<SearchQueueItem>(new SearchQueueItem(applyActionToState(*helpfulActsItr, *(currSQI->state()), currSQI->plan), true));
@@ -6263,7 +6257,6 @@ Solution FF::search(bool & reachedGoal)
     }
 
     visitedStates->clear();
-
 
     cout << "\nProblem Unsolvable\n";
     reachedGoal = false;

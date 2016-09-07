@@ -720,4 +720,3 @@ list<FFEvent> * readPlan(char* filename)
 
     return toReturn;
 };
-

@@ -65,7 +65,6 @@ bool Globals::profileScheduling = false;
 bool Globals::totalOrder = false;
 bool Globals::checkingForGoodState = false;
 
-
 ostream & operator <<(ostream & o, const ActionSegment & s) {
     if (s.second == VAL::E_AT_START) {
         cout << *(s.first) << ", start";
