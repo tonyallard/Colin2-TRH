@@ -78,7 +78,7 @@ PDDLState PDDLStateFactory::getDeTILedPDDLState(
 			propositions);
 	addTILPropositions(tilRequiredObjects, propositions);
 
-	std::list<string> planPrefix = getPlanPrefix(plan);
+	std::list<string> planPrefix = PDDL::getPlanPrefix(plan);
 	PDDLState theState(objectSymbolTable, propositions, tilPredicates, pnes,
 			goals, metric, planPrefix, heuristic, timestamp);
 
