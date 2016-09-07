@@ -26,7 +26,7 @@ std::ostream & operator<<(std::ostream & output, const Literal & literal) {
 }
 
 bool Literal::operator==(const Literal & other) {
-	if (!(this->proposition == other.proposition)) {
+	if (this->proposition != other.proposition) {
 		return false;
 	}
 	if (this->isPositive() != other.isPositive()){
