@@ -18,9 +18,11 @@
 #include "PropositionFactory.h"
 #include "PNEFactory.h"
 #include "ExpressionTree.h"
+#include "../TRH/TRH.h"
 
 #include "../FakeTILAction.h"
 #include "../RPGBuilder.h"
+#include "../temporalanalysis.h"
 
 using namespace std;
 
@@ -452,7 +454,7 @@ string PDDLDomainFactory::getdeTILedAction(const TIL & til,
  * For example the start snap action has been executed, but not the end snap action
  */
 std::list<PDDL::PendingAction> PDDLDomainFactory::getPendingActions(
-		const Planner::MinimalState & state, double timestamp,
+		const Planner::MinimalState & state, double timestamp, 
 		std::set<PDDLObject> & objectSymbolTable,
 		list<PDDL::Proposition> & pendingActionRequiredObjects) {
 	std::list<PendingAction> pendingActions;
@@ -461,10 +463,10 @@ std::list<PDDL::PendingAction> PDDLDomainFactory::getPendingActions(
 			state.startedActions.begin();
 	const std::map<int, std::set<int> >::const_iterator saItrEnd =
 			state.startedActions.end();
+
 	for (; saItr != saItrEnd; saItr++) {
 
 		std::string name = PDDL::getActionName(saItr->first);
-
 		std::set<PDDLObject> parameters;
 
 		//For each action get its conditions
@@ -474,6 +476,31 @@ std::list<PDDL::PendingAction> PDDLDomainFactory::getPendingActions(
 		// Get action duration
 		double minDur = Planner::RPGBuilder::getOpMinDuration(saItr->first, 1);
 		double maxDur = Planner::RPGBuilder::getOpMaxDuration(saItr->first, 1);
+		//Duration inequalities not supported
+		if (minDur != maxDur) {
+			cerr << "Duration inequalities not yet supported. Taking the mean." 
+				<< endl;
+			minDur = (minDur + maxDur) / 2;
+		}
+		//Determine how long the action has been running for 
+		//and compute the remaining duraiton
+		double actionStartTime = 0.0;
+		const vector<pair<double, double> > & tsBounds = 
+			Planner::TemporalAnalysis::getActionTSBounds()[saItr->first];
+		const double startMin = tsBounds[0].first;
+        const double startMax = tsBounds[0].second;
+
+		const double endMin = tsBounds[1].first;
+        const double endMax = tsBounds[1].second;
+
+		actionStartTime = startMin;
+
+		//Calculate remaining duration
+		double remainingDur = minDur - (timestamp - actionStartTime);
+		//ensure it is above 0
+		remainingDur = max(EPSILON, remainingDur);
+		//ensure it is no longer than max duraiton
+		remainingDur = min(minDur, remainingDur);
 
 		// Literals Added by Action
 		std::list<std::pair<PDDL::Proposition, VAL::time_spec> > propositionalAddEffects;
@@ -555,7 +582,7 @@ std::list<PDDL::PendingAction> PDDLDomainFactory::getPendingActions(
 
 		PendingAction pendingAction(name, parameterTable,
 				propositionalAddEffects, propositionalDelEffects, pneEffects,
-				conditions, requiredObjects, minDur);
+				conditions, requiredObjects, remainingDur);
 
 		pendingActions.push_back(pendingAction);
 	}

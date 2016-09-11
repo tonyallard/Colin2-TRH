@@ -72,7 +72,7 @@ private:
 		std::list<PDDL::Proposition> & tilRequiredObjects,
 		std::list<PDDL::Proposition> & tilRequiredObjectsParameterised);
 	std::list<PDDL::PendingAction> getPendingActions(
-			const Planner::MinimalState & state, double timestamp,
+			const Planner::MinimalState & state, double timestamp, 
 			std::set<PDDLObject> & objectSymbolTable,
 			list<PDDL::Proposition> & pendingActionRequiredObjects);
 	list<string> getPendingActions(const std::list<PendingAction> & pendingActions);
@@ -98,7 +98,7 @@ public:
 			const std::list<PendingAction> & pendingActions);
 
 	PDDL::PDDLDomain getDeTILedDomain(
-		const VAL::domain * domain, const Planner::MinimalState & state,
+		const VAL::domain * domain, const Planner::MinimalState & state, 
 		double timestamp);
 };
 }
