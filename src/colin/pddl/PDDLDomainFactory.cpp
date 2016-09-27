@@ -628,18 +628,11 @@ std::list<PDDL::TIL> PDDLDomainFactory::getTILs(
 		std::set<PDDLObject> & objectSymbolTable) {
 
 	std::list<PDDL::TIL> tils;
-
 	//Cycle thourgh TILs
-	list<Planner::FakeTILAction> theTILs = Planner::RPGBuilder::getTILs();
-	std::list<Planner::FakeTILAction>::const_iterator tilItr = theTILs.begin();
-	const std::list<Planner::FakeTILAction>::const_iterator tilItrEnd =
-			theTILs.end();
-	for (; tilItr != tilItrEnd; tilItr++) {
-		const Planner::FakeTILAction * tilAction = &(*tilItr);
-		//Make sure the TIL is still current
-		if (tilAction->duration <= timestamp) {
-			continue;
-		}
+	vector<Planner::FakeTILAction*> theTILs = Planner::RPGBuilder::getTILVec();
+
+	for (int tilItr = state.nextTIL; tilItr < theTILs.size(); tilItr++) {
+		const Planner::FakeTILAction * tilAction = theTILs[tilItr];
 
 		PDDL::extractParameters(tilAction, objectSymbolTable, constants);
 		PDDL::TIL til = PDDL::getTIL(*tilAction, timestamp, constants);
