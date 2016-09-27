@@ -1580,8 +1580,10 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
 
     if (FF::USE_TRH) {
         //Use TRH Heuristic
-        h = TRH::TRH::getInstance()->getHeuristic(theState.getInnerState(), header, 
+        pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState.getInnerState(), header, 
                 theState.timeStamp, 0, pddlFactory);
+        h = result.first;
+        makespanEstimate = result.second;
     } else {
         //Use RPG Heuristic
         if (considerCache) {
@@ -5432,7 +5434,7 @@ Solution FF::search(bool & reachedGoal)
 
     auto_ptr<StatesToDelete> statesKept(new StatesToDelete());
 
-    if (ffDebug || true) cout << "Initial heuristic = " << bestHeuristic.heuristicValue << "\n";
+    if (ffDebug || true) cout << "Initial heuristic = " << bestHeuristic.heuristicValue << " | " << bestHeuristic.makespanEstimate << "\n";
     // If the problem is unsolveable in the relaxed sense then it is unsolveable
     if (bestHeuristic.heuristicValue == -1.0) {
         reachedGoal = false;
@@ -5772,7 +5774,7 @@ Solution FF::search(bool & reachedGoal)
 #endif
                         if ((succ->heuristicValue.heuristicValue < bestHeuristic.heuristicValue)
                                 || (FF::makespanTieBreak && (succ->heuristicValue.heuristicValue == bestHeuristic.heuristicValue)
-                                    && (succ->heuristicValue.makespan < bestHeuristic.makespan))
+                                    && (succ->heuristicValue.makespanEstimate < bestHeuristic.makespanEstimate))
                            ) {
 
                         	//Save EHC Performance
@@ -5781,7 +5783,7 @@ Solution FF::search(bool & reachedGoal)
                         	EHCSearchStateCount = 0;
 
                         	bestHeuristic = succ->heuristicValue;
-                            cout << "b (" << bestHeuristic.heuristicValue << " | " << bestHeuristic.makespan << ")" ; cout.flush();
+                            cout << "b (" << bestHeuristic.heuristicValue << " | " << bestHeuristic.makespanEstimate << ")" ; cout.flush();
                             //succ->printPlan();
                             //Clear search queue and add this as new root node
                             //Expansion will only take place from here now
@@ -5794,14 +5796,14 @@ Solution FF::search(bool & reachedGoal)
                                 break;
                             }
                         } else {
-                            if (Globals::globalVerbosity & 1) cout << "."; cout.flush();
+                            // if (Globals::globalVerbosity & 1) 
+                                cout << "."; cout.flush();
                             searchQueue.push_back(succ.release(), 1);
                         }
                     } else {
-                        if (Globals::globalVerbosity & 1) {
-                            cout << "d";
-                            cout.flush();
-                        }
+                        // if (Globals::globalVerbosity & 1)
+                            cout << "d"; cout.flush();
+                        
 #ifndef NDEBUG
                         if (Globals::globalVerbosity & 2) {
                             cout << succ->heuristicValue.diagnosis << " ";
@@ -5810,7 +5812,8 @@ Solution FF::search(bool & reachedGoal)
 #endif
                     }
                 } else {
-                    if (Globals::globalVerbosity & 1) cout << "p"; cout.flush();
+                    // if (Globals::globalVerbosity & 1)
+                        cout << "p"; cout.flush();
                 }
             }
         }
@@ -6215,31 +6218,31 @@ Solution FF::search(bool & reachedGoal)
 #endif
                         if (succ->heuristicValue.heuristicValue != 0.0) {
 
-                            if (succ->heuristicValue.heuristicValue < bestHeuristic.heuristicValue || (FF::makespanTieBreak && (succ->heuristicValue.heuristicValue == bestHeuristic.heuristicValue && succ->heuristicValue.makespan < bestHeuristic.makespan))) {
+                            if (succ->heuristicValue.heuristicValue < bestHeuristic.heuristicValue || (FF::makespanTieBreak && (succ->heuristicValue.heuristicValue == bestHeuristic.heuristicValue && succ->heuristicValue.makespanEstimate < bestHeuristic.makespanEstimate))) {
 
                                 bestHeuristic = succ->heuristicValue;
                                 if (Globals::globalVerbosity & 2) {
                                     cout << "\t" << bestHeuristic.heuristicValue << " | " << bestHeuristic.makespan << ", category " << visitTheState << " - a new best heuristic value, with plan:\n";
                                     //succ->printPlan();
                                 } else {
-                                    cout << "b (" << bestHeuristic.heuristicValue << " | " << bestHeuristic.makespan << ")" ; cout.flush();
+                                    cout << "b (" << bestHeuristic.heuristicValue << " | " << bestHeuristic.makespanEstimate << ")" ; cout.flush();
                                 }
 
                                 searchQueue.insert(succ.release(), visitTheState);
                             } else {
                                 if (Globals::globalVerbosity & 2) {
                                     cout << "\t" << succ->heuristicValue.heuristicValue << " | " << succ->heuristicValue.makespan << ", category " << visitTheState << "\n";
-                                } else if (Globals::globalVerbosity & 1) {
+                                } //else if (Globals::globalVerbosity & 1) {
                                     cout << "."; cout.flush();
-                                }
+                                // }
                                 searchQueue.insert(succ.release(), visitTheState);
                             }
                         }
 
                     } else {
-                        if (Globals::globalVerbosity & 1) {
+                        // if (Globals::globalVerbosity & 1) {
                             cout << "d"; cout.flush();
-                        }
+                        // }
 #ifndef NDEBUG
                         if (Globals::globalVerbosity & 2) {
                             cout << succ->heuristicValue.diagnosis << " ";
@@ -6248,9 +6251,9 @@ Solution FF::search(bool & reachedGoal)
 #endif
                     }
                 } else {
-                    if (Globals::globalVerbosity & 1 && !(Globals::globalVerbosity & 2)) {
+                    // if (Globals::globalVerbosity & 1 && !(Globals::globalVerbosity & 2)) {
                         cout << "p"; cout.flush();
-                    }
+                    // }
                 }
             }
         }

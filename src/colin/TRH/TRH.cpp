@@ -20,6 +20,7 @@ namespace TRH {
 TRH * TRH::INSTANCE = NULL;
 const char * TRH::H_CMD = "./lib/colin-clp tempdomain.pddl temp.pddl";
 const string TRH::H_VAL_DELIM = "State Heuristic Value is: ";
+const string TRH::RELAXED_PLAN_SIZE_DELIM = "Relaxed plan length is: ";
 const string TRH::H_STATES_EVAL_DELIM = "; States evaluated: ";
 const string TRH::H_PLAN_DELIM = "(init-action)  [0.001]";
 
@@ -34,7 +35,7 @@ TRH * TRH::getInstance() {
 	return INSTANCE;
 }
 
-double TRH::getHeuristic(const Planner::MinimalState & state,
+pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory) {
 
     Planner::FF::STATES_EVALUATED++;
@@ -44,22 +45,20 @@ double TRH::getHeuristic(const Planner::MinimalState & state,
 	std::shared_ptr<FILE> pipe(popen(H_CMD, "r"), pclose);
 	TRH::TRH::TIME_SPENT_IN_HEURISTIC += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
 	if (!pipe)
-		return 1e5;
+		return std::make_pair(-1.0, -1.0);
 	char buffer[128];
 	std::string result = "";
-	cout << "About to read buffer!" << endl;
 	while (!feof(pipe.get())) {
 		if (fgets(buffer, 128, pipe.get()) != NULL)
 			result += buffer;
-			// cout << buffer;
+			 // cout << buffer;
 	}
-	cout << "Completed Reading Buffer!" << endl;
 	int pos = result.find(H_STATES_EVAL_DELIM);
 	if (pos != -1) {
 		int posEnd = result.find("\n", pos);
 		string statesEvalStr = result.substr(pos + H_STATES_EVAL_DELIM.size(), posEnd-(pos + H_STATES_EVAL_DELIM.size()));
 		int statesEval = stoi(statesEvalStr);
-		printf("Heuristic States Eval: %s\n", statesEvalStr.c_str());
+		// printf("Heuristic States Eval: %s\n", statesEvalStr.c_str());
 		Planner::FF::STATES_EVALUATED_IN_HEURISTIC += statesEval;
 	}
 	// int planPos = result.find(H_PLAN_DELIM);
@@ -69,18 +68,28 @@ double TRH::getHeuristic(const Planner::MinimalState & state,
 	// 	}
 	pos = result.find(H_VAL_DELIM);
 	if (pos == -1) {
-		cerr << "Problem was unsolvable - therefore max heuristic" << endl;
-		return 1e5;
+		cerr << "Problem was unsolvable - therefore heuristic value of -1.0" << endl;
+		return std::make_pair(-1.0, -1.0);
 	}
 	string h_val_str = result.substr(pos + H_VAL_DELIM.size());
-	printf("%s\n", h_val_str.c_str());
+	// printf("%s\n", h_val_str.c_str());
 	double hval = stod(h_val_str);
+	
+	int relaxedPlanSize = 0;
+	pos = result.find(RELAXED_PLAN_SIZE_DELIM);
+	if (pos != -1) {
+		int posEnd = result.find("\n", pos);
+		string relaxedPlanSizeStr = result.substr(pos + RELAXED_PLAN_SIZE_DELIM.size(), posEnd-(pos + RELAXED_PLAN_SIZE_DELIM.size()));
+		relaxedPlanSize = stoi(relaxedPlanSizeStr);
+		// printf("Relaxed Plan Length: %s\n", relaxedPlanSizeStr.c_str());
+	}
 	int planPos = result.find(H_PLAN_DELIM);
 	if ((planPos != -1) && (hval == 0.0)) {
 		string plan = result.substr(planPos + H_PLAN_DELIM.size(), pos);
 		cout << plan << endl;
 	}
-	return hval;
+
+	return std::make_pair (hval, relaxedPlanSize);
 }
 
 void TRH::writeTempStates(const Planner::MinimalState & state,

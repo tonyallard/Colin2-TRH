@@ -20,6 +20,7 @@ class TRH {
 private:
 	static const char * H_CMD;
 	static const string H_VAL_DELIM;
+	static const string RELAXED_PLAN_SIZE_DELIM;
 	static const string H_STATES_EVAL_DELIM;
 	static const string H_PLAN_DELIM;
 	static TRH * INSTANCE;
@@ -37,7 +38,7 @@ private:
 	;
 public:
 	static TRH * getInstance();
-	double getHeuristic(const Planner::MinimalState & state,
+	pair<double, int> getHeuristic(const Planner::MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory);
 	static double TIME_SPENT_IN_HEURISTIC;
 	static double TIME_SPENT_IN_PRINTING_TO_FILE;
