@@ -18,7 +18,7 @@
 namespace TRH {
 
 TRH * TRH::INSTANCE = NULL;
-const char * TRH::H_CMD = "./lib/colin-clp tempdomain.pddl temp.pddl";
+const char * TRH::H_CMD = "./lib/colin-clp /tmp/tempdomain.pddl /tmp/temp.pddl";
 const string TRH::H_VAL_DELIM = "State Heuristic Value is: ";
 const string TRH::RELAXED_PLAN_SIZE_DELIM = "Relaxed plan length is: ";
 const string TRH::H_STATES_EVAL_DELIM = "; States evaluated: ";
@@ -124,7 +124,7 @@ void TRH::writeTempStates(const Planner::MinimalState & state,
         
     //Write State/Domain to disk for heuristic computation
     begin_time = clock();
-	string filePath = "";
+	string filePath = "/tmp/";
 	string stateFileName = "temp";
 	string domainFileName = "tempdomain";
 	pddlState.writeDeTILedStateToFile(filePath, stateFileName);
