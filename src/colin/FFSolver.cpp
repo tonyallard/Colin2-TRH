@@ -5796,14 +5796,14 @@ Solution FF::search(bool & reachedGoal)
                                 break;
                             }
                         } else {
-                            // if (Globals::globalVerbosity & 1) 
-                                cout << "."; cout.flush();
+                            if (Globals::globalVerbosity & 1) cout << "."; cout.flush();
                             searchQueue.push_back(succ.release(), 1);
                         }
                     } else {
-                        // if (Globals::globalVerbosity & 1)
-                            cout << "d"; cout.flush();
-                        
+                        if (Globals::globalVerbosity & 1) {
+                            cout << "d"; 
+                            cout.flush();
+                        }
 #ifndef NDEBUG
                         if (Globals::globalVerbosity & 2) {
                             cout << succ->heuristicValue.diagnosis << " ";
@@ -5812,8 +5812,7 @@ Solution FF::search(bool & reachedGoal)
 #endif
                     }
                 } else {
-                    // if (Globals::globalVerbosity & 1)
-                        cout << "p"; cout.flush();
+                    if (Globals::globalVerbosity & 1) cout << "p"; cout.flush();
                 }
             }
         }
@@ -6232,17 +6231,17 @@ Solution FF::search(bool & reachedGoal)
                             } else {
                                 if (Globals::globalVerbosity & 2) {
                                     cout << "\t" << succ->heuristicValue.heuristicValue << " | " << succ->heuristicValue.makespan << ", category " << visitTheState << "\n";
-                                } //else if (Globals::globalVerbosity & 1) {
+                                } else if (Globals::globalVerbosity & 1) {
                                     cout << "."; cout.flush();
-                                // }
+                                }
                                 searchQueue.insert(succ.release(), visitTheState);
                             }
                         }
 
                     } else {
-                        // if (Globals::globalVerbosity & 1) {
+                        if (Globals::globalVerbosity & 1) {
                             cout << "d"; cout.flush();
-                        // }
+                        }
 #ifndef NDEBUG
                         if (Globals::globalVerbosity & 2) {
                             cout << succ->heuristicValue.diagnosis << " ";
@@ -6251,9 +6250,9 @@ Solution FF::search(bool & reachedGoal)
 #endif
                     }
                 } else {
-                    // if (Globals::globalVerbosity & 1 && !(Globals::globalVerbosity & 2)) {
+                    if (Globals::globalVerbosity & 1 && !(Globals::globalVerbosity & 2)) {
                         cout << "p"; cout.flush();
-                    // }
+                    }
                 }
             }
         }
