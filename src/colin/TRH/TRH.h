@@ -24,18 +24,33 @@ private:
 	static const string H_STATES_EVAL_DELIM;
 	static const string H_PLAN_DELIM;
 	static TRH * INSTANCE;
-	void writeTempStates(const Planner::MinimalState & state,
-		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory);
+
+	static int generateNewInstanceID();
+	
+	/*Used to ensure unique state files per instance*/
+	const int TRH_INSTANCE_ID;
+
 	//Singleton
-	TRH() {
-	}
-	;
-	TRH(TRH const & other) {
+	TRH(int trhInstanceID) : TRH_INSTANCE_ID(trhInstanceID) {
+	};
+	TRH(TRH const & other) : TRH_INSTANCE_ID(generateNewInstanceID()){
 	}
 	;
 	TRH& operator=(TRH const&) {
 	}
 	;
+
+	string buildCommand();
+	void writeTempState(const Planner::MinimalState & state,
+		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
+		PDDL::PDDLStateFactory pddlFactory);
+	void writeBadState(const Planner::MinimalState & state,
+		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
+		PDDL::PDDLStateFactory pddlFactory, int stateNum);
+	void writeStateToFile(const Planner::MinimalState & state,
+		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
+		PDDL::PDDLStateFactory pddlFactory, string fileName);
+
 public:
 	static TRH * getInstance();
 	pair<double, int> getHeuristic(const Planner::MinimalState & state,

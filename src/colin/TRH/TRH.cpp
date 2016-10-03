@@ -4,6 +4,8 @@
 #include <cstdio>
 #include <memory>
 #include <sstream>
+#include <limits>
+#include <random>
 
 #include "TRH.h"
 #include "PDDLDomain.h"
@@ -18,31 +20,40 @@
 namespace TRH {
 
 TRH * TRH::INSTANCE = NULL;
-const char * TRH::H_CMD = "./lib/colin-clp /tmp/tempdomain.pddl /tmp/temp.pddl";
+const char * TRH::H_CMD = "./lib/colin-clp";
 const string TRH::H_VAL_DELIM = "State Heuristic Value is: ";
 const string TRH::RELAXED_PLAN_SIZE_DELIM = "Relaxed plan length is: ";
 const string TRH::H_STATES_EVAL_DELIM = "; States evaluated: ";
 const string TRH::H_PLAN_DELIM = "(init-action)  [0.001]";
-
 double TRH::TIME_SPENT_IN_HEURISTIC = 0.0;
 double TRH::TIME_SPENT_IN_PRINTING_TO_FILE = 0.0;
 double TRH::TIME_SPENT_CONVERTING_PDDL_STATE = 0.0;
 
+
 TRH * TRH::getInstance() {
 	if (!INSTANCE) {
-		INSTANCE = new TRH();
+		INSTANCE = new TRH(generateNewInstanceID());
 	}
 	return INSTANCE;
+}
+
+int TRH::generateNewInstanceID() {
+	static std::random_device rd;
+	static std::default_random_engine generator(rd());
+	static std::uniform_int_distribution<int> distribution(0,
+		std::numeric_limits<int>::max());
+	return distribution(generator);
 }
 
 pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory) {
 
     Planner::FF::STATES_EVALUATED++;
-	writeTempStates(state, plan, timestamp, heuristic, pddlFactory);
+	writeTempState(state, plan, timestamp, heuristic, pddlFactory);
 
 	clock_t begin_time = clock();
-	std::shared_ptr<FILE> pipe(popen(H_CMD, "r"), pclose);
+
+	std::shared_ptr<FILE> pipe(popen(buildCommand().c_str(), "r"), pclose);
 	TRH::TRH::TIME_SPENT_IN_HEURISTIC += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
 	if (!pipe)
 		return std::make_pair(-1.0, -1.0);
@@ -69,6 +80,8 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 	pos = result.find(H_VAL_DELIM);
 	if (pos == -1) {
 		cerr << "Problem was unsolvable - therefore heuristic value of -1.0" << endl;
+		static int badStateNum = 0;
+		writeBadState(state, plan, timestamp, heuristic, pddlFactory, badStateNum++);
 		return std::make_pair(-1.0, -1.0);
 	}
 	string h_val_str = result.substr(pos + H_VAL_DELIM.size());
@@ -92,17 +105,44 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 	return std::make_pair (hval, relaxedPlanSize);
 }
 
-void TRH::writeTempStates(const Planner::MinimalState & state,
+string TRH::buildCommand() {
+	ostringstream cmd;
+	cmd << H_CMD << " /tmp/temp" << TRH_INSTANCE_ID << "domain.pddl" 
+		<< " /tmp/temp" << TRH_INSTANCE_ID << ".pddl";
+	return cmd.str();
+}
+
+void TRH::writeTempState(const Planner::MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory) {
     // static int oneShot = 0;
-    // if (oneShot++ > 3) {
+    // if (oneShot++ > 1) {
     // 	cerr << "Exiting..." << endl;
     // 	exit(0);
     // }
 
+	ostringstream stateFileName;
+	stateFileName << "temp" << TRH_INSTANCE_ID;
+	writeStateToFile(state, plan, timestamp, heuristic, 
+		pddlFactory, stateFileName.str());
+}
 
-    clock_t begin_time = clock();
+void TRH::writeBadState(const Planner::MinimalState & state,
+		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
+		PDDL::PDDLStateFactory pddlFactory, int stateNum) {
+	
+	ostringstream stateFileName;
+	stateFileName << "BadState" << TRH_INSTANCE_ID << "-" << stateNum;
+	writeStateToFile(state, plan, timestamp, heuristic, 
+		pddlFactory, stateFileName.str());
+}
+
+
+void TRH::writeStateToFile(const Planner::MinimalState & state,
+	std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
+	PDDL::PDDLStateFactory pddlFactory, string fileName) {
+
+	clock_t begin_time = clock();
 
     /*Generate Domain*/
 
@@ -125,11 +165,12 @@ void TRH::writeTempStates(const Planner::MinimalState & state,
     //Write State/Domain to disk for heuristic computation
     begin_time = clock();
 	string filePath = "/tmp/";
-	string stateFileName = "temp";
-	string domainFileName = "tempdomain";
-	pddlState.writeDeTILedStateToFile(filePath, stateFileName);
+	
+	string domainFileName = fileName + "domain";
+	pddlState.writeDeTILedStateToFile(filePath, fileName);
 	domain.writeToFile(filePath, domainFileName);
 	TRH::TRH::TIME_SPENT_IN_PRINTING_TO_FILE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
+
 }
   
 }
