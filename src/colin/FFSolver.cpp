@@ -95,6 +95,7 @@ std::map<int, int> FF::EHC_PERFORMANCE_HISTOGRAM;
 bool FF::USE_TRH = true;
 int FF::STATES_EVALUATED = 0;
 int FF::STATES_EVALUATED_IN_HEURISTIC = 0;
+int FF::DEAD_END_COUNT = 0;
 
 #ifndef NDEBUG
 list<FFEvent> * FF::benchmarkPlan = 0;
@@ -1576,7 +1577,7 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
 
 
     double makespanEstimate = 0.0;
-    double h; 
+    double h = DBL_MAX; 
 
     if (FF::USE_TRH) {
         //Use TRH Heuristic
@@ -1595,9 +1596,11 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
                 cout << "*";
                 cout.flush();
             } else {
+                clock_t begin_time = clock();
                 h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
                                                                extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,       // for colin-jair heuristic
                                                                helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
+                TRH::TRH::TIME_SPENT_IN_HEURISTIC += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
                 FFcache_relaxedPlan = relaxedPlan;
                 FFcache_helpfulActions = helpfulActions;
                 FFcache_h = h;
@@ -1606,9 +1609,11 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
             }
         } else {
             //printState(theState);
+            clock_t begin_time = clock();
             h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
                                                             extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,          // for colin-jair heuristic
                                                             helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
+            TRH::TRH::TIME_SPENT_IN_HEURISTIC += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
         }
     }
 
@@ -1663,7 +1668,7 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
 }
 
 
-HTrio FF::calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, map<double, list<pair<int, int> > > * justApplied, double tilFrom)
+HTrio FF::calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, PDDL::PDDLStateFactory pddlFactory, map<double, list<pair<int, int> > > * justApplied, double tilFrom)
 {
     assert(!scheduleToMetric);
     //cout << "Evaluating a state reached by " << header.size() + now.size() << " snap actions\n";
@@ -1690,13 +1695,22 @@ HTrio FF::calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & th
     list<pair<double, list<ActionSegment> > > relaxedPlan;
 
     //printState(theState);
-    static int oldBestH = INT_MAX;
-
+    static double oldBestH = DBL_MAX;
     double makespanEstimate = 0.0;
-    int h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
+    double h = DBL_MAX;  
+    if (FF::USE_TRH) {
+        //Use TRH Heuristic
+        pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState.getInnerState(), header, 
+                theState.timeStamp, 0, pddlFactory);
+        h = result.first;
+        makespanEstimate = result.second;
+    } else {
+        clock_t begin_time = clock();
+        h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
                                                        theState.getInnerState().secondMin, theState.getInnerState().secondMax, timeAtWhichValueIsDefined,                                      // for colin-jair heuristic
                                                        helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
-
+        TRH::TRH::TIME_SPENT_IN_HEURISTIC += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
+    }
     if (h < oldBestH) {
         oldBestH = h;
     }
@@ -2190,7 +2204,7 @@ void FF::evaluateStateAndUpdatePlan(auto_ptr<SearchQueueItem> & succ, ExtendedMi
     HTrio h1;
 
     if (FF::allowCompressionSafeScheduler) {
-        h1 = calculateHeuristicAndCompressionSafeSchedule(state, prevState, goals, goalFluents, helpfulActions, succ->plan, nowList, stepID, justApplied, tilFrom);
+        h1 = calculateHeuristicAndCompressionSafeSchedule(state, prevState, goals, goalFluents, helpfulActions, succ->plan, nowList, stepID, pddlFactory, justApplied, tilFrom);
     } else {
         h1 = calculateHeuristicAndSchedule(state, prevState, goals, goalFluents, incrementalData, helpfulActions, succ->plan, nowList, stepID, pddlFactory, true, justApplied, tilFrom);
     }
@@ -4745,7 +4759,7 @@ list<FFEvent> * FF::doBenchmark(bool & reachedGoal, list<FFEvent> * oldSoln, con
         HTrio h1;
         if (FF::allowCompressionSafeScheduler) {
             h1 = calculateHeuristicAndCompressionSafeSchedule(*(currSQI->state()), 0, goals, numericGoals,
-                                                              currSQI->helpfulActions, currSQI->plan, tEvent, -1);
+                                                              currSQI->helpfulActions, currSQI->plan, tEvent, -1, pddlFactory);
 
         } else {
             h1 = calculateHeuristicAndSchedule(*(currSQI->state()), 0, goals, numericGoals,
@@ -5057,7 +5071,7 @@ list<FFEvent> * FF::doBenchmark(bool & reachedGoal, list<FFEvent> * oldSoln, con
 
             if (FF::allowCompressionSafeScheduler) {
                 h1 = calculateHeuristicAndCompressionSafeSchedule(*(succ->state()), currSQI->state(), goals, numericGoals,
-                                                   succ->helpfulActions, succ->plan, nowList, stepID, 0, 0.001);
+                                                   succ->helpfulActions, succ->plan, nowList, stepID, pddlFactory, 0, 0.001);
 
             } else {
                 h1 = calculateHeuristicAndSchedule(*(succ->state()), currSQI->state(), goals, numericGoals, pd.get(),
@@ -5423,7 +5437,7 @@ Solution FF::search(bool & reachedGoal)
         FFheader_upToDate = false;
         FFonly_one_successor = true;
         if (FF::allowCompressionSafeScheduler) {
-            bestHeuristic = calculateHeuristicAndCompressionSafeSchedule(initialState, 0, goals, numericGoals, initialSQI->helpfulActions, initialSQI->plan, tEvent, -1);
+            bestHeuristic = calculateHeuristicAndCompressionSafeSchedule(initialState, 0, goals, numericGoals, initialSQI->helpfulActions, initialSQI->plan, tEvent, -1, pddlFactory);
         } else {
             bestHeuristic = calculateHeuristicAndSchedule(initialState, 0, goals, numericGoals, (ParentData*) 0, initialSQI->helpfulActions, initialSQI->plan, tEvent, -1, pddlFactory);
         }
@@ -5810,6 +5824,7 @@ Solution FF::search(bool & reachedGoal)
                             cout.flush();
                         }
 #endif
+                        FF::DEAD_END_COUNT++;
                     }
                 } else {
                     if (Globals::globalVerbosity & 1) cout << "p"; cout.flush();
@@ -6248,6 +6263,7 @@ Solution FF::search(bool & reachedGoal)
                             cout.flush();
                         }
 #endif
+                        FF::DEAD_END_COUNT++;
                     }
                 } else {
                     if (Globals::globalVerbosity & 1 && !(Globals::globalVerbosity & 2)) {
@@ -6490,7 +6506,7 @@ list<FFEvent> * FF::reprocessPlan(list<FFEvent> * oldSoln, TemporalConstraints *
         }
         #endif
         if (FF::allowCompressionSafeScheduler) {
-            calculateHeuristicAndCompressionSafeSchedule(initialState, 0, goals, numericGoals, currSQI->helpfulActions, currSQI->plan, tEvent, -1);
+            calculateHeuristicAndCompressionSafeSchedule(initialState, 0, goals, numericGoals, currSQI->helpfulActions, currSQI->plan, tEvent, -1, pddlFactory);
         } else {
             calculateHeuristicAndSchedule(initialState, 0, goals, numericGoals, (ParentData*) 0, currSQI->helpfulActions, currSQI->plan, tEvent, -1, pddlFactory);
         }

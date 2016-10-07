@@ -481,6 +481,7 @@ int main(int argc, char * argv[])
                 	pair<int,int> counter = *ehcPerfItr;
                 	cout << "#; " << counter.first << ": " << counter.second << endl;
                 }
+                cout << "#; Search encountered " << FF::DEAD_END_COUNT << " dead ends" << endl;
                 cout << endl;
             }
             
@@ -495,6 +496,18 @@ int main(int argc, char * argv[])
         return 0;
     } else {
         cout << ";; Problem unsolvable!\n";
+        cout << "#; States evaluated: " << Planner::FF::STATES_EVALUATED << endl;
+        cout << "#; Heuristic States Evaluated: " << Planner::FF::STATES_EVALUATED_IN_HEURISTIC << endl;
+        cout << "#; Time spent converting PDDL state: " << TRH::TRH::TIME_SPENT_CONVERTING_PDDL_STATE << "s." << endl;
+        cout << "#; Time spent printing state to file: " << TRH::TRH::TIME_SPENT_IN_PRINTING_TO_FILE << "s." << endl;
+        cout << "#; Time spent in heuristic: " << TRH::TRH::TIME_SPENT_IN_HEURISTIC << "s." << endl;
+        cout << "#; EHC Performance Histogram: " << FF::EHC_PERFORMANCE_HISTOGRAM.size() << endl;
+        map<int, int>::iterator ehcPerfItr = FF::EHC_PERFORMANCE_HISTOGRAM.begin();
+        for (; ehcPerfItr != FF::EHC_PERFORMANCE_HISTOGRAM.end(); ehcPerfItr++) {
+            pair<int,int> counter = *ehcPerfItr;
+            cout << "#; " << counter.first << ": " << counter.second << endl;
+        }
+        cout << "#; Search encountered " << FF::DEAD_END_COUNT << " dead ends" << endl;
         tms refReturn;
         times(&refReturn);
         double secs = ((double)refReturn.tms_utime + (double)refReturn.tms_stime) / ((double) sysconf(_SC_CLK_TCK));

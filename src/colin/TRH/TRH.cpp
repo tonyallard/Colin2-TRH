@@ -54,7 +54,6 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 	clock_t begin_time = clock();
 
 	std::shared_ptr<FILE> pipe(popen(buildCommand().c_str(), "r"), pclose);
-	TRH::TRH::TIME_SPENT_IN_HEURISTIC += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
 	if (!pipe)
 		return std::make_pair(-1.0, -1.0);
 	char buffer[128];
@@ -64,6 +63,7 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 			result += buffer;
 			 // cout << buffer;
 	}
+	TRH::TRH::TIME_SPENT_IN_HEURISTIC += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
 	int pos = result.find(H_STATES_EVAL_DELIM);
 	if (pos != -1) {
 		int posEnd = result.find("\n", pos);
@@ -79,7 +79,7 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 	// 	}
 	pos = result.find(H_VAL_DELIM);
 	if (pos == -1) {
-		cerr << "Problem was unsolvable - therefore heuristic value of -1.0" << endl;
+		// cerr << "Problem was unsolvable - therefore heuristic value of -1.0" << endl;
 		static int badStateNum = 0;
 		writeBadState(state, plan, timestamp, heuristic, pddlFactory, badStateNum++);
 		return std::make_pair(-1.0, -1.0);
@@ -160,7 +160,7 @@ void TRH::writeStateToFile(const Planner::MinimalState & state,
     PDDL::PDDLState pddlState = pddlFactory.getDeTILedPDDLState(state, plan, timestamp, 
         	heuristic, tilPredicates, tilRequiredObjects, pendingActionRequiredObjects, domainObjectSymbolTable);
         		
-    TRH::TRH::TIME_SPENT_CONVERTING_PDDL_STATE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
+    TRH::TRH::TIME_SPENT_CONVERTING_PDDL_STATE += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
         
     //Write State/Domain to disk for heuristic computation
     begin_time = clock();
@@ -169,7 +169,7 @@ void TRH::writeStateToFile(const Planner::MinimalState & state,
 	string domainFileName = fileName + "domain";
 	pddlState.writeDeTILedStateToFile(filePath, fileName);
 	domain.writeToFile(filePath, domainFileName);
-	TRH::TRH::TIME_SPENT_IN_PRINTING_TO_FILE += float( clock () - begin_time ) /  CLOCKS_PER_SEC;
+	TRH::TRH::TIME_SPENT_IN_PRINTING_TO_FILE += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
 
 }
   

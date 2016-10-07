@@ -176,6 +176,7 @@ public:
     static bool USE_TRH;
     static int STATES_EVALUATED;
     static int STATES_EVALUATED_IN_HEURISTIC;
+    static int DEAD_END_COUNT;
 
 private:
 
@@ -184,7 +185,7 @@ private:
 
     static void incrementEHCPerformance(int EHCSearchStateCount);
 
-    static HTrio calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, map<double, list<pair<int, int> > > * justApplied = 0, double tilFrom = 0.001);
+    static HTrio calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, PDDL::PDDLStateFactory pddlFactory, map<double, list<pair<int, int> > > * justApplied = 0, double tilFrom = 0.001);
     static HTrio calculateHeuristicAndSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const p, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, PDDL::PDDLStateFactory pddlFactory, bool considerCache = false, map<double, list<pair<int, int> > > * justApplied = 0, double tilFrom = 0.001);
 
     static ExtendedMinimalState * applyActionToState(ActionSegment & theAction, const ExtendedMinimalState & parent, const list<FFEvent> & plan);
