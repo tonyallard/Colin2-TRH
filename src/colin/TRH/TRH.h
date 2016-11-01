@@ -23,6 +23,7 @@ private:
 	static const string RELAXED_PLAN_SIZE_DELIM;
 	static const string H_STATES_EVAL_DELIM;
 	static const string H_PLAN_DELIM;
+	static const string TEMP_STATE_PATH;
 	static TRH * INSTANCE;
 
 	static int generateNewInstanceID();
@@ -41,7 +42,7 @@ private:
 	;
 
 	string buildCommand();
-	void writeTempState(const Planner::MinimalState & state,
+	string writeTempState(const Planner::MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory);
 	void writeBadState(const Planner::MinimalState & state,
@@ -50,6 +51,7 @@ private:
 	void writeStateToFile(const Planner::MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory, string fileName);
+	void removeTempState(string fileName);
 
 public:
 	static TRH * getInstance();

@@ -49,7 +49,7 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory) {
 
     Planner::FF::STATES_EVALUATED++;
-	writeTempState(state, plan, timestamp, heuristic, pddlFactory);
+	string stateName = writeTempState(state, plan, timestamp, heuristic, pddlFactory);
 
 	clock_t begin_time = clock();
 
@@ -64,6 +64,7 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 			 // cout << buffer;
 	}
 	TRH::TRH::TIME_SPENT_IN_HEURISTIC += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
+	removeTempState(stateName);
 	int pos = result.find(H_STATES_EVAL_DELIM);
 	if (pos != -1) {
 		int posEnd = result.find("\n", pos);
@@ -81,7 +82,7 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 	if (pos == -1) {
 		// cerr << "Problem was unsolvable - therefore heuristic value of -1.0" << endl;
 		static int badStateNum = 0;
-		writeBadState(state, plan, timestamp, heuristic, pddlFactory, badStateNum++);
+		//writeBadState(state, plan, timestamp, heuristic, pddlFactory, badStateNum++);
 		return std::make_pair(-1.0, -1.0);
 	}
 	string h_val_str = result.substr(pos + H_VAL_DELIM.size());
@@ -112,7 +113,7 @@ string TRH::buildCommand() {
 	return cmd.str();
 }
 
-void TRH::writeTempState(const Planner::MinimalState & state,
+string TRH::writeTempState(const Planner::MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory) {
     // static int oneShot = 0;
@@ -125,6 +126,7 @@ void TRH::writeTempState(const Planner::MinimalState & state,
 	stateFileName << "temp" << TRH_INSTANCE_ID;
 	writeStateToFile(state, plan, timestamp, heuristic, 
 		pddlFactory, stateFileName.str());
+	return stateFileName.str();
 }
 
 void TRH::writeBadState(const Planner::MinimalState & state,
@@ -164,13 +166,29 @@ void TRH::writeStateToFile(const Planner::MinimalState & state,
         
     //Write State/Domain to disk for heuristic computation
     begin_time = clock();
-	string filePath = "/tmp/";
+	static const string filePath = "/tmp/";
 	
 	string domainFileName = fileName + "domain";
 	pddlState.writeDeTILedStateToFile(filePath, fileName);
 	domain.writeToFile(filePath, domainFileName);
 	TRH::TRH::TIME_SPENT_IN_PRINTING_TO_FILE += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
+}
 
+void TRH::removeTempState(string fileName) {
+	static const string filePath = "/tmp/";
+	static const string extension = ".pddl";
+	ostringstream stateFileName;
+	ostringstream domainFileName;
+
+	domainFileName << filePath << fileName
+		<< "domain" << extension;
+	stateFileName << filePath << fileName 
+		<< extension;
+
+	//Remove Domain File
+	remove(domainFileName.str().c_str());
+	//Remove State File
+	remove(stateFileName.str().c_str());
 }
   
 }
