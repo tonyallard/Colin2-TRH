@@ -202,6 +202,10 @@ list<PDDL::Proposition> PDDLDomainFactory::getPredicates(
 list<PDDL::Proposition> PDDLDomainFactory::getFunctions(
 		const VAL::func_decl_list * functions) {
 	list<PDDL::Proposition> functionList;
+	//Guard against domains with no functions
+	if (functions == 0) {
+		return functionList;
+	}
 	VAL::func_decl_list::const_iterator funcItr = functions->begin();
 	for (; funcItr != functions->end(); funcItr++) {
 		PDDL::Proposition function = getFunction(*funcItr);
