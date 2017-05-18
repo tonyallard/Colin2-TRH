@@ -486,7 +486,7 @@ int main(int argc, char * argv[])
             }
             
             FFEvent::printPlan(*spSoln);
-            
+            TRH::TRH::printPlanPostfix();           
         }
 
         if (benchmark) {

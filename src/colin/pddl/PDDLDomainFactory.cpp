@@ -46,6 +46,7 @@ PDDLDomainFactory::PDDLDomainFactory(const VAL::domain * domain) {
 	functions = getFunctions(domain->functions);
 	constants = getConstantsFromDomain(domain->constants);
 	domainOperators = getDomainOperators(domain->ops);
+	domainOperatorNames = getDomainOperatorNames(domain->ops);
 }
 
 PDDL::PDDLDomain PDDLDomainFactory::getDomain(const VAL::domain * domain,
@@ -88,6 +89,16 @@ PDDL::PDDLDomain PDDLDomainFactory::getDeTILedDomain(const VAL::domain * domain,
 	return PDDLDomain(name, requirements, types, predicates, functions,
 			constants, actions, tilPredicates, tilRequiredObjects,
 			pendingActionRequiredObjects, domainObjectSymbolTable);
+}
+
+bool PDDLDomainFactory::isDomainOperator(string name) {
+	std::list<string>::const_iterator opItr = domainOperatorNames.begin();
+	for (; opItr != domainOperatorNames.end(); opItr++) {
+		if (name.compare(*opItr) == 0)  {
+			return true;
+		}
+	}
+	return false;
 }
 
 list<string> PDDLDomainFactory::getDomainRequirements(VAL::pddl_req_flag flags,
@@ -248,6 +259,17 @@ list<string> PDDLDomainFactory::getDomainOperators(
 		}
 	}
 	return domOperators;
+}
+
+list<string> PDDLDomainFactory::getDomainOperatorNames(
+		const VAL::operator_list * operators) {
+	list<string> domOperatorNames;
+	VAL::operator_list::const_iterator opsItr = operators->begin();
+	for (; opsItr != operators->end(); opsItr++) {
+		const VAL::operator_ * op = *opsItr;
+		domOperatorNames.push_back(op->name->getName());
+	}
+	return domOperatorNames;
 }
 
 list<string> PDDLDomainFactory::getActions(

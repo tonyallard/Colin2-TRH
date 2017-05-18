@@ -43,6 +43,7 @@ private:
 	list<PDDL::Proposition> functions;
 	std::list<std::pair<std::string, std::string> > constants;
 	list<std::string> domainOperators;
+	list<std::string> domainOperatorNames;
 
 	//Private Functions
 	list<string> getDomainRequirements(VAL::pddl_req_flag flags,
@@ -59,6 +60,7 @@ private:
 	std::list<std::pair<std::string, std::string> > getConstantsFromDomain(
 			const VAL::const_symbol_list * constants);
 	list<std::string> getDomainOperators(const VAL::operator_list * operators);
+	list<std::string> getDomainOperatorNames(const VAL::operator_list * operators);
 	list<string> getActions(const std::list<PendingAction> & pendingActions,
 	std::list<string> deTILedActions);
 	std::string getDurativeAction(const VAL::durative_action * action);
@@ -92,7 +94,9 @@ public:
 	static PDDLDomainFactory * getInstance();
 
 	//Needs to be public so PDDLStateFactory can use it to generate state
-	inline std::list<std::pair<std::string, std::string> > getConstants() {return constants;}
+	inline const std::list<std::pair<std::string, std::string> > & getConstants() {return constants;}
+	//Needs to be public so TRH can determine plan actions from Heuristic
+	bool isDomainOperator(string name);
 
 	PDDL::PDDLDomain getDomain(const VAL::domain * domain,
 			const std::list<PendingAction> & pendingActions);

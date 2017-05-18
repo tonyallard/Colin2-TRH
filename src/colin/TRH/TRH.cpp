@@ -16,7 +16,6 @@
 #include "PDDLObject.h"
 #include "../FFSolver.h"
 
-
 namespace TRH {
 
 TRH * TRH::INSTANCE = NULL;
@@ -28,6 +27,7 @@ const string TRH::H_PLAN_DELIM = "0.000:";
 double TRH::TIME_SPENT_IN_HEURISTIC = 0.0;
 double TRH::TIME_SPENT_IN_PRINTING_TO_FILE = 0.0;
 double TRH::TIME_SPENT_CONVERTING_PDDL_STATE = 0.0;
+list<Util::triple<double, string, double> > TRH::RELAXED_PLAN;
 
 
 TRH * TRH::getInstance() {
@@ -94,7 +94,7 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 	int planPos = result.find(H_PLAN_DELIM);
 	if ((planPos != -1) && (hval == 0.0)) {
 		string plan = result.substr(planPos, pos-planPos);
-		list<Util::triple<double, string, double> > rPlan = getRelaxedPlan(plan);
+		RELAXED_PLAN = getRelaxedPlan(plan, timestamp);
 	}
 
 	return std::make_pair (hval, relaxedPlanSize);
@@ -107,25 +107,50 @@ string TRH::buildCommand() {
 	return cmd.str();
 }
 
-list<Util::triple<double, string, double> > TRH::getRelaxedPlan(string plan) {
+list<Util::triple<double, string, double> > TRH::getRelaxedPlan(string plan, double timestamp) {
 	list<Util::triple<double, string, double> > rPlan;
 	string temp;
 	std::istringstream inputStream (plan);
+	int tilsEncountered = 0; //need to adjust timings for relaxed tils
+	const double tilDuration = EPSILON;
 	while (getline(inputStream, temp)) {
-		int startTimePos = temp.find(":");
-		double startTime = stod(temp.substr(0, startTimePos));
-
+		
 		int actionNameStartPos = temp.find("(");
 		int actionNameEndPos = temp.find(")") + 1;
-		string actionName = temp.substr(actionNameStartPos, actionNameEndPos - actionNameStartPos);
+		string actionInstance = temp.substr(actionNameStartPos, actionNameEndPos - actionNameStartPos);
+		string actionName = actionInstance.substr(1, actionInstance.find(" ") - 1);
+		
+		if (PDDL::PDDLDomainFactory::getInstance()->isDomainOperator(actionName)){
+			int startTimePos = temp.find(":");
+			
+			double startTime = stod(temp.substr(0, startTimePos));
+			//Add the timestamp to the action to fit after the prefix
+			startTime += timestamp;
+			//Deduct any previous TIL durations from startTimes
+			startTime -= (tilsEncountered * tilDuration);
 
-		int actionDurationStartPos = temp.find("[") + 1;
-		int actionDurationEndPos = temp.find("]");
-		double duration = stod(temp.substr(actionDurationStartPos, actionDurationEndPos - actionDurationStartPos));
-
-		cout << startTime << ": " << actionName << "  [" << duration << "]" << endl;
+			int actionDurationStartPos = temp.find("[") + 1;
+			int actionDurationEndPos = temp.find("]");
+			double duration = stod(temp.substr(actionDurationStartPos, actionDurationEndPos - actionDurationStartPos));
+			Util::triple<double, string, double> action;
+			action.make_triple(startTime, actionInstance, duration);
+			rPlan.push_back(action);
+		} else {
+			//assume TIL action
+			//FIXME: Possibly need to be more thorough here
+			tilsEncountered++;
+		}
 	}
 	return rPlan;
+}
+
+void TRH::printPlanPostfix() {
+	list<Util::triple<double, string, double> >::const_iterator rPlanItr =
+		RELAXED_PLAN.begin();
+	for (; rPlanItr != RELAXED_PLAN.end(); rPlanItr++) {
+		cout << rPlanItr->first << ": " << rPlanItr->second << "  [" <<
+			rPlanItr->third << "]" << endl;
+	}
 }
 
 string TRH::writeTempState(const Planner::MinimalState & state,

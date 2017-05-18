@@ -27,6 +27,7 @@ private:
 	static const string H_STATES_EVAL_DELIM;
 	static const string H_PLAN_DELIM;
 	static const string TEMP_STATE_PATH;
+	static list<Util::triple<double, string, double> > RELAXED_PLAN;
 	static TRH * INSTANCE;
 
 	static int generateNewInstanceID();
@@ -55,12 +56,13 @@ private:
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory, string fileName);
 	void removeTempState(string fileName);
-	list<Util::triple<double, string, double> > getRelaxedPlan(string plan);
+	list<Util::triple<double, string, double> > getRelaxedPlan(string plan, double timestamp);
 
 public:
 	static TRH * getInstance();
 	pair<double, int> getHeuristic(const Planner::MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory);
+	static void printPlanPostfix();
 	static double TIME_SPENT_IN_HEURISTIC;
 	static double TIME_SPENT_IN_PRINTING_TO_FILE;
 	static double TIME_SPENT_CONVERTING_PDDL_STATE;
