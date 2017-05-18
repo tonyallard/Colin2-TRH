@@ -33,7 +33,7 @@ PDDLStateFactory::PDDLStateFactory(const Planner::MinimalState & initialState,
 			objectParameterTable);
 	std::list<PDDL::PNE> stdPNEs = getPNEs(initialState, objectParameterTable);
 	staticPNEs = getStaticPNEs(stdPNEs, objectParameterTable);
-	goals = getPropositionalGoals();
+	goals = getPropositionalGoals(objectParameterTable);
 	metric = getMetric();
 }
 
@@ -110,15 +110,18 @@ PDDL::Metric PDDLStateFactory::getMetric() {
  * N.B. We say propositional because we assume they are positive.
  * FIXME Add support for negative propositonal goals
  */
-std::list<Proposition> PDDLStateFactory::getPropositionalGoals() {
+std::list<Proposition> PDDLStateFactory::getPropositionalGoals(
+		std::set<PDDLObject> & objectSymbolTable) {
 	std::list<Proposition> goals;
 	std::list<Inst::Literal*>::const_iterator goalItr =
 			Planner::RPGBuilder::getLiteralGoals().begin();
 	const std::list<Inst::Literal*>::const_iterator goalItrEnd =
 			Planner::RPGBuilder::getLiteralGoals().end();
 	for (; goalItr != goalItrEnd; goalItr++) {
+		Inst::Literal* aLiteral = (*goalItr);
 		Proposition prop = PropositionFactory::getInstance()->getProposition(
-				(*goalItr)->toProposition());
+				aLiteral->toProposition());
+		PDDL::extractParameters(aLiteral, objectSymbolTable, constants);
 		goals.push_back(prop);
 	}
 	return goals;

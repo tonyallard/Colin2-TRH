@@ -56,7 +56,7 @@ private:
 	std::list<PDDL::PNE> getStaticPNEs(
 			std::list<PDDL::PNE> dynamicPNEs,
 			std::set<PDDLObject> & objectSymbolTable);
-	std::list<PDDL::Proposition> getPropositionalGoals();
+	std::list<PDDL::Proposition> getPropositionalGoals(std::set<PDDLObject> & objectSymbolTable);
 	PDDL::Metric getMetric();
 
 	void addTILPropositions(
