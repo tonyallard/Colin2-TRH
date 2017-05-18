@@ -530,7 +530,7 @@ std::list<PDDL::PendingAction> PDDLDomainFactory::getPendingActions(
 		const std::list<Inst::Literal*>::const_iterator delItrEnd =
 				deletes.end();
 		for (; delItr != delItrEnd; delItr++) {
-			const VAL::proposition * realProp = (*addItr)->toProposition();
+			const VAL::proposition * realProp = (*delItr)->toProposition();
 			parameters = extractParameters(*delItr, parameters, constants);
 			Proposition prop =
 					PropositionFactory::getInstance()->getProposition(realProp);
