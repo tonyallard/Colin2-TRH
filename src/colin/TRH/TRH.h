@@ -8,10 +8,13 @@
 #ifndef COLIN_TRH_TRH_H_
 #define COLIN_TRH_TRH_H_
 
+#include <list>
+
 #include "PDDLState.h"
 #include "PDDLStateFactory.h"
 #include "../minimalstate.h"
 #include "../FFEvent.h"
+#include "../util/Util.h"
 
 using namespace std;
 
@@ -52,6 +55,7 @@ private:
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory, string fileName);
 	void removeTempState(string fileName);
+	list<Util::triple<double, string, double> > getRelaxedPlan(string plan);
 
 public:
 	static TRH * getInstance();

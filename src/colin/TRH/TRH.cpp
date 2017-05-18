@@ -24,7 +24,7 @@ const char * TRH::H_CMD = "./lib/colin-clp";
 const string TRH::H_VAL_DELIM = "State Heuristic Value is: ";
 const string TRH::RELAXED_PLAN_SIZE_DELIM = "Relaxed plan length is: ";
 const string TRH::H_STATES_EVAL_DELIM = "; States evaluated: ";
-const string TRH::H_PLAN_DELIM = "(init-action)  [0.001]";
+const string TRH::H_PLAN_DELIM = "0.000:";
 double TRH::TIME_SPENT_IN_HEURISTIC = 0.0;
 double TRH::TIME_SPENT_IN_PRINTING_TO_FILE = 0.0;
 double TRH::TIME_SPENT_CONVERTING_PDDL_STATE = 0.0;
@@ -61,7 +61,6 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 	while (!feof(pipe.get())) {
 		if (fgets(buffer, 128, pipe.get()) != NULL)
 			result += buffer;
-			 // cout << buffer;
 	}
 	TRH::TRH::TIME_SPENT_IN_HEURISTIC += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
 	removeTempState(stateName);
@@ -73,11 +72,6 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 		// printf("Heuristic States Eval: %s\n", statesEvalStr.c_str());
 		Planner::FF::STATES_EVALUATED_IN_HEURISTIC += statesEval;
 	}
-	// int planPos = result.find(H_PLAN_DELIM);
-	// 	if (planPos != -1) {
-	// 		string plan = result.substr(planPos + H_PLAN_DELIM.size(), pos);
-	// 		cout << plan << endl;
-	// 	}
 	pos = result.find(H_VAL_DELIM);
 	if (pos == -1) {
 		// cerr << "Problem was unsolvable - therefore heuristic value of -1.0" << endl;
@@ -99,8 +93,8 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 	}
 	int planPos = result.find(H_PLAN_DELIM);
 	if ((planPos != -1) && (hval == 0.0)) {
-		string plan = result.substr(planPos + H_PLAN_DELIM.size(), pos);
-		cout << plan << endl;
+		string plan = result.substr(planPos, pos-planPos);
+		list<Util::triple<double, string, double> > rPlan = getRelaxedPlan(plan);
 	}
 
 	return std::make_pair (hval, relaxedPlanSize);
@@ -111,6 +105,27 @@ string TRH::buildCommand() {
 	cmd << H_CMD << " /tmp/temp" << TRH_INSTANCE_ID << "domain.pddl" 
 		<< " /tmp/temp" << TRH_INSTANCE_ID << ".pddl";
 	return cmd.str();
+}
+
+list<Util::triple<double, string, double> > TRH::getRelaxedPlan(string plan) {
+	list<Util::triple<double, string, double> > rPlan;
+	string temp;
+	std::istringstream inputStream (plan);
+	while (getline(inputStream, temp)) {
+		int startTimePos = temp.find(":");
+		double startTime = stod(temp.substr(0, startTimePos));
+
+		int actionNameStartPos = temp.find("(");
+		int actionNameEndPos = temp.find(")") + 1;
+		string actionName = temp.substr(actionNameStartPos, actionNameEndPos - actionNameStartPos);
+
+		int actionDurationStartPos = temp.find("[") + 1;
+		int actionDurationEndPos = temp.find("]");
+		double duration = stod(temp.substr(actionDurationStartPos, actionDurationEndPos - actionDurationStartPos));
+
+		cout << startTime << ": " << actionName << "  [" << duration << "]" << endl;
+	}
+	return rPlan;
 }
 
 string TRH::writeTempState(const Planner::MinimalState & state,

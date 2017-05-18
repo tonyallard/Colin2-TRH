@@ -11,6 +11,7 @@ include(UseDoxygen OPTIONAL)
 include_directories ("${PROJECT_SOURCE_DIR}/pddl")
 include_directories ("${PROJECT_SOURCE_DIR}/TRH")
 
+add_subdirectory(util)
 add_subdirectory(pddl)
 add_subdirectory(TRH)
 
@@ -50,7 +51,7 @@ set(colin_build_srcs
     solver.cpp)
 
 add_library(ColinCommon STATIC ${colin_build_srcs})
-target_link_libraries(ColinCommon ParsePDDL Inst PDDL TRH)
+target_link_libraries(ColinCommon ParsePDDL Inst UTIL PDDL TRH)
 SET_TARGET_PROPERTIES(ColinCommon PROPERTIES COMPILE_FLAGS "-DTOTALORDERSTATES -DPOPF3ANALYSIS")
 
 
