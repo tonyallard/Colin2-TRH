@@ -484,9 +484,9 @@ int main(int argc, char * argv[])
                 cout << "#; Search encountered " << FF::DEAD_END_COUNT << " dead ends" << endl;
                 cout << endl;
             }
-            
             FFEvent::printPlan(*spSoln);
-            TRH::TRH::printPlanPostfix();           
+            cout << endl;
+                     
         }
 
         if (benchmark) {

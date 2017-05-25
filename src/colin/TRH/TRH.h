@@ -22,12 +22,16 @@ namespace TRH {
 class TRH {
 private:
 	static const char * H_CMD;
+	static const string TEMP_FILE_PATH;
+	static const string TEMP_FILE_PREFIX;
+	static const string TEMP_DOMAIN_SUFFIX;
+	static const string TEMP_FILE_EXT;
 	static const string H_VAL_DELIM;
 	static const string RELAXED_PLAN_SIZE_DELIM;
 	static const string H_STATES_EVAL_DELIM;
 	static const string H_PLAN_DELIM;
 	static const string TEMP_STATE_PATH;
-	static list<Util::triple<double, string, double> > RELAXED_PLAN;
+	static list<Planner::FFEvent> RELAXED_PLAN;
 	static TRH * INSTANCE;
 
 	static int generateNewInstanceID();
@@ -56,13 +60,14 @@ private:
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory, string fileName);
 	void removeTempState(string fileName);
-	list<Util::triple<double, string, double> > getRelaxedPlan(string plan, double timestamp);
+	list<Planner::FFEvent> getRelaxedPlan(string plan, double timestamp);
 
 public:
 	static TRH * getInstance();
 	pair<double, int> getHeuristic(const Planner::MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory);
 	static void printPlanPostfix();
+	inline static list<Planner::FFEvent> & getRelaxedPlan() {return RELAXED_PLAN;}
 	static double TIME_SPENT_IN_HEURISTIC;
 	static double TIME_SPENT_IN_PRINTING_TO_FILE;
 	static double TIME_SPENT_CONVERTING_PDDL_STATE;

@@ -14,12 +14,19 @@
 #include "PendingAction.h"
 #include "Proposition.h"
 #include "PDDLObject.h"
+#include "PDDLUtils.h"
 #include "../FFSolver.h"
+#include "instantiation.h"
+#include "../lpscheduler.h"
 
 namespace TRH {
 
 TRH * TRH::INSTANCE = NULL;
 const char * TRH::H_CMD = "./lib/colin-clp";
+const string TRH::TEMP_FILE_PATH = "";//"/tmp/";
+const string TRH::TEMP_FILE_PREFIX = "temp";
+const string TRH::TEMP_DOMAIN_SUFFIX = "-domain";
+const string TRH::TEMP_FILE_EXT = ".pddl";
 const string TRH::H_VAL_DELIM = "State Heuristic Value is: ";
 const string TRH::RELAXED_PLAN_SIZE_DELIM = "Relaxed plan length is: ";
 const string TRH::H_STATES_EVAL_DELIM = "; States evaluated: ";
@@ -27,12 +34,12 @@ const string TRH::H_PLAN_DELIM = "0.000:";
 double TRH::TIME_SPENT_IN_HEURISTIC = 0.0;
 double TRH::TIME_SPENT_IN_PRINTING_TO_FILE = 0.0;
 double TRH::TIME_SPENT_CONVERTING_PDDL_STATE = 0.0;
-list<Util::triple<double, string, double> > TRH::RELAXED_PLAN;
+list<Planner::FFEvent> TRH::RELAXED_PLAN;
 
 
 TRH * TRH::getInstance() {
 	if (!INSTANCE) {
-		INSTANCE = new TRH(generateNewInstanceID());
+		INSTANCE = new TRH(11);//generateNewInstanceID());
 	}
 	return INSTANCE;
 }
@@ -50,7 +57,7 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 
     Planner::FF::STATES_EVALUATED++;
 	string stateName = writeTempState(state, plan, timestamp, heuristic, pddlFactory);
-
+	cout << "State Name: " << stateName << endl;
 	clock_t begin_time = clock();
 
 	std::shared_ptr<FILE> pipe(popen(buildCommand().c_str(), "r"), pclose);
@@ -60,10 +67,11 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 	std::string result = "";
 	while (!feof(pipe.get())) {
 		if (fgets(buffer, 128, pipe.get()) != NULL)
+			cout << buffer;
 			result += buffer;
 	}
 	TRH::TRH::TIME_SPENT_IN_HEURISTIC += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
-	removeTempState(stateName);
+	//removeTempState(stateName);
 	int pos = result.find(H_STATES_EVAL_DELIM);
 	if (pos != -1) {
 		int posEnd = result.find("\n", pos);
@@ -95,6 +103,22 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 	if ((planPos != -1) && (hval == 0.0)) {
 		string plan = result.substr(planPos, pos-planPos);
 		RELAXED_PLAN = getRelaxedPlan(plan, timestamp);
+		cout << "Relaxed plan created." << endl;
+		list<Planner::FFEvent> fullPlan;
+		//Add prefix
+		fullPlan.insert(fullPlan.end(), plan.begin(), 
+                plan.end());
+		cout << "Added Header" << endl;
+		//Add Relaxed Plan
+		fullPlan.insert(fullPlan.end(), RELAXED_PLAN.begin(), 
+                RELAXED_PLAN.end());
+		cout << "Added Relaxed Plan" << endl;
+		cout << "Trying to schedule full plan." << endl;
+        Planner::LPScheduler tryToSchedule(state, fullPlan);
+		if (!tryToSchedule.isSolved()) {
+        	cerr << "Something went wrong!" << endl;
+        }
+        cout << "HERE" << endl;
 	}
 
 	return std::make_pair (hval, relaxedPlanSize);
@@ -102,13 +126,17 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 
 string TRH::buildCommand() {
 	ostringstream cmd;
-	cmd << H_CMD << " /tmp/temp" << TRH_INSTANCE_ID << "domain.pddl" 
-		<< " /tmp/temp" << TRH_INSTANCE_ID << ".pddl";
+	cmd << H_CMD << " " 
+		<< TEMP_FILE_PATH << TEMP_FILE_PREFIX << TRH_INSTANCE_ID 
+			<< TEMP_DOMAIN_SUFFIX << TEMP_FILE_EXT
+		<< " " << TEMP_FILE_PATH << TEMP_FILE_PREFIX << TRH_INSTANCE_ID 
+			<< TEMP_FILE_EXT;
+	cout << cmd.str() << endl;
 	return cmd.str();
 }
 
-list<Util::triple<double, string, double> > TRH::getRelaxedPlan(string plan, double timestamp) {
-	list<Util::triple<double, string, double> > rPlan;
+list<Planner::FFEvent> TRH::getRelaxedPlan(string plan, double timestamp) {
+	list<Planner::FFEvent> rPlan;
 	string temp;
 	std::istringstream inputStream (plan);
 	int tilsEncountered = 0; //need to adjust timings for relaxed tils
@@ -117,40 +145,55 @@ list<Util::triple<double, string, double> > TRH::getRelaxedPlan(string plan, dou
 		
 		int actionNameStartPos = temp.find("(");
 		int actionNameEndPos = temp.find(")") + 1;
-		string actionInstance = temp.substr(actionNameStartPos, actionNameEndPos - actionNameStartPos);
+		string actionInstance = temp.substr(actionNameStartPos, 
+			actionNameEndPos - actionNameStartPos);
 		string actionName = actionInstance.substr(1, actionInstance.find(" ") - 1);
+		Inst::instantiatedOp * op = PDDL::getOperator(actionInstance);
 		
-		if (PDDL::PDDLDomainFactory::getInstance()->isDomainOperator(actionName)){
-			int startTimePos = temp.find(":");
-			
-			double startTime = stod(temp.substr(0, startTimePos));
-			//Add the timestamp to the action to fit after the prefix
-			startTime += timestamp;
-			//Deduct any previous TIL durations from startTimes
-			startTime -= (tilsEncountered * tilDuration);
+		int startTimePos = temp.find(":");
+		double startTime = stod(temp.substr(0, startTimePos));
+		//Add the timestamp to the action to fit after the prefix
+		startTime += timestamp;
+		//Deduct any previous TIL durations from startTimes
+		startTime -= (tilsEncountered * tilDuration);
 
-			int actionDurationStartPos = temp.find("[") + 1;
-			int actionDurationEndPos = temp.find("]");
-			double duration = stod(temp.substr(actionDurationStartPos, actionDurationEndPos - actionDurationStartPos));
-			Util::triple<double, string, double> action;
-			action.make_triple(startTime, actionInstance, duration);
-			rPlan.push_back(action);
-		} else {
-			//assume TIL action
+		int actionDurationStartPos = temp.find("[") + 1;
+		int actionDurationEndPos = temp.find("]");
+		double duration = stod(temp.substr(actionDurationStartPos, 
+			actionDurationEndPos - actionDurationStartPos));
+
+		if (op == 0){
+			//Is it a til action?
 			//FIXME: Possibly need to be more thorough here
-			tilsEncountered++;
+			if ((PDDL::isTILAction(actionName, 0.0, 0.0)) && 
+				(duration == EPSILON)){
+				tilsEncountered++;
+			}
+		} else {
+			if (duration > EPSILON) {
+				//Durative Action
+				Planner::FFEvent start_snap_action = Planner::FFEvent(op, 
+					duration, duration);
+				start_snap_action.time_spec = VAL::E_AT_START;
+				Planner::FFEvent end_snap_action = Planner::FFEvent(op, 
+					rPlan.size(), duration, duration);
+				end_snap_action.time_spec = VAL::E_AT_END;
+				rPlan.push_back(start_snap_action);
+				rPlan.push_back(end_snap_action);
+			} else {
+				Planner::FFEvent start_snap_action = Planner::FFEvent(op, 
+					duration, duration);
+				start_snap_action.time_spec = VAL::E_AT_START;
+				rPlan.push_back(start_snap_action);
+			}
+			
 		}
 	}
 	return rPlan;
 }
 
 void TRH::printPlanPostfix() {
-	list<Util::triple<double, string, double> >::const_iterator rPlanItr =
-		RELAXED_PLAN.begin();
-	for (; rPlanItr != RELAXED_PLAN.end(); rPlanItr++) {
-		cout << rPlanItr->first << ": " << rPlanItr->second << "  [" <<
-			rPlanItr->third << "]" << endl;
-	}
+	Planner::FFEvent::printPlan(RELAXED_PLAN);
 }
 
 string TRH::writeTempState(const Planner::MinimalState & state,
@@ -163,7 +206,7 @@ string TRH::writeTempState(const Planner::MinimalState & state,
     // }
 
 	ostringstream stateFileName;
-	stateFileName << "temp" << TRH_INSTANCE_ID;
+	stateFileName << TEMP_FILE_PREFIX << TRH_INSTANCE_ID;
 	writeStateToFile(state, plan, timestamp, heuristic, 
 		pddlFactory, stateFileName.str());
 	return stateFileName.str();
@@ -206,24 +249,20 @@ void TRH::writeStateToFile(const Planner::MinimalState & state,
         
     //Write State/Domain to disk for heuristic computation
     begin_time = clock();
-	static const string filePath = "/tmp/";
 	
-	string domainFileName = fileName + "domain";
-	pddlState.writeDeTILedStateToFile(filePath, fileName);
-	domain.writeToFile(filePath, domainFileName);
+	string domainFileName = fileName + TEMP_DOMAIN_SUFFIX;
+	pddlState.writeDeTILedStateToFile(TEMP_FILE_PATH, fileName);
+	domain.writeToFile(TEMP_FILE_PATH, domainFileName);
 	TRH::TRH::TIME_SPENT_IN_PRINTING_TO_FILE += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
 }
 
 void TRH::removeTempState(string fileName) {
-	static const string filePath = "/tmp/";
-	static const string extension = ".pddl";
 	ostringstream stateFileName;
 	ostringstream domainFileName;
 
-	domainFileName << filePath << fileName
-		<< "domain" << extension;
-	stateFileName << filePath << fileName 
-		<< extension;
+	domainFileName << TEMP_FILE_PATH << fileName
+		<< TEMP_DOMAIN_SUFFIX << TEMP_FILE_EXT;
+	stateFileName << TEMP_FILE_PATH << fileName << TEMP_FILE_EXT;
 
 	//Remove Domain File
 	remove(domainFileName.str().c_str());

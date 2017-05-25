@@ -1384,6 +1384,10 @@ public:
     }
     static void getInitialState(LiteralSet & initialState, vector<double> & initialFluents);
     static void getNonStaticInitialState(LiteralSet & initialState, vector<double> & initialFluents);
+    static int getInstantiatedOpCount() {
+        return instantiatedOps.size();
+    }
+
     static instantiatedOp* getInstantiatedOp(const int & i) {
         return instantiatedOps[i];
     };

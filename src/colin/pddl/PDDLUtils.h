@@ -29,6 +29,7 @@
 namespace PDDL {
 
 const std::string BASE_TYPE_CLASS = "OBJECT";
+const std::string TIL_ACTION_PREFIX = "at-";
 
 //PDDL Type helper functions
 std::string getPDDLTypeString(const VAL::pddl_typed_symbol * type);
@@ -80,6 +81,8 @@ std::string getActionName(int actionNum);
 bool supported(const PDDL::Proposition * proposition,
 		std::list<PDDL::Proposition> * propositions);
 bool isEqual(const Planner::FFEvent * one, const Planner::FFEvent * two);
+bool isTILAction(std::string eventName, int minDur, int maxDur);
+Inst::instantiatedOp * getOperator(std::string actionInstance);
 
 //Basic conversion functions
 PDDL::PDDLObject getPDDLObject(const VAL::pddl_typed_symbol * pddlType);

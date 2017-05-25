@@ -1580,11 +1580,20 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
     double h = DBL_MAX; 
 
     if (FF::USE_TRH) {
+        vector<double>::const_iterator mtsItr = minTimestamps.begin();
+        for (; mtsItr != minTimestamps.end(); mtsItr++){
+            cout << *mtsItr << ", ";
+        }
+        double timeStamp = 0.00;
+        if (!minTimestamps.empty()) {
+            timeStamp = *minTimestamps.rbegin() + 0.001;
+        }
         //Use TRH Heuristic
         pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState.getInnerState(), header, 
-                theState.timeStamp, 0, pddlFactory);
+                timeStamp, 0, pddlFactory);
         h = result.first;
         makespanEstimate = result.second;
+
     } else {
         //Use RPG Heuristic
         if (considerCache) {

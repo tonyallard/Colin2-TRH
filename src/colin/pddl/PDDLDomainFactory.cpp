@@ -519,10 +519,13 @@ std::list<PDDL::PendingAction> PDDLDomainFactory::getPendingActions(
 		const double endMin = tsBounds[1].first;
         const double endMax = tsBounds[1].second;
 
-		actionStartTime = startMin;
+		actionStartTime = startMax;
 
 		//Calculate remaining duration
 		double remainingDur = minDur - (timestamp - actionStartTime);
+		cout << name << endl;
+		cout << "Timestamp: " << timestamp << " actioStartTime: " 
+				<< actionStartTime << " minDur: " << minDur << endl;
 		//ensure it is above 0
 		remainingDur = max(EPSILON, remainingDur);
 		//ensure it is no longer than max duraiton

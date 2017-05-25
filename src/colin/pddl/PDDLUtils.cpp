@@ -552,6 +552,27 @@ bool supported(const PDDL::Proposition * proposition,
 	return false;
 }
 
+bool isTILAction(std::string eventName, int minDur, int maxDur) {
+
+	int found = eventName.substr(0, TIL_ACTION_PREFIX.size()).find(
+				TIL_ACTION_PREFIX);
+	return ((found == 0) && (minDur == 0) && (maxDur == 0));
+}
+
+Inst::instantiatedOp * getOperator(std::string actionInstance) {
+	int instantiatedOpCount = Planner::RPGBuilder::getInstantiatedOpCount();
+	for (int i = 0; i < instantiatedOpCount; i++) {
+		Inst::instantiatedOp * op = Planner::RPGBuilder::getInstantiatedOp(i);
+		ostringstream op_inst;
+		op->write(op_inst);
+		if (!actionInstance.compare(op_inst.str())){
+			//Action Operator Found
+			return op;
+		}
+	}
+	return 0;
+}
+
 // Basic Conversions Functions
 
 PDDL::PDDLObject getPDDLObject(const VAL::pddl_typed_symbol * pddlType) {
