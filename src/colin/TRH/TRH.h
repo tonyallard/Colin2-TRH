@@ -12,7 +12,7 @@
 
 #include "PDDLState.h"
 #include "PDDLStateFactory.h"
-#include "../minimalstate.h"
+#include "../ExtendedMinimalState.h"
 #include "../FFEvent.h"
 #include "../util/Util.h"
 
@@ -31,7 +31,6 @@ private:
 	static const string H_STATES_EVAL_DELIM;
 	static const string H_PLAN_DELIM;
 	static const string TEMP_STATE_PATH;
-	static list<Planner::FFEvent> RELAXED_PLAN;
 	static TRH * INSTANCE;
 
 	static int generateNewInstanceID();
@@ -61,13 +60,13 @@ private:
 		PDDL::PDDLStateFactory pddlFactory, string fileName);
 	void removeTempState(string fileName);
 	list<Planner::FFEvent> getRelaxedPlan(string plan, double timestamp);
+	static void evaluateStateAndUpdatePlan(const Planner::FFEvent & actionToBeApplied,
+			Planner::ExtendedMinimalState & state, std::list<Planner::FFEvent> & plan);
 
 public:
 	static TRH * getInstance();
-	pair<double, int> getHeuristic(const Planner::MinimalState & state,
+	pair<double, int> getHeuristic(Planner::ExtendedMinimalState & theState,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory);
-	static void printPlanPostfix();
-	inline static list<Planner::FFEvent> & getRelaxedPlan() {return RELAXED_PLAN;}
 	static double TIME_SPENT_IN_HEURISTIC;
 	static double TIME_SPENT_IN_PRINTING_TO_FILE;
 	static double TIME_SPENT_CONVERTING_PDDL_STATE;

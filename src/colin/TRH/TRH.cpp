@@ -17,7 +17,7 @@
 #include "PDDLUtils.h"
 #include "../FFSolver.h"
 #include "instantiation.h"
-#include "../lpscheduler.h"
+#include "../temporalanalysis.h"
 
 namespace TRH {
 
@@ -34,7 +34,6 @@ const string TRH::H_PLAN_DELIM = "0.000:";
 double TRH::TIME_SPENT_IN_HEURISTIC = 0.0;
 double TRH::TIME_SPENT_IN_PRINTING_TO_FILE = 0.0;
 double TRH::TIME_SPENT_CONVERTING_PDDL_STATE = 0.0;
-list<Planner::FFEvent> TRH::RELAXED_PLAN;
 
 
 TRH * TRH::getInstance() {
@@ -52,8 +51,10 @@ int TRH::generateNewInstanceID() {
 	return distribution(generator);
 }
 
-pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
+pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory) {
+
+	const Planner::MinimalState & state = theState.getInnerState();
 
     Planner::FF::STATES_EVALUATED++;
 	string stateName = writeTempState(state, plan, timestamp, heuristic, pddlFactory);
@@ -101,26 +102,13 @@ pair<double, int> TRH::getHeuristic(const Planner::MinimalState & state,
 	}
 	int planPos = result.find(H_PLAN_DELIM);
 	if ((planPos != -1) && (hval == 0.0)) {
-		string plan = result.substr(planPos, pos-planPos);
-		RELAXED_PLAN = getRelaxedPlan(plan, timestamp);
-		cout << "Relaxed plan created." << endl;
-		list<Planner::FFEvent> fullPlan;
-		//Add prefix
-		fullPlan.insert(fullPlan.end(), plan.begin(), 
-                plan.end());
-		cout << "Added Header" << endl;
-		//Add Relaxed Plan
-		fullPlan.insert(fullPlan.end(), RELAXED_PLAN.begin(), 
-                RELAXED_PLAN.end());
-		cout << "Added Relaxed Plan" << endl;
-		cout << "Trying to schedule full plan." << endl;
-        Planner::LPScheduler tryToSchedule(state, fullPlan);
-		if (!tryToSchedule.isSolved()) {
-        	cerr << "Something went wrong!" << endl;
-        }
-        cout << "HERE" << endl;
+		string rPlan = result.substr(planPos, pos-planPos);
+		list<Planner::FFEvent> relaexedPlan = getRelaxedPlan(rPlan, timestamp);
+		list<Planner::FFEvent>::const_iterator rPlanItr = relaexedPlan.begin();
+		for (; rPlanItr != relaexedPlan.end(); rPlanItr++) {
+			evaluateStateAndUpdatePlan(*rPlanItr, theState, plan);
+		}
 	}
-
 	return std::make_pair (hval, relaxedPlanSize);
 }
 
@@ -175,11 +163,7 @@ list<Planner::FFEvent> TRH::getRelaxedPlan(string plan, double timestamp) {
 				Planner::FFEvent start_snap_action = Planner::FFEvent(op, 
 					duration, duration);
 				start_snap_action.time_spec = VAL::E_AT_START;
-				Planner::FFEvent end_snap_action = Planner::FFEvent(op, 
-					rPlan.size(), duration, duration);
-				end_snap_action.time_spec = VAL::E_AT_END;
 				rPlan.push_back(start_snap_action);
-				rPlan.push_back(end_snap_action);
 			} else {
 				Planner::FFEvent start_snap_action = Planner::FFEvent(op, 
 					duration, duration);
@@ -192,8 +176,97 @@ list<Planner::FFEvent> TRH::getRelaxedPlan(string plan, double timestamp) {
 	return rPlan;
 }
 
-void TRH::printPlanPostfix() {
-	Planner::FFEvent::printPlan(RELAXED_PLAN);
+void TRH::evaluateStateAndUpdatePlan(const Planner::FFEvent & actionToBeApplied,
+		Planner::ExtendedMinimalState & state, list<Planner::FFEvent> & plan)
+{
+
+	list<Planner::ActionSegment> helpfulActions;
+
+
+	Planner::FFEvent extraEvent;
+	Planner::FFEvent extraEventTwo;
+
+    bool eventOneDefined = false;
+    bool eventTwoDefined = false;
+
+    const bool rawDebug = false;
+
+    map<double, list<pair<int, int> > > * justApplied = 0;
+    map<double, list<pair<int, int> > > actualJustApplied;
+    double tilFrom = 0.001;
+
+    int stepID = -1;
+
+    if (actionToBeApplied.time_spec == VAL::E_AT_START) {
+        if (rawDebug) cout << "RAW start\n";
+        extraEvent = Planner::FFEvent(actionToBeApplied.action, state.startEventQueue.back().minDuration, state.startEventQueue.back().maxDuration);
+        eventOneDefined = true;
+
+        assert(extraEvent.time_spec == VAL::E_AT_START);
+        Planner::FF::makeJustApplied(actualJustApplied, tilFrom, state, true);
+        if (!actualJustApplied.empty()) justApplied = &actualJustApplied;
+
+        if (!Planner::RPGBuilder::getRPGDEs(actionToBeApplied.action->getID()).empty()) { // if it's not a non-temporal action
+
+            const int endStepID = state.getInnerState().planLength - 1;
+            const int startStepID = endStepID - 1;
+            extraEventTwo = Planner::FFEvent(actionToBeApplied.action, startStepID, state.startEventQueue.back().minDuration, state.startEventQueue.back().maxDuration);
+            extraEvent.pairWithStep = endStepID;
+            eventTwoDefined = true;
+
+            if (!Planner::TemporalAnalysis::canSkipToEnd(actionToBeApplied.action->getID())) {
+                extraEventTwo.getEffects = false;
+            }
+
+            stepID = startStepID;
+        } else {
+            stepID = state.getInnerState().planLength - 1;
+        }
+    } else {
+        extraEvent = Planner::FFEvent(actionToBeApplied.divisionID);
+        eventOneDefined = true;
+        stepID = state.getInnerState().planLength - 1;
+    }
+
+
+    list<Planner::FFEvent> nowList;
+
+    if (eventOneDefined) nowList.push_back(extraEvent);
+    if (eventTwoDefined) nowList.push_back(extraEventTwo);
+
+    assert(stepID != -1);
+
+    if (eventTwoDefined) {
+        extraEventTwo = nowList.back();
+        nowList.pop_back();
+    }
+
+    if (eventOneDefined) {
+        extraEvent = nowList.back();
+    }
+
+    #ifdef POPF3ANALYSIS
+    #ifndef TOTALORDERSTATES
+    if (actionToBeApplied.time_spec == VAL::E_AT_START) {
+        if (   !RPGBuilder::getRPGDEs(actionToBeApplied.action->getID()).empty()
+            && TemporalAnalysis::canSkipToEnd(actionToBeApplied.action->getID())) { // if it's a compression-safe temporal action
+
+            const int endStepID = state.getInnerState().planLength - 1;
+
+            state.getEditableInnerState().updateWhenEndOfActionIs(actionToBeApplied.action->getID(), endStepID, extraEventTwo.lpMinTimestamp);
+
+        }
+    }
+    #endif
+    #endif
+
+    if (eventOneDefined) {
+        plan.push_back(extraEvent);
+    }
+
+    if (eventTwoDefined) {
+        plan.push_back(extraEventTwo);
+    }
 }
 
 string TRH::writeTempState(const Planner::MinimalState & state,

@@ -100,7 +100,7 @@ FFEvent::FFEvent(const int & t)
     #ifdef STOCHASTICDURATIONS
     stochasticTimestamp = 0;
     #endif
-    
+
 }
 
 

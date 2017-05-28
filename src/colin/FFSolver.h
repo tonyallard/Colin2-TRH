@@ -178,6 +178,8 @@ public:
     static int STATES_EVALUATED_IN_HEURISTIC;
     static int DEAD_END_COUNT;
 
+    static void evaluateStateAndUpdatePlan(const FFEvent & actionToBeApplied, ExtendedMinimalState & state, list<FFEvent> & plan);
+
 private:
 
     static bool scheduleToMetric;
@@ -215,8 +217,6 @@ private:
     static bool precedingActions(ExtendedMinimalState & theState, const ActionSegment & actionSeg, list<ActionSegment> & alsoMustDo, int oldTIL = -1, double moveOn = 0.001);
 
     static bool checkTemporalSoundness(ExtendedMinimalState & theState, const ActionSegment & actionSeg, int oldTIL = -1, double moveOn = 0.001);
-
-    static void makeJustApplied(map<double, list<pair<int, int> > > & justApplied, double & tilFrom, ExtendedMinimalState & state, const bool & lastIsSpecial);
 
     static double evaluateMetric(const MinimalState & theState, const list<FFEvent> & plan, const bool printMetric=true);
 
@@ -260,6 +260,7 @@ public:
 
     static list<FFEvent> * doBenchmark(bool & reachedGoal, list<FFEvent> * soln, const bool doLoops = true);
     static list<FFEvent> * reprocessPlan(list<FFEvent> * soln, TemporalConstraints * cons);
+    static void makeJustApplied(map<double, list<pair<int, int> > > & justApplied, double & tilFrom, ExtendedMinimalState & state, const bool & lastIsSpecial);
 };
 
 
