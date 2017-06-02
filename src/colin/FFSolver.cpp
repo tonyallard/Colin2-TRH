@@ -1586,7 +1586,7 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
         }
         double timeStamp = 0.00;
         if (!minTimestamps.empty()) {
-            timeStamp = *minTimestamps.rbegin() + 0.001;
+            timeStamp = *minTimestamps.rbegin();// + 0.001;
         }
         //Use TRH Heuristic
         pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState, header,
@@ -1731,7 +1731,11 @@ HTrio FF::calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & th
     return toReturn;
 }
 
-
+/**
+ * Asserts the action is not null OR is no a rogue action (that is actions with invalid conditions or effects)
+ * Asserts that the action is applicable from a temporal standpoint (read the comments to that function for what that means)
+ *
+ */
 ExtendedMinimalState * FF::applyActionToState(ActionSegment & actionToApply, const ExtendedMinimalState & parent, const list<FFEvent> & plan)
 {
 
@@ -2529,15 +2533,15 @@ void FF::evaluateStateAndUpdatePlan(const FFEvent & actionToBeApplied, ExtendedM
         plan.push_back(extraEventTwo);
     }
 
-//
-//    if (actID.second == VAL::E_AT_START // If it's the start of an action...
-//            && !RPGBuilder::getRPGDEs(actID.first->getID()).empty() // that is temporal..
-//            && TemporalAnalysis::canSkipToEnd(actID.first->getID())) { // and compression-safe
-//
-//        // we can pull it off the start event queue as we don't need to worry about applying it
-//
-//        state.startEventQueue.pop_back();
-//    }
+
+   if (actionToBeApplied.time_spec == VAL::E_AT_START // If it's the start of an action...
+           && !RPGBuilder::getRPGDEs(actionToBeApplied.action->getID()).empty() // that is temporal..
+           && TemporalAnalysis::canSkipToEnd(actionToBeApplied.action->getID())) { // and compression-safe
+
+       // we can pull it off the start event queue as we don't need to worry about applying it
+
+       state.startEventQueue.pop_back();
+   }
 }
 
 
@@ -5573,9 +5577,9 @@ Solution FF::search(bool & reachedGoal)
 
     HTrio bestHeuristic;
     HTrio initialHeuristic;
+    SearchQueueItem * const initialSQI = new SearchQueueItem(&initialState, false);
     // Initialise the initial state search node and calculate its heuristic. Why, well I guess thats how you get the initial helpful actions
     {
-        SearchQueueItem * const initialSQI = new SearchQueueItem(&initialState, false);
         list<FFEvent> tEvent;
         FFheader_upToDate = false;
         FFonly_one_successor = true;
@@ -5603,7 +5607,7 @@ Solution FF::search(bool & reachedGoal)
 		//Save EHC Performance
 		FF::incrementEHCPerformance(EHCSearchStateCount);
 		reachedGoal = true;
-		workingBestSolution.update(list<FFEvent>(), 0, evaluateMetric(initialState.getInnerState(), list<FFEvent>(), false));
+		workingBestSolution.update(initialSQI->plan, initialSQI->state()->getEditableInnerState().temporalConstraints, evaluateMetric(initialState.getInnerState(), list<FFEvent>(), false));
 		return workingBestSolution;
 	}
 

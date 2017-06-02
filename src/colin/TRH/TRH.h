@@ -15,6 +15,7 @@
 #include "../ExtendedMinimalState.h"
 #include "../FFEvent.h"
 #include "../util/Util.h"
+#include "../lpscheduler.h" 
 
 using namespace std;
 
@@ -59,14 +60,21 @@ private:
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory, string fileName);
 	void removeTempState(string fileName);
-	list<Planner::FFEvent> getRelaxedPlan(string plan, double timestamp);
-	static void evaluateStateAndUpdatePlan(const Planner::FFEvent & actionToBeApplied,
-			Planner::ExtendedMinimalState & state, std::list<Planner::FFEvent> & plan);
+	list<Planner::ActionSegment> getRelaxedPlan(string plan, double timestamp);
+	static bool evaluateStateAndUpdatePlan(const Planner::ActionSegment & actionToBeApplied,
+		Planner::ExtendedMinimalState & state, 
+		Planner::ExtendedMinimalState * prevState,
+		const auto_ptr<Planner::ParentData> incrementalData,
+		std::list<Planner::FFEvent> & plan);
+	// static Planner::ExtendedMinimalState * applyActionToState(
+	// 	Planner::ActionSegment & actionToApply, const Planner::ExtendedMinimalState & parent, 
+	// 	const list<Planner::FFEvent> & plan);
 
 public:
 	static TRH * getInstance();
 	pair<double, int> getHeuristic(Planner::ExtendedMinimalState & theState,
-		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory);
+		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
+		PDDL::PDDLStateFactory pddlFactory);
 	static double TIME_SPENT_IN_HEURISTIC;
 	static double TIME_SPENT_IN_PRINTING_TO_FILE;
 	static double TIME_SPENT_CONVERTING_PDDL_STATE;

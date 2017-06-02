@@ -231,6 +231,7 @@ void FFEvent::printPlan(const list<FFEvent> & toPrint)
                 cout << threeDP(planItr->lpTimestamp);
             }
             cout << ": " << *(planItr->action) << " ";
+            // cout << "{" << planItr->pairWithStep << ", " << planItr->time_spec << "}  ";
             if (planItr->pairWithStep >= 0) {
                 const double dur = endTS[planItr->pairWithStep] - planItr->lpTimestamp;
                 cout << " [" << threeDP(dur) << "]";

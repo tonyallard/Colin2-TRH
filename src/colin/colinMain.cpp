@@ -485,8 +485,7 @@ int main(int argc, char * argv[])
                 cout << endl;
             }
             FFEvent::printPlan(*spSoln);
-            cout << endl;
-                     
+            cout << "fin." << endl;
         }
 
         if (benchmark) {

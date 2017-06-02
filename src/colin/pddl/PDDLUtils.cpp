@@ -570,7 +570,7 @@ Inst::instantiatedOp * getOperator(std::string actionInstance) {
 			return op;
 		}
 	}
-	return 0;
+	return NULL;
 }
 
 // Basic Conversions Functions
