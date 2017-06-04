@@ -59,6 +59,7 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
     Planner::FF::STATES_EVALUATED++;
 	string stateName = writeTempState(state, plan, timestamp, heuristic, pddlFactory);
 	cout << "State Name: " << stateName << endl;
+	cout << "Timestamp: " << timestamp << endl;
 	clock_t begin_time = clock();
 
 	std::shared_ptr<FILE> pipe(popen(buildCommand().c_str(), "r"), pclose);
@@ -106,16 +107,30 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 		Planner::FFEvent::printPlan(plan);
 		string rPlan = result.substr(planPos, pos-planPos);
 		list<Planner::ActionSegment> relaexedPlan = getRelaxedPlan(rPlan, timestamp);
-		list<Planner::ActionSegment>::iterator rPlanItr = relaexedPlan.begin();
-		Planner::ExtendedMinimalState * theStatePtr = &theState;
-		Planner::ExtendedMinimalState * prevState = 0;
 
-		// std::map<int, std::set<int> >::const_iterator saItr =
-		// 	state.startedActions.begin();
-		// const std::map<int, std::set<int> >::const_iterator saItrEnd =
-		// 	state.startedActions.end();
+		std::map<int, std::set<int> >::const_iterator saItr =
+			state.startedActions.begin();
+		const std::map<int, std::set<int> >::const_iterator saItrEnd =
+			state.startedActions.end();
+		Planner::SearchQueueItem * currSQI = new Planner::SearchQueueItem(&theState, false);
+		currSQI->plan = plan;
+		cout << "Adding ends of actions that are executing..." << endl;
+		for (; saItr != saItrEnd; saItr++) {
+			 Planner::ActionSegment startedAction (Planner::RPGBuilder::getInstantiatedOp(saItr->first), VAL::E_AT_END, 
+					 currSQI->state()->getInnerState().nextTIL, Planner::RPGHeuristic::emptyIntList);
 
-		// for (; saItr != saItrEnd; saItr++) {
+			cout << PDDL::getActionName(startedAction.first->getID()) << endl;
+			
+			const auto_ptr<Planner::ParentData> incrementalData(
+			Planner::FF::allowCompressionSafeScheduler ? 0 : Planner::LPScheduler::prime(currSQI->plan, 
+			currSQI->state()->getInnerState().temporalConstraints, currSQI->state()->startEventQueue));
+		
+			auto_ptr<Planner::SearchQueueItem> succ = auto_ptr<Planner::SearchQueueItem>(new Planner::SearchQueueItem(
+        	Planner::FF::applyActionToState(startedAction, *(currSQI->state()), currSQI->plan), true));
+        	evaluateStateAndUpdatePlan(succ, startedAction,  *(succ->state()), currSQI->state(), incrementalData.get(), currSQI->plan);
+        	delete currSQI;
+        	currSQI = succ.release();
+		}
 		// 	prevState = theStatePtr;
 		// 	Planner::ActionSegment actSeg(Planner::RPGBuilder::getInstantiatedOp(saItr->first), 
 		// 		VAL::E_AT_END, theStatePtr->getInnerState().nextTIL, Planner::RPGHeuristic::emptyIntList);
@@ -129,32 +144,52 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 		// 		break;	
 		// 	}
 		// }
-
+		list<Planner::ActionSegment>::iterator rPlanItr = relaexedPlan.begin();
 		for (int i = 0; rPlanItr != relaexedPlan.end(); rPlanItr++, i++) {
 			//Update divisionID / nextTIL
-			rPlanItr->divisionID = theStatePtr->getInnerState().nextTIL;
-			cout << "Applying action " << PDDL::getActionName(rPlanItr->first->getID()) 
+			rPlanItr->divisionID = currSQI->state()->getInnerState().nextTIL;
+			cout << "Applying action from relaxed plan: " << PDDL::getActionName(rPlanItr->first->getID()) 
 				<< " - " << rPlanItr->second << endl;
-			//Add action to plan
-			prevState = theStatePtr;
-			//
-			theStatePtr = Planner::FF::applyActionToState(*rPlanItr, *theStatePtr, plan);
-			
-			if (!Planner::FF::checkTemporalSoundness(*theStatePtr, *rPlanItr)) {
-				cout << "#####Temporally not sound..." << endl;
-				break;
-			}
-			const auto_ptr<Planner::ParentData> incrementalData(Planner::FF::allowCompressionSafeScheduler ? 0 : 
-				Planner::LPScheduler::prime(plan, theStatePtr->getInnerState().temporalConstraints,
-                theStatePtr->startEventQueue));
-			if (!evaluateStateAndUpdatePlan(*rPlanItr, *theStatePtr, prevState, incrementalData, plan)) {
-				cout << "#####Something went wrong updating plan..." << endl;
-				break;	
-			}
-			cout << "updating plan: " << i << " " <<
-			theStatePtr->getEditableInnerState().temporalConstraints << " " << plan.size() << endl;
+		
+
+		const auto_ptr<Planner::ParentData> incrementalData(
+			Planner::FF::allowCompressionSafeScheduler ? 0 : Planner::LPScheduler::prime(currSQI->plan, 
+			currSQI->state()->getInnerState().temporalConstraints, currSQI->state()->startEventQueue));
+
+		cout << "Most Recent Step: " << Planner::MinimalState::getTransformer()->stepThatMustPrecedeUnfinishedActions(currSQI->state()->getInnerState().temporalConstraints) << endl;
+
+		auto_ptr<Planner::SearchQueueItem> succ = auto_ptr<Planner::SearchQueueItem>(new Planner::SearchQueueItem(
+        	Planner::FF::applyActionToState(*rPlanItr, *(currSQI->state()), currSQI->plan), true));
+		succ->heuristicValue.makespan = currSQI->heuristicValue.makespan;
+
+        evaluateStateAndUpdatePlan(succ, *rPlanItr,  *(succ->state()), currSQI->state(), incrementalData.get(), currSQI->plan);
+
+        delete currSQI;
+        currSQI = succ.release();
+
+			// //Add action to plan
+			// prevState = theStatePtr;
+			// //
+			// cout << "Applying Action to State: " << theStatePtr << endl;
+			// theStatePtr = Planner::FF::applyActionToState(*rPlanItr, *theStatePtr, plan);
+			// cout << "New State:" << theStatePtr << endl;
+			// if (!Planner::FF::checkTemporalSoundness(*theStatePtr, *rPlanItr)) {
+			// 	cout << "#####Temporally not sound..." << endl;
+			// 	break;
+			// }
+			// cout << "Is Sound" << endl;
+			// const auto_ptr<Planner::ParentData> incrementalData(Planner::FF::allowCompressionSafeScheduler ? 0 : 
+			// 	Planner::LPScheduler::prime(plan, prevState->getInnerState().temporalConstraints,
+   //              prevState->startEventQueue));
+			// if (!evaluateStateAndUpdatePlan(*rPlanItr, *theStatePtr, prevState, incrementalData.get(), plan)) {
+			// 	cout << "#####Something went wrong updating plan..." << endl;
+			// 	break;	
+			// }
+			// cout << "updating plan: " << i << " " <<
+			// theStatePtr->getEditableInnerState().temporalConstraints << " " << plan.size() << endl;
+			Planner::FFEvent::printPlan(succ->plan);
 		}
-		// Planner::FFEvent::printPlan(plan);
+		
 	}
 	return std::make_pair (hval, relaxedPlanSize);
 }
@@ -219,49 +254,93 @@ list<Planner::ActionSegment> TRH::getRelaxedPlan(string plan, double timestamp) 
 	return rPlan;
 }
 
-bool TRH::evaluateStateAndUpdatePlan(const Planner::ActionSegment & actionToBeApplied,
-		Planner::ExtendedMinimalState & state, 
-		Planner::ExtendedMinimalState * prevState,
-		const auto_ptr<Planner::ParentData> incrementalData,
-		list<Planner::FFEvent> & plan)
+list<Planner::FFEvent> TRH::getRelaxedFFPlan(string plan, double timestamp) {
+	list<Planner::FFEvent> rPlan;
+	string temp;
+	std::istringstream inputStream (plan);
+	int tilsEncountered = 0; //need to adjust timings for relaxed tils
+	const double tilDuration = EPSILON;
+	while (getline(inputStream, temp)) {
+
+		int actionNameStartPos = temp.find("(");
+		int actionNameEndPos = temp.find(")") + 1;
+		string actionInstance = temp.substr(actionNameStartPos,
+			actionNameEndPos - actionNameStartPos);
+		string actionName = actionInstance.substr(1, actionInstance.find(" ") - 1);
+		Inst::instantiatedOp * op = PDDL::getOperator(actionInstance);
+
+		// int startTimePos = temp.find(":");
+		// double startTime = stod(temp.substr(0, startTimePos));
+		// //Add the timestamp to the action to fit after the prefix
+		// startTime += timestamp;
+		// //Deduct any previous TIL durations from startTimes
+		// startTime -= (tilsEncountered * tilDuration);
+
+		int actionDurationStartPos = temp.find("[") + 1;
+		int actionDurationEndPos = temp.find("]");
+		double duration = stod(temp.substr(actionDurationStartPos,
+			actionDurationEndPos - actionDurationStartPos));
+
+		if (op == 0){
+			//Is it a til action?
+			//FIXME: Possibly need to be more thorough here
+			if ((PDDL::isTILAction(actionName, 0.0, 0.0)) &&
+				(duration == EPSILON)){
+				tilsEncountered++;
+			}
+		} else {
+//			Planner::FFEvent start_snap_action = Planner::FFEvent(op,
+//				VAL::E_AT_START, 0, Planner::RPGHeuristic::emptyIntList);
+//			rPlan.push_back(start_snap_action);
+//			if (!Planner::RPGBuilder::getRPGDEs(op->getID()).empty()) {
+//				//Durative Action
+//				Planner::FFEvent end_snap_action = Planner::FFEvent(op,
+//					VAL::E_AT_END, 0, Planner::RPGHeuristic::emptyIntList);
+//				rPlan.push_back(end_snap_action);
+//			}
+		}
+	}
+	return rPlan;
+}
+
+bool TRH::evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ, 
+	const Planner::ActionSegment & actionToBeApplied,
+	Planner::ExtendedMinimalState & state, 
+	Planner::ExtendedMinimalState * prevState,
+	Planner::ParentData * const incrementalData,
+	list<Planner::FFEvent> & header)
 {
+    Planner::FFEvent extraEvent;
+    Planner::FFEvent extraEventTwo;
 
-	list<Planner::ActionSegment> helpfulActions;
+    cout << "Most Recent Step " << Planner::MinimalState::getTransformer()->stepThatMustPrecedeUnfinishedActions(state.getInnerState().temporalConstraints) << endl;
 
-
-	Planner::FFEvent extraEvent;
-	Planner::FFEvent extraEventTwo;
+    Planner::FFEvent * reusedEndEvent = 0;
 
     bool eventOneDefined = false;
     bool eventTwoDefined = false;
-
-    const bool rawDebug = false;
 
     map<double, list<pair<int, int> > > * justApplied = 0;
     map<double, list<pair<int, int> > > actualJustApplied;
     double tilFrom = 0.001;
 
+    succ->plan = header;
+
     int stepID = -1;
 
     if (actionToBeApplied.second == VAL::E_AT_START) {
-        cout << "Start Action" << endl;
-        if (rawDebug) cout << "RAW start\n";
-        extraEvent = Planner::FFEvent(actionToBeApplied.first, 
-        	state.startEventQueue.back().minDuration, state.startEventQueue.back().maxDuration);
+        extraEvent = Planner::FFEvent(actionToBeApplied.first, state.startEventQueue.back().minDuration, state.startEventQueue.back().maxDuration);
         eventOneDefined = true;
 
         assert(extraEvent.time_spec == VAL::E_AT_START);
         Planner::FF::makeJustApplied(actualJustApplied, tilFrom, state, true);
         if (!actualJustApplied.empty()) justApplied = &actualJustApplied;
 
-        // if it's not a non-temporal action
-        if (!Planner::RPGBuilder::getRPGDEs(actionToBeApplied.first->getID()).empty()) { 
+        if (!Planner::RPGBuilder::getRPGDEs(actionToBeApplied.first->getID()).empty()) { // if it's not a non-temporal action
 
-        	const int endStepID = plan.size() + 1;
-        	cout << "end Step ID: " << endStepID << endl;
+            const int endStepID = state.getInnerState().planLength - 1;
             const int startStepID = endStepID - 1;
-            extraEventTwo = Planner::FFEvent(actionToBeApplied.first, startStepID, 
-            	state.startEventQueue.back().minDuration, state.startEventQueue.back().maxDuration);
+            extraEventTwo = Planner::FFEvent(actionToBeApplied.first, startStepID, state.startEventQueue.back().minDuration, state.startEventQueue.back().maxDuration);
             extraEvent.pairWithStep = endStepID;
             eventTwoDefined = true;
 
@@ -270,13 +349,10 @@ bool TRH::evaluateStateAndUpdatePlan(const Planner::ActionSegment & actionToBeAp
             }
 
             stepID = startStepID;
-            cout << "Step ID: " << stepID << endl;
         } else {
-        	stepID = state.getInnerState().planLength - 1;
-        	cout << "Step ID2: " << stepID << endl;
+            stepID = state.getInnerState().planLength - 1;
         }
     } else if (actionToBeApplied.second == VAL::E_AT_END) {
-        if (rawDebug) cout << "RAW end\n";
         map<int, list<list<Planner::StartEvent>::iterator > >::iterator tsiOld = state.entriesForAction.find(actionToBeApplied.first->getID());
         assert(tsiOld != state.entriesForAction.end());
 
@@ -284,14 +360,13 @@ bool TRH::evaluateStateAndUpdatePlan(const Planner::ActionSegment & actionToBeAp
         tsiOld->second.pop_front();
         if (tsiOld->second.empty()) state.entriesForAction.erase(tsiOld);
 
-        if (rawDebug || Planner::Globals::globalVerbosity & 1048576) cout << "Pairing with start at step " << pairWith->stepID << ", so activating end at " << pairWith->stepID + 1 << "\n";
-
         stepID = pairWith->stepID + 1;
 
         {
-            list<Planner::FFEvent>::iterator pwItr = plan.begin();
+            list<Planner::FFEvent>::iterator pwItr = succ->plan.begin();
             for (int sID = 0; sID <= pairWith->stepID; ++sID, ++pwItr) ;
             pwItr->getEffects = true;
+            reusedEndEvent = &(*pwItr);
         }
 
         state.startEventQueue.erase(pairWith);
@@ -313,13 +388,15 @@ bool TRH::evaluateStateAndUpdatePlan(const Planner::ActionSegment & actionToBeAp
     assert(stepID != -1);
 
     //Update Time
-    Planner::LPScheduler tryToSchedule(state.getInnerState(), plan, nowList, stepID, state.startEventQueue, incrementalData.get(), state.entriesForAction, (prevState ? &prevState->getInnerState().secondMin : 0), (prevState ? &prevState->getInnerState().secondMax : 0), &(state.tilComesBefore), Planner::FF::scheduleToMetric);
-
+    cout << "Here" << endl;
+    Planner::LPScheduler tryToSchedule(state.getInnerState(), succ->plan, nowList, stepID, 
+    	state.startEventQueue, incrementalData, state.entriesForAction, 
+    	(prevState ? &prevState->getInnerState().secondMin : 0), 
+    	(prevState ? &prevState->getInnerState().secondMax : 0), 
+    	&(state.tilComesBefore), Planner::FF::scheduleToMetric);
+    cout << "Here2" << endl;
     //Check if it is valid
     // if (!tryToSchedule.isSolved()) return false;
-
-    vector<double> timeAtWhichValueIsDefined;
-    // tryToSchedule.updateStateFluents(state.getEditableInnerState().secondMin, state.getEditableInnerState().secondMax, timeAtWhichValueIsDefined);
 
     if (eventTwoDefined) {
         extraEventTwo = nowList.back();
@@ -346,12 +423,13 @@ bool TRH::evaluateStateAndUpdatePlan(const Planner::ActionSegment & actionToBeAp
     #endif
 
     if (eventOneDefined) {
-        plan.push_back(extraEvent);
+        succ->plan.push_back(extraEvent);
     }
 
     if (eventTwoDefined) {
-        plan.push_back(extraEventTwo);
+        succ->plan.push_back(extraEventTwo);
     }
+
 
     if (actionToBeApplied.second == VAL::E_AT_START // If it's the start of an action...
            && !Planner::RPGBuilder::getRPGDEs(actionToBeApplied.first->getID()).empty() // that is temporal..
@@ -360,8 +438,8 @@ bool TRH::evaluateStateAndUpdatePlan(const Planner::ActionSegment & actionToBeAp
        // we can pull it off the start event queue as we don't need to worry about applying it
 
        state.startEventQueue.pop_back();
-   }
-   return true;
+   	}
+   	return true;
 }
 
 // Planner::ExtendedMinimalState * TRH::applyActionToState(Planner::ActionSegment & actionToApply, 

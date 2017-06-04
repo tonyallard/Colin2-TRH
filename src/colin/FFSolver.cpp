@@ -1586,6 +1586,7 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
         }
         double timeStamp = 0.00;
         if (!minTimestamps.empty()) {
+            //FIXME: Need to determine the best way to do this
             timeStamp = *minTimestamps.rbegin();// + 0.001;
         }
         //Use TRH Heuristic

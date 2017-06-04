@@ -61,11 +61,13 @@ private:
 		PDDL::PDDLStateFactory pddlFactory, string fileName);
 	void removeTempState(string fileName);
 	list<Planner::ActionSegment> getRelaxedPlan(string plan, double timestamp);
-	static bool evaluateStateAndUpdatePlan(const Planner::ActionSegment & actionToBeApplied,
+	list<Planner::FFEvent> getRelaxedFFPlan(string plan, double timestamp);
+	static bool evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
+		const Planner::ActionSegment & actionToBeApplied,
 		Planner::ExtendedMinimalState & state, 
 		Planner::ExtendedMinimalState * prevState,
-		const auto_ptr<Planner::ParentData> incrementalData,
-		std::list<Planner::FFEvent> & plan);
+		Planner::ParentData * const incrementalData,
+		std::list<Planner::FFEvent> & header);
 	// static Planner::ExtendedMinimalState * applyActionToState(
 	// 	Planner::ActionSegment & actionToApply, const Planner::ExtendedMinimalState & parent, 
 	// 	const list<Planner::FFEvent> & plan);

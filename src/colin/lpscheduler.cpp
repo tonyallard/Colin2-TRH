@@ -6825,6 +6825,7 @@ ChildData * ParentData::spawnChildData(list<StartEvent> & seq,
 
         const int endLocation = endGap;
         const int startLocation = startGap;
+        cout << "StartGAP: " << startGap << endl;
         // fortunately, we left gaps in the event sequence
         vector<FFEvent*> & childEvents = toReturn->getEventsWithFakes();
 
@@ -6982,7 +6983,7 @@ ChildData * ParentData::spawnChildData(list<StartEvent> & seq,
         }
 
         const int mustComeBeforeOpenEnds = MinimalState::getTransformer()->stepThatMustPrecedeUnfinishedActions(cons);
-
+        cout << "Must come before: " << mustComeBeforeOpenEnds << "startLoc: " << startLocation << endl;
         if (mustComeBeforeOpenEnds != -1) {
             assert(mustComeBeforeOpenEnds == startLocation);
 
