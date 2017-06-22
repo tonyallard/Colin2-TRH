@@ -60,7 +60,8 @@ private:
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory, string fileName);
 	void removeTempState(string fileName);
-	list<Planner::ActionSegment> getRelaxedPlan(string plan, double timestamp);
+	list<string> getRelaxedPlanStr(const string & planStr);
+	list<Planner::ActionSegment> getRelaxedPlan(list<string> planStr, double timestamp);
 	list<Planner::FFEvent> getRelaxedFFPlan(string plan, double timestamp);
 	static bool evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
 		const Planner::ActionSegment & actionToBeApplied,

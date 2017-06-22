@@ -1,9 +1,11 @@
 #include <stdlib.h>
 #include <string>
 #include <iostream>
+#include <fstream> //Delete when done testing
 #include <cstdio>
 #include <memory>
 #include <sstream>
+#include <regex>
 #include <limits>
 #include <random>
 
@@ -62,16 +64,31 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 	cout << "Timestamp: " << timestamp << endl;
 	clock_t begin_time = clock();
 
-	std::shared_ptr<FILE> pipe(popen(buildCommand().c_str(), "r"), pclose);
-	if (!pipe)
-		return std::make_pair(-1.0, -1.0);
-	char buffer[128];
-	std::string result = "";
-	while (!feof(pipe.get())) {
-		if (fgets(buffer, 128, pipe.get()) != NULL)
-			cout << buffer;
-			result += buffer;
+	ifstream myfile ("p06.plan");
+	string line;
+	string result;
+	if (myfile.is_open()) {
+		while (getline(myfile, line))
+		{
+			result += line;
+		}
+		myfile.close();
 	}
+
+	// std::shared_ptr<FILE> pipe(popen(buildCommand().c_str(), "r"), pclose);
+	// if (!pipe)
+	// 	return std::make_pair(-1.0, -1.0);
+	// char buffer[128];
+	// std::string result = "";
+	// while (!feof(pipe.get())) {
+	// 	if (fgets(buffer, 128, pipe.get()) != NULL)
+	// 		cout << buffer;
+	// 		result += buffer;
+	// }
+
+
+
+
 	TRH::TRH::TIME_SPENT_IN_HEURISTIC += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
 	//removeTempState(stateName);
 	int pos = result.find(H_STATES_EVAL_DELIM);
@@ -101,13 +118,12 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 		relaxedPlanSize = stoi(relaxedPlanSizeStr);
 		// printf("Relaxed Plan Length: %s\n", relaxedPlanSizeStr.c_str());
 	}
-	int planPos = result.find(H_PLAN_DELIM);
-	if ((planPos != -1) && (hval == 0.0)) {
+	list<string> relaxedPlanStr = getRelaxedPlanStr(result);
+	if ((relaxedPlanStr.size() != 0) && (hval == 0.0)) {
 		cout << "initial plan size: " << plan.size() << endl;
 		Planner::FFEvent::printPlan(plan);
-		string rPlan = result.substr(planPos, pos-planPos);
-		list<Planner::ActionSegment> relaexedPlan = getRelaxedPlan(rPlan, timestamp);
-
+		list<Planner::ActionSegment> relaexedPlan = getRelaxedPlan(relaxedPlanStr, timestamp);
+		cout << "relaxed plan size: " << relaxedPlanStr.size() << endl;
 		std::map<int, std::set<int> >::const_iterator saItr =
 			state.startedActions.begin();
 		const std::map<int, std::set<int> >::const_iterator saItrEnd =
@@ -187,9 +203,9 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 			// }
 			// cout << "updating plan: " << i << " " <<
 			// theStatePtr->getEditableInnerState().temporalConstraints << " " << plan.size() << endl;
-			Planner::FFEvent::printPlan(succ->plan);
 		}
-		
+		Planner::FFEvent::printPlan(currSQI->plan);
+		delete currSQI;
 	}
 	return std::make_pair (hval, relaxedPlanSize);
 }
@@ -205,31 +221,48 @@ string TRH::buildCommand() {
 	return cmd.str();
 }
 
-list<Planner::ActionSegment> TRH::getRelaxedPlan(string plan, double timestamp) {
+list<string> TRH::getRelaxedPlanStr(const string & planStr) {
+	cout << planStr << endl;
+	regex plan_reg("[[:digit:]]+\\.?[[:digit:]]*: \\([[:alnum:][:s:]\\-_]+\\)  \\[[[:digit:]]+\\.?[[:digit:]]*\\]");
+	smatch match;
+	list<string> relaxedPlanStr;
+	string testStr (planStr);
+	while (regex_search(testStr, match, plan_reg)) {
+		for (auto elm:match){
+			cout << elm << endl;
+			relaxedPlanStr.push_back(elm);
+			testStr = match.suffix().str();
+		}
+	}
+	return relaxedPlanStr;
+}
+
+list<Planner::ActionSegment> TRH::getRelaxedPlan(list<string> planStr, 
+	double timestamp) {
 	list<Planner::ActionSegment> rPlan;
-	string temp;
-	std::istringstream inputStream (plan);
 	int tilsEncountered = 0; //need to adjust timings for relaxed tils
 	const double tilDuration = EPSILON;
-	while (getline(inputStream, temp)) {
-		
-		int actionNameStartPos = temp.find("(");
-		int actionNameEndPos = temp.find(")") + 1;
-		string actionInstance = temp.substr(actionNameStartPos, 
+	
+	list<string>::const_iterator planStrItr = planStr.begin();
+	for (; planStrItr != planStr.end(); planStrItr++) {
+		string actionStr = *planStrItr;
+		int actionNameStartPos = actionStr.find("(");
+		int actionNameEndPos = actionStr.find(")") + 1;
+		string actionInstance = actionStr.substr(actionNameStartPos, 
 			actionNameEndPos - actionNameStartPos);
 		string actionName = actionInstance.substr(1, actionInstance.find(" ") - 1);
 		Inst::instantiatedOp * op = PDDL::getOperator(actionInstance);
 		
-		// int startTimePos = temp.find(":");
-		// double startTime = stod(temp.substr(0, startTimePos));
+		// int startTimePos = actionStr.find(":");
+		// double startTime = stod(actionStr.substr(0, startTimePos));
 		// //Add the timestamp to the action to fit after the prefix
 		// startTime += timestamp;
 		// //Deduct any previous TIL durations from startTimes
 		// startTime -= (tilsEncountered * tilDuration);
 
-		int actionDurationStartPos = temp.find("[") + 1;
-		int actionDurationEndPos = temp.find("]");
-		double duration = stod(temp.substr(actionDurationStartPos, 
+		int actionDurationStartPos = actionStr.find("[") + 1;
+		int actionDurationEndPos = actionStr.find("]");
+		double duration = stod(actionStr.substr(actionDurationStartPos, 
 			actionDurationEndPos - actionDurationStartPos));
 
 		if (op == 0){

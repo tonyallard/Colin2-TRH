@@ -4,7 +4,7 @@ include_directories(${val_SOURCE_DIR} ${val_SOURCE_DIR}/parsing ${PDDL_SOURCE_DI
 
 project(TRH)
 
-set(CMAKE_CXX_FLAGS "-std=c++0x -pg -ggdb ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++11 -pg -ggdb ${CMAKE_CXX_FLAGS}")
 
 set(libTRH_SRCS
 	TRH.cpp

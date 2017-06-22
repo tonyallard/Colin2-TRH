@@ -47,6 +47,7 @@
 #include "TRH/TRH.h"
 
 #include <sys/times.h>
+#include <unistd.h>
 
 using std::cerr;
 
