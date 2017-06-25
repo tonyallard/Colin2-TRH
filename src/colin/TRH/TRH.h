@@ -61,8 +61,10 @@ private:
 		PDDL::PDDLStateFactory pddlFactory, string fileName);
 	void removeTempState(string fileName);
 	list<string> getRelaxedPlanStr(const string & planStr);
-	list<Planner::ActionSegment> getRelaxedPlan(list<string> planStr, double timestamp);
-	list<Planner::FFEvent> getRelaxedFFPlan(string plan, double timestamp);
+	map<double, Planner::ActionSegment> getRelaxedPlan(list<string> planStr, 
+	double timestamp);
+	list<Planner::FFEvent> getRelaxedFFPlan(list<string> plan, double timestamp);
+	Planner::SearchQueueItem * applyTILsIfRequired(Planner::SearchQueueItem * currSQI, double timestamp);
 	static bool evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
 		const Planner::ActionSegment & actionToBeApplied,
 		Planner::ExtendedMinimalState & state, 

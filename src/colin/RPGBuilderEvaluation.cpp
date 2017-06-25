@@ -10332,7 +10332,7 @@ bool RPGHeuristic::Private::testApplicability(const MinimalState & theState, con
 
 
         if (fail) {
-            cout << "STime: " << stateTime << endl;
+            cout << "State Time: " << stateTime << endl;
             assert(TemporalAnalysis::okayToStart(actID.first->getID(), stateTime));
         } else {
             if (!TemporalAnalysis::okayToStart(actID.first->getID(), stateTime)) return false;
@@ -10343,6 +10343,7 @@ bool RPGHeuristic::Private::testApplicability(const MinimalState & theState, con
             const bool passesPropositional = RPGBuilder::stepNeedsToHaveFinished(actID, theState, ntf);
             if (!passesPropositional) {
                 if (fail) {
+                    cout << "Didn't pass propositional" << endl;
                     assert(false);
                 } else {
                     return false;

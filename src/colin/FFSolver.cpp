@@ -1742,7 +1742,7 @@ ExtendedMinimalState * FF::applyActionToState(ActionSegment & actionToApply, con
 {
 
 //  static const double EPSILON = 0.001;
-    const bool localDebug = false;
+    const bool localDebug = true;
 
     if (localDebug) {
         if (actionToApply.second == VAL::E_AT) {

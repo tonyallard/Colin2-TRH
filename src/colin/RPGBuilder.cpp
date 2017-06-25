@@ -3377,7 +3377,6 @@ bool RPGBuilder::stepNeedsToHaveFinished(const ActionSegment & act, const Minima
 {
 
     const bool debug = true;
-    cout << "meme  mme" << endl;
 
     const int actID = (act.first ? act.first->getID() : -1);
 
