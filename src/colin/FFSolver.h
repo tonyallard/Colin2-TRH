@@ -179,7 +179,6 @@ public:
     static int DEAD_END_COUNT;
 
     static bool scheduleToMetric;
-    static void evaluateStateAndUpdatePlan(const FFEvent & actionToBeApplied, ExtendedMinimalState & state, list<FFEvent> & plan);
 
 private:
 

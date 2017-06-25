@@ -63,7 +63,6 @@ private:
 	list<string> getRelaxedPlanStr(const string & planStr);
 	map<double, Planner::ActionSegment> getRelaxedPlan(list<string> planStr, 
 	double timestamp);
-	list<Planner::FFEvent> getRelaxedFFPlan(list<string> plan, double timestamp);
 	Planner::SearchQueueItem * applyTILsIfRequired(Planner::SearchQueueItem * currSQI, double timestamp);
 	static bool evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
 		const Planner::ActionSegment & actionToBeApplied,
@@ -71,9 +70,6 @@ private:
 		Planner::ExtendedMinimalState * prevState,
 		Planner::ParentData * const incrementalData,
 		std::list<Planner::FFEvent> & header);
-	// static Planner::ExtendedMinimalState * applyActionToState(
-	// 	Planner::ActionSegment & actionToApply, const Planner::ExtendedMinimalState & parent, 
-	// 	const list<Planner::FFEvent> & plan);
 
 public:
 	static TRH * getInstance();

@@ -99,8 +99,6 @@ public:
 
     static bool actionIsNeverApplicable(const int & a);
     static bool okayToStart(const int & a, const double & ts) {
-        cout << "Time Stamp: " << ts << " - Action timestamp bounds: " 
-                << actionTSBounds[a][0].second << endl;
         return (ts <= actionTSBounds[a][0].second);
     }
 

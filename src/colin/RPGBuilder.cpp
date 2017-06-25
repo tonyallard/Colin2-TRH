@@ -3376,7 +3376,7 @@ void RPGBuilder::getNonStaticInitialState(LiteralSet & initialState, vector<doub
 bool RPGBuilder::stepNeedsToHaveFinished(const ActionSegment & act, const MinimalState & theState, set<int> & toBeNonMutex)
 {
 
-    const bool debug = true;
+    const bool debug = false;
 
     const int actID = (act.first ? act.first->getID() : -1);
 
