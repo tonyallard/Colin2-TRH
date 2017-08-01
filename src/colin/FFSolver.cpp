@@ -1736,7 +1736,7 @@ HTrio FF::calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & th
 
 /**
  * Asserts the action is not null OR is no a rogue action (that is actions with invalid conditions or effects)
- * Asserts that the action is applicable from a temporal standpoint (read the comments to that function for what th
+ * Asserts that the action is applicable from a temporal standpoint (read the comments to that function for what that means)
  *
  */
 ExtendedMinimalState * FF::applyActionToState(ActionSegment & actionToApply, const ExtendedMinimalState & parent, const list<FFEvent> & plan)
@@ -5446,7 +5446,9 @@ Solution FF::search(bool & reachedGoal)
 
     HTrio bestHeuristic;
     HTrio initialHeuristic;
-    // Initialise the initial state search node and calculate its heuristic. Why, well I guess thats how you get the initial helpful actions
+    // Initialise the initial state search node and calculate its heuristic. 
+    // Why do we calculate the heuristic, well I guess thats how you get 
+    // the initial helpful actions from
     SearchQueueItem * const initialSQI = new SearchQueueItem(&initialState, false);
     {
         list<FFEvent> tEvent;

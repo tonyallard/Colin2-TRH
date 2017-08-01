@@ -10307,7 +10307,7 @@ bool RPGHeuristic::testApplicability(const MinimalState & theState, const double
 
 /**
  * Checks that an action is not self-overlappin (if that is on)
- * Temporally is ok to start. This looks at whether the state time stamp fits with
+ * Temporally is ok to start. This looks at whether the state time stamp fits within the window for the action to occur
  * Checks previous required steps have completed (for propositions)
  * Checks previous negative steps have completed
  * Also checks for other things if we are not ignoring delete effects.
