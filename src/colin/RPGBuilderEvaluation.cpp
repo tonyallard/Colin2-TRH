@@ -10305,6 +10305,17 @@ bool RPGHeuristic::testApplicability(const MinimalState & theState, const double
     return d->testApplicability(theState, stateTime, actID, fail, ignoreDeletes);
 }
 
+/**
+ * Checks that an action is not self-overlappin (if that is on)
+ * Temporally is ok to start. This looks at whether the state time stamp fits with
+ * Checks previous required steps have completed (for propositions)
+ * Checks previous negative steps have completed
+ * Also checks for other things if we are not ignoring delete effects.
+ * Does this for start and end snap actions
+ *
+ * Does something different for TILs
+ * 
+ */
 bool RPGHeuristic::Private::testApplicability(const MinimalState & theState, const double & stateTime, const ActionSegment & actID, const bool & fail, const bool & ignoreDeletes)
 {
 

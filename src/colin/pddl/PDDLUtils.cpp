@@ -174,7 +174,7 @@ string getOperandString(const Planner::RPGBuilder::Operand & operand,
 		cerr
 				<< "Something went wrong printing numeric effect. Unhandled math operation (ID: " << operand.numericOp << ")."
 				<< endl;
-		return 0;
+		return NULL;
 	}
 }
 
@@ -570,7 +570,7 @@ Inst::instantiatedOp * getOperator(std::string actionInstance) {
 			return op;
 		}
 	}
-	return 0;
+	return NULL;
 }
 
 // Basic Conversions Functions

@@ -970,7 +970,6 @@ protected:
     static vector<list<int> > mentionedInFluentInvariants;
 
     static list<FakeTILAction> timedInitialLiterals;
-    static vector<FakeTILAction*> timedInitialLiteralsVector;
 
     static list<FakeTILAction> optimisationTimedInitialLiterals;
     static vector<FakeTILAction*> optimisationTimedInitialLiteralsVector;
@@ -1140,7 +1139,7 @@ protected:
     static RPGHeuristic * globalHeuristic;
 
 public:
-
+    static vector<FakeTILAction*> timedInitialLiteralsVector;
 
     static pair<bool, bool> & isStatic(Literal* l);
 

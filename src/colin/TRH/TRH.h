@@ -12,9 +12,10 @@
 
 #include "PDDLState.h"
 #include "PDDLStateFactory.h"
-#include "../minimalstate.h"
+#include "../ExtendedMinimalState.h"
 #include "../FFEvent.h"
 #include "../util/Util.h"
+#include "../lpscheduler.h"
 
 using namespace std;
 
@@ -31,8 +32,10 @@ private:
 	static const string H_STATES_EVAL_DELIM;
 	static const string H_PLAN_DELIM;
 	static const string TEMP_STATE_PATH;
-	static list<Planner::FFEvent> RELAXED_PLAN;
 	static TRH * INSTANCE;
+
+	static const string H_PLAN_DELIM_START; 
+	static const string H_PLAN_DELIM_STOP;
 
 	static int generateNewInstanceID();
 	
@@ -60,14 +63,23 @@ private:
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory, string fileName);
 	void removeTempState(string fileName);
-	list<Planner::FFEvent> getRelaxedPlan(string plan, double timestamp);
+	list<string> getRelaxedPlanStr(const string & output);
+	map<double, Planner::ActionSegment> getRelaxedPlan(list<string> planStr, 
+		double timestamp);
+	Planner::SearchQueueItem * applyTILsIfRequired(Planner::SearchQueueItem * currSQI, double timestamp);
+	static bool evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
+		const Planner::ActionSegment & actionToBeApplied,
+		Planner::ExtendedMinimalState & state, 
+		Planner::ExtendedMinimalState * prevState,
+		Planner::ParentData * const incrementalData,
+		std::list<Planner::FFEvent> & header);
 
 public:
 	static TRH * getInstance();
-	pair<double, int> getHeuristic(const Planner::MinimalState & state,
-		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory);
+	pair<double, int> getHeuristic(Planner::ExtendedMinimalState & theState,
+		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
+		PDDL::PDDLStateFactory pddlFactory);
 	static void printPlanPostfix();
-	inline static list<Planner::FFEvent> & getRelaxedPlan() {return RELAXED_PLAN;}
 	static double TIME_SPENT_IN_HEURISTIC;
 	static double TIME_SPENT_IN_PRINTING_TO_FILE;
 	static double TIME_SPENT_CONVERTING_PDDL_STATE;

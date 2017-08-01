@@ -1586,10 +1586,13 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
         }
         double timeStamp = 0.00;
         if (!minTimestamps.empty()) {
-            timeStamp = *minTimestamps.rbegin() + 0.001;
+            //FIXME: Need to determine best way to pick the states timestamp
+            //Should we add 0.001 for epoch or take the timestamp of the
+            //last action?
+            timeStamp = *minTimestamps.rbegin();// + 0.001;
         }
         //Use TRH Heuristic
-        pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState.getInnerState(), header, 
+        pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState, header, 
                 timeStamp, 0, pddlFactory);
         h = result.first;
         makespanEstimate = result.second;
@@ -1709,7 +1712,7 @@ HTrio FF::calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & th
     double h = DBL_MAX;  
     if (FF::USE_TRH) {
         //Use TRH Heuristic
-        pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState.getInnerState(), header, 
+        pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState, header, 
                 theState.timeStamp, 0, pddlFactory);
         h = result.first;
         makespanEstimate = result.second;
@@ -1731,7 +1734,11 @@ HTrio FF::calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & th
     return toReturn;
 }
 
-
+/**
+ * Asserts the action is not null OR is no a rogue action (that is actions with invalid conditions or effects)
+ * Asserts that the action is applicable from a temporal standpoint (read the comments to that function for what th
+ *
+ */
 ExtendedMinimalState * FF::applyActionToState(ActionSegment & actionToApply, const ExtendedMinimalState & parent, const list<FFEvent> & plan)
 {
 
@@ -5440,8 +5447,8 @@ Solution FF::search(bool & reachedGoal)
     HTrio bestHeuristic;
     HTrio initialHeuristic;
     // Initialise the initial state search node and calculate its heuristic. Why, well I guess thats how you get the initial helpful actions
+    SearchQueueItem * const initialSQI = new SearchQueueItem(&initialState, false);
     {
-        SearchQueueItem * const initialSQI = new SearchQueueItem(&initialState, false);
         list<FFEvent> tEvent;
         FFheader_upToDate = false;
         FFonly_one_successor = true;
@@ -5469,7 +5476,7 @@ Solution FF::search(bool & reachedGoal)
 		//Save EHC Performance
 		FF::incrementEHCPerformance(EHCSearchStateCount);
 		reachedGoal = true;
-		workingBestSolution.update(list<FFEvent>(), 0, evaluateMetric(initialState.getInnerState(), list<FFEvent>(), false));
+		workingBestSolution.update(initialSQI->plan, initialSQI->state()->getEditableInnerState().temporalConstraints, evaluateMetric(initialState.getInnerState(), list<FFEvent>(), false));
 		return workingBestSolution;
 	}
 

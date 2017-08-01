@@ -177,10 +177,10 @@ public:
     static int STATES_EVALUATED;
     static int STATES_EVALUATED_IN_HEURISTIC;
     static int DEAD_END_COUNT;
+    static bool scheduleToMetric;
 
 private:
 
-    static bool scheduleToMetric;
     static bool skipRPG;
 
     static void incrementEHCPerformance(int EHCSearchStateCount);
@@ -188,7 +188,6 @@ private:
     static HTrio calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, PDDL::PDDLStateFactory pddlFactory, map<double, list<pair<int, int> > > * justApplied = 0, double tilFrom = 0.001);
     static HTrio calculateHeuristicAndSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const p, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, PDDL::PDDLStateFactory pddlFactory, bool considerCache = false, map<double, list<pair<int, int> > > * justApplied = 0, double tilFrom = 0.001);
 
-    static ExtendedMinimalState * applyActionToState(ActionSegment & theAction, const ExtendedMinimalState & parent, const list<FFEvent> & plan);
 
     /** @brief Check that a successor state has made meaningful progress
      *
@@ -213,10 +212,6 @@ private:
 
 //  static bool checkTSTemporalSoundness(RPGHeuristic* const rpg, ExtendedMinimalState & theState, const int & theAction, const VAL::time_spec & ts, const double & incr, int oldTIL=-1);
     static bool precedingActions(ExtendedMinimalState & theState, const ActionSegment & actionSeg, list<ActionSegment> & alsoMustDo, int oldTIL = -1, double moveOn = 0.001);
-
-    static bool checkTemporalSoundness(ExtendedMinimalState & theState, const ActionSegment & actionSeg, int oldTIL = -1, double moveOn = 0.001);
-
-    static void makeJustApplied(map<double, list<pair<int, int> > > & justApplied, double & tilFrom, ExtendedMinimalState & state, const bool & lastIsSpecial);
 
     static double evaluateMetric(const MinimalState & theState, const list<FFEvent> & plan, const bool printMetric=true);
 
@@ -260,6 +255,9 @@ public:
 
     static list<FFEvent> * doBenchmark(bool & reachedGoal, list<FFEvent> * soln, const bool doLoops = true);
     static list<FFEvent> * reprocessPlan(list<FFEvent> * soln, TemporalConstraints * cons);
+    static ExtendedMinimalState * applyActionToState(ActionSegment & theAction, const ExtendedMinimalState & parent, const list<FFEvent> & plan);
+    static bool checkTemporalSoundness(ExtendedMinimalState & theState, const ActionSegment & actionSeg, int oldTIL = -1, double moveOn = 0.001);
+    static void makeJustApplied(map<double, list<pair<int, int> > > & justApplied, double & tilFrom, ExtendedMinimalState & state, const bool & lastIsSpecial);
 };
 
 
