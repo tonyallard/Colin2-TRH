@@ -58,5 +58,7 @@ struct triple {
 	}
 };
 
+bool isDouble(const char* str);
+
 }
 #endif /* COLIN_UTIL_UTIL_H_ */

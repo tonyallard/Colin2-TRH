@@ -6,4 +6,16 @@
  */
 
 #include "Util.h"
+#include <stdlib.h>
 
+namespace Util {
+	bool isDouble(const char* str)
+	{
+		char* endptr = 0;
+		strtod(str, &endptr);
+
+		if(*endptr != '\0' || endptr == str)
+			return false;
+		return true;
+	}
+}

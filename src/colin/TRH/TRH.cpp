@@ -7,6 +7,7 @@
 #include <limits>
 #include <random>
 
+#include "../util/Util.h"
 #include "TRH.h"
 #include "PDDLDomain.h"
 #include "PDDLState.h"
@@ -71,7 +72,7 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 	std::string result = "";
 	while (!feof(pipe.get())) {
 		if (fgets(buffer, 128, pipe.get()) != NULL)
-			cout << buffer;
+			// cout << buffer;
 			result += buffer;
 	}
 	TRH::TRH::TIME_SPENT_IN_HEURISTIC += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
@@ -210,10 +211,17 @@ list<string> TRH::getRelaxedPlanStr(const string & output) {
 	int endPos = output.find(H_PLAN_DELIM_STOP);
 	string planSection = output.substr(startPos + H_PLAN_DELIM_START.size(), 
 		endPos-(startPos + H_PLAN_DELIM_START.size()));
-	cout << planSection << endl;
+	//Iterate through actions
+	std::istringstream iss(planSection);
+	for (std::string line; std::getline(iss, line); ){
+		//Guaranteed to be a double if this is an action
+		string firstFive = line.substr(0, 5);
+		if (Util::isDouble(firstFive.c_str())) {
+			relaxedPlanStr.push_back(line);
+		}
+	}
 	return relaxedPlanStr;
 }
-
 
 map<double, Planner::ActionSegment> TRH::getRelaxedPlan(list<string> planStr, 
 	double timestamp) {

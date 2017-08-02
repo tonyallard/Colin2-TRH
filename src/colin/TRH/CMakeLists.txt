@@ -11,6 +11,6 @@ set(libTRH_SRCS
 )
 
 add_library(TRH ${libTRH_SRCS})
-target_link_libraries(TRH PDDL)
+target_link_libraries(TRH PDDL UTIL)
 SET_TARGET_PROPERTIES(TRH PROPERTIES COMPILE_FLAGS "-DTOTALORDERSTATES -DPOPF3ANALYSIS")
 
