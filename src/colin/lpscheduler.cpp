@@ -2122,7 +2122,6 @@ LPScheduler::LPScheduler(const MinimalState & theState,
 
     if (!initialised) initialise();
 
-
     static vector<pair<int,double> > emptyEntries(0);
 
     static const bool optimised = true;
@@ -2144,7 +2143,7 @@ LPScheduler::LPScheduler(const MinimalState & theState,
     if (tsVarCount == 0) {
         lp = 0; solved = true; return;
     }
-
+    
     if (hybridBFLP && parentData) {
 
         cd = parentData->spawnChildData(startEventQueue, header, now, setObjectiveToMetric, theState.temporalConstraints, justAppliedStep);
@@ -6262,6 +6261,7 @@ ParentData * LPScheduler::prime(list<FFEvent> & header, const TemporalConstraint
                 }
             }
         } else {
+            cout << "Last one was a TIL" << endl;
             assert(hItr->time_spec == VAL::E_AT);
             toReturn->setTIL(i);
         }
@@ -6825,6 +6825,7 @@ ChildData * ParentData::spawnChildData(list<StartEvent> & seq,
 
         const int endLocation = endGap;
         const int startLocation = startGap;
+        cout << "StartGAP: " << startGap << endl;
         // fortunately, we left gaps in the event sequence
         vector<FFEvent*> & childEvents = toReturn->getEventsWithFakes();
 
@@ -6982,6 +6983,7 @@ ChildData * ParentData::spawnChildData(list<StartEvent> & seq,
         }
 
         const int mustComeBeforeOpenEnds = MinimalState::getTransformer()->stepThatMustPrecedeUnfinishedActions(cons);
+        cout << "Must come before: " << mustComeBeforeOpenEnds << "startLoc: " << startLocation << endl;
 
         if (mustComeBeforeOpenEnds != -1) {
             assert(mustComeBeforeOpenEnds == startLocation);

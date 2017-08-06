@@ -1085,6 +1085,7 @@ public:
     };
 
     inline void startGapIsStep(const int & i) {
+        cout << "Setting Start GAP to " << i << endl;
         startGap = i;
     };
     inline void endGapIsStep(const int & i) {

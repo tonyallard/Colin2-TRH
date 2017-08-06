@@ -1592,7 +1592,7 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
             timeStamp = *minTimestamps.rbegin();// + 0.001;
         }
         //Use TRH Heuristic
-        pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState, header, 
+        pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState, header, now,
                 timeStamp, 0, pddlFactory);
         h = result.first;
         makespanEstimate = result.second;
@@ -1713,7 +1713,7 @@ HTrio FF::calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & th
     if (FF::USE_TRH) {
         //Use TRH Heuristic
         pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState, header, 
-                theState.timeStamp, 0, pddlFactory);
+                now, theState.timeStamp, 0, pddlFactory);
         h = result.first;
         makespanEstimate = result.second;
     } else {
@@ -2218,7 +2218,7 @@ void FF::evaluateStateAndUpdatePlan(auto_ptr<SearchQueueItem> & succ, ExtendedMi
     assert(stepID != -1);
 
     HTrio h1;
-
+    cout << "Calculating heuristic while adding it to the plan..." << actID.second << endl;
     if (FF::allowCompressionSafeScheduler) {
         h1 = calculateHeuristicAndCompressionSafeSchedule(state, prevState, goals, goalFluents, helpfulActions, succ->plan, nowList, stepID, pddlFactory, justApplied, tilFrom);
     } else {
@@ -2412,7 +2412,6 @@ void FF::evaluateStateAndUpdatePlan(auto_ptr<SearchQueueItem> & succ, ExtendedMi
     }
 #endif
 }
-
 
 bool FF::precedingActions(ExtendedMinimalState & theState, const ActionSegment & actionSeg, list<ActionSegment> & alsoMustDo, const int oldTIL, const double moveOn)
 {
@@ -5650,7 +5649,11 @@ Solution FF::search(bool & reachedGoal)
                     if (visitTheState) {
 
                         TILparent = currSQI.get();
-
+                        /*
+                         * I am pretty sure this applies all the TILs that are stacked at this point
+                         * in time. For example if you had 5 TILs each defined with AT(5, ...) then this
+                         * would ensure all 5 are applied when one is visitied.
+                         */
                         for (int tn = oldTIL + 1; tn <= helpfulActsItr->divisionID; ++tn) {
                             set<int> needToFinish;// = RPGBuilder::TILneedsToHaveFinished(tn, succ->state);
                             //registerFinished(toSolve->rpg, succ->state, needToFinish);
@@ -6095,6 +6098,10 @@ Solution FF::search(bool & reachedGoal)
                     /* I think this is some house keeping where if the state has been visited before and
                      * the action is a TIL, it performs some house keeping functions to make this the next
                      * active TIL or something and update the internal representaiton of the plan.
+                     *
+                     * Update: I am pretty sure this applies all the TILs that are stacked at this point
+                     * in time. For example if you had 5 TILs each defined with AT(5, ...) then this
+                     * would ensure all 5 are applied when one is visitied.
                      */
                     if (visitTheState) {
 

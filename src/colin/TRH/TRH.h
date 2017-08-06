@@ -77,9 +77,9 @@ private:
 public:
 	static TRH * getInstance();
 	pair<double, int> getHeuristic(Planner::ExtendedMinimalState & theState,
-		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
+		std::list<Planner::FFEvent>& plan, std::list<Planner::FFEvent> & now,
+		double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory);
-	static void printPlanPostfix();
 	static double TIME_SPENT_IN_HEURISTIC;
 	static double TIME_SPENT_IN_PRINTING_TO_FILE;
 	static double TIME_SPENT_CONVERTING_PDDL_STATE;
