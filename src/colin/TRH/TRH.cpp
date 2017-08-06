@@ -17,6 +17,7 @@
 #include "PDDLObject.h"
 #include "PDDLUtils.h"
 #include "../FFSolver.h"
+// #include "../FFSolver.cpp"
 #include "instantiation.h"
 #include "../temporalanalysis.h"
 
@@ -131,6 +132,13 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 		cout << "initial plan size: " << header.size() << endl;
 		Planner::FFEvent::printPlan(header);
 
+		list<Planner::FFEvent> testPlan(header);
+		testPlan.insert(testPlan.end(), now.begin(), now.end());
+		list<Planner::FFEvent> relaxedPlan = getRelaxedEventList(relaxedPlanStr, timestamp);
+		testPlan.insert(testPlan.end(), relaxedPlan.begin(), relaxedPlan.end());
+		list<Planner::FFEvent> plan = reprocessPlan(testPlan);
+		Planner::FFEvent::printPlan(plan);
+
 		// cout << "Adding ends of " << state.startedActions.size() 
 		// 	<< " actions that are executing..." << endl;
 		// std::map<int, std::set<int> >::const_iterator saItr =
@@ -154,55 +162,55 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 		//           currSQI = succ.release();
 		// }
 
-		map<double, Planner::ActionSegment> relaexedPlan = getRelaxedPlan(relaxedPlanStr, timestamp);
-		cout << "relaxed plan size: " << relaxedPlanStr.size() << endl;
-		map<double, Planner::ActionSegment>::iterator rPlanItr = relaexedPlan.begin();
-		for (int i = 0; rPlanItr != relaexedPlan.end(); rPlanItr++, i++) {
-			double startTime = rPlanItr->first;
-			Planner::ActionSegment action = rPlanItr->second;
-			//Determine if a TIL needs to happen
-			cout << "Current Timestamp " << startTime << " next TIL " 
-					<< currSQI->state()->getInnerState().nextTIL << endl;
-			currSQI = applyTILsIfRequired(currSQI, startTime);
-			//Update divisionID / nextTIL
-			action.divisionID = currSQI->state()->getInnerState().nextTIL;
-			cout << "1 - Applying action from relaxed plan: " << PDDL::getActionName(action.first->getID()) 
-					<< " - " << action.second << endl;
+	// 	map<double, Planner::ActionSegment> relaexedPlan = getRelaxedPlan(relaxedPlanStr, timestamp);
+	// 	cout << "relaxed plan size: " << relaxedPlanStr.size() << endl;
+	// 	map<double, Planner::ActionSegment>::iterator rPlanItr = relaexedPlan.begin();
+	// 	for (int i = 0; rPlanItr != relaexedPlan.end(); rPlanItr++, i++) {
+	// 		double startTime = rPlanItr->first;
+	// 		Planner::ActionSegment action = rPlanItr->second;
+	// 		//Determine if a TIL needs to happen
+	// 		cout << "Current Timestamp " << startTime << " next TIL " 
+	// 				<< currSQI->state()->getInnerState().nextTIL << endl;
+	// 		currSQI = applyTILsIfRequired(currSQI, startTime);
+	// 		//Update divisionID / nextTIL
+	// 		action.divisionID = currSQI->state()->getInnerState().nextTIL;
+	// 		cout << "1 - Applying action from relaxed plan: " << PDDL::getActionName(action.first->getID()) 
+	// 				<< " - " << action.second << endl;
 			
-			cout << "2 - Most Recent Step: " << Planner::MinimalState::getTransformer()->
-					stepThatMustPrecedeUnfinishedActions(currSQI->state()->getInnerState().temporalConstraints) 
-					<< endl;
+	// 		cout << "2 - Most Recent Step: " << Planner::MinimalState::getTransformer()->
+	// 				stepThatMustPrecedeUnfinishedActions(currSQI->state()->getInnerState().temporalConstraints) 
+	// 				<< endl;
 
-			const auto_ptr<Planner::ParentData> incrementalData(
-					Planner::FF::allowCompressionSafeScheduler ? 0 : Planner::LPScheduler::prime(currSQI->plan, 
-					currSQI->state()->getInnerState().temporalConstraints, currSQI->state()->startEventQueue));
+	// 		const auto_ptr<Planner::ParentData> incrementalData(
+	// 				Planner::FF::allowCompressionSafeScheduler ? 0 : Planner::LPScheduler::prime(currSQI->plan, 
+	// 				currSQI->state()->getInnerState().temporalConstraints, currSQI->state()->startEventQueue));
 
-			cout << "3 - Applying Action to State..." << endl;
-			auto_ptr<Planner::SearchQueueItem> succ = auto_ptr<Planner::SearchQueueItem>(new 
-					Planner::SearchQueueItem(Planner::FF::applyActionToState(action, *(currSQI->state()), 
-					currSQI->plan), true));
-			succ->heuristicValue.makespan = currSQI->heuristicValue.makespan;
+	// 		cout << "3 - Applying Action to State..." << endl;
+	// 		auto_ptr<Planner::SearchQueueItem> succ = auto_ptr<Planner::SearchQueueItem>(new 
+	// 				Planner::SearchQueueItem(Planner::FF::applyActionToState(action, *(currSQI->state()), 
+	// 				currSQI->plan), true));
+	// 		succ->heuristicValue.makespan = currSQI->heuristicValue.makespan;
 			
-			cout << "4 - Updating Plan..." << endl;
-			if (!evaluateStateAndUpdatePlan(succ, action,  *(succ->state()), currSQI->state(), 
-					incrementalData.get(), currSQI->plan)) {
-				cerr << "Problem scheduling..." << endl;
-				exit(0);
-			}
+	// 		cout << "4 - Updating Plan..." << endl;
+	// 		if (!evaluateStateAndUpdatePlan(succ, action,  *(succ->state()), currSQI->state(), 
+	// 				incrementalData.get(), currSQI->plan)) {
+	// 			cerr << "Problem scheduling..." << endl;
+	// 			exit(0);
+	// 		}
 
-			cout << "Header steps: " << succ->plan.size() << endl;
-			std::list<std::string> header = PDDL::getPlanPrefix(succ->plan);
-			std::list<std::string>::const_iterator headItr = header.begin();
-			for (; headItr != header.end(); headItr++) {
-				cout << *headItr << endl;	
-			}
+	// 		cout << "Header steps: " << succ->plan.size() << endl;
+	// 		std::list<std::string> header = PDDL::getPlanPrefix(succ->plan);
+	// 		std::list<std::string>::const_iterator headItr = header.begin();
+	// 		for (; headItr != header.end(); headItr++) {
+	// 			cout << *headItr << endl;	
+	// 		}
 			
-			delete currSQI;
-			currSQI = succ.release();
-			cout << "5 - Action " << PDDL::getActionName(action.first->getID()) << " has been added to plan." << endl;
-		}
-		Planner::FFEvent::printPlan(currSQI->plan);
-		delete currSQI;
+	// 		delete currSQI;
+	// 		currSQI = succ.release();
+	// 		cout << "5 - Action " << PDDL::getActionName(action.first->getID()) << " has been added to plan." << endl;
+	// 	}
+	// 	Planner::FFEvent::printPlan(currSQI->plan);
+	// 	delete currSQI;
 	}
 	return std::make_pair (hval, relaxedPlanSize);
 }
@@ -309,6 +317,60 @@ map<double, Planner::ActionSegment> TRH::getRelaxedPlan(list<string> planStr,
 	return rPlan;
 }
 
+list<Planner::FFEvent> TRH::getRelaxedEventList(list<string> planStr, 
+	double timestamp) {
+	list<Planner::FFEvent> rPlan;
+
+	int tilsEncountered = 0; //need to adjust timings for relaxed tils
+	const double tilDuration = EPSILON;
+	
+	list<string>::const_iterator planStrItr = planStr.begin();
+	for (; planStrItr != planStr.end(); planStrItr++) {
+		string actionStr = *planStrItr;
+		int actionNameStartPos = actionStr.find("(");
+		int actionNameEndPos = actionStr.find(")") + 1;
+		string actionInstance = actionStr.substr(actionNameStartPos, 
+			actionNameEndPos - actionNameStartPos);
+		string actionName = actionInstance.substr(1, actionInstance.find(" ") - 1);
+		Inst::instantiatedOp * op = PDDL::getOperator(actionInstance);
+		
+		int startTimePos = actionStr.find(":");
+		double startTime = stod(actionStr.substr(0, startTimePos));
+		//Add the timestamp to the action to fit after the prefix
+		startTime += timestamp;
+		//Deduct any previous TIL durations from startTimes
+		startTime -= (tilsEncountered * tilDuration);
+
+		int actionDurationStartPos = actionStr.find("[") + 1;
+		int actionDurationEndPos = actionStr.find("]");
+		double duration = stod(actionStr.substr(actionDurationStartPos, 
+			actionDurationEndPos - actionDurationStartPos));
+
+		if (op == 0){
+			//Is it a til action?
+			//FIXME: Possibly need to be more thorough here
+			if ((PDDL::isTILAction(actionName, 0.0, 0.0)) && 
+				(duration == EPSILON)){
+				tilsEncountered++;
+			}
+		} else {
+			Planner::FFEvent start_snap_action = Planner::FFEvent(op, 
+				startTime, startTime);
+			start_snap_action.lpTimestamp = startTime;
+			rPlan.push_back(start_snap_action);
+			if (!Planner::RPGBuilder::getRPGDEs(op->getID()).empty()) {
+				//Durative Action
+				double durActEndStart = startTime + duration;
+				Planner::FFEvent end_snap_action = Planner::FFEvent(op, 
+				durActEndStart, durActEndStart);
+				end_snap_action.lpTimestamp = durActEndStart;
+				rPlan.push_back(end_snap_action);
+			}
+		}
+	}
+	return rPlan;
+}
+
 Planner::SearchQueueItem * TRH::applyTILsIfRequired(Planner::SearchQueueItem * currSQI, 
 		double timestamp) {
 
@@ -339,6 +401,164 @@ Planner::SearchQueueItem * TRH::applyTILsIfRequired(Planner::SearchQueueItem * c
 			return toReturn;
 		}
 	}
+	return toReturn;
+}
+
+list<Planner::FFEvent> TRH::reprocessPlan(list<Planner::FFEvent> & oldSoln)
+{
+	// static bool initCSBase = false;
+
+	// if (!initCSBase) {
+	// 	initCSBase = true;
+	// 	const vector<NumericAnalysis::dominance_constraint> & dcs = NumericAnalysis::getDominanceConstraints();
+	// 	const int pneCount = dcs.size();
+	// 	CSBase::ignorableFluents = vector<bool>(pneCount);
+	// 	CSBase::nonDominatedFluent = vector<bool>(pneCount);
+	// 	for (int i = 0; i < pneCount; ++i) {
+	// 		CSBase::ignorableFluents[i] = ((dcs[i] == NumericAnalysis::E_METRICTRACKING) || (dcs[i] == NumericAnalysis::E_IRRELEVANT));
+	// 		CSBase::nonDominatedFluent[i] = (!(CSBase::ignorableFluents[i]) && dcs[i] == NumericAnalysis::E_NODOMINANCE);
+	// 	}
+	// }
+
+	// if (Planner::FF::allowCompressionSafeScheduler) {
+	// 	Planner::FF::allowCompressionSafeScheduler = CompressionSafeScheduler::canUseThisScheduler();
+	// }
+
+
+	// const bool ffDebug = (Globals::globalVerbosity & 2);
+
+	// Planner::FFheader_upToDate = false;
+	// Planner::FFonly_one_successor = false;
+	Planner::FF::WAStar = false;
+	set<int> goals;
+	set<int> numericGoals;
+	Planner::ExtendedMinimalState initialState;
+
+	{
+		Planner::LiteralSet tinitialState;
+		vector<double> tinitialFluents;
+
+		Planner::RPGBuilder::getNonStaticInitialState(tinitialState, tinitialFluents);
+
+		initialState.getEditableInnerState().setFacts(tinitialState);
+		initialState.getEditableInnerState().setFacts(tinitialFluents);
+
+		// if (ffDebug) {
+		// 	cout << "Initial state has " << initialState.getInnerState().first.size() << " propositional facts\n";
+		// }
+	}
+
+	PDDL::PDDLStateFactory pddlFactory(initialState.getInnerState(), PDDL::PDDLDomainFactory::getInstance()->getConstants());
+
+	{
+		list<Literal*>::iterator gsItr = Planner::RPGBuilder::getLiteralGoals().begin();
+		const list<Literal*>::iterator gsEnd = Planner::RPGBuilder::getLiteralGoals().end();
+
+		for (; gsItr != gsEnd; ++gsItr) {
+			pair<bool, bool> & currStatic = Planner::RPGBuilder::isStatic(*gsItr);
+			if (currStatic.first) {
+				assert(currStatic.second);
+			} else {
+				goals.insert((*gsItr)->getStateID());
+			}
+
+		}
+
+	}
+	{
+		list<pair<int, int> >::iterator gsItr = Planner::RPGBuilder::getNumericRPGGoals().begin();
+		const list<pair<int, int> >::iterator gsEnd = Planner::RPGBuilder::getNumericRPGGoals().end();
+
+		for (; gsItr != gsEnd; ++gsItr) {
+			if (gsItr->first != -1) {
+				numericGoals.insert(gsItr->first);
+			}
+			if (gsItr->second != -1) {
+				numericGoals.insert(gsItr->second);
+			}
+		}
+	}
+
+	list<Planner::FFEvent*> sortedSoln;
+
+	list<Planner::FFEvent>::iterator osItr = oldSoln.begin();
+	const list<Planner::FFEvent>::iterator osEnd = oldSoln.end();
+
+	for (; osItr != osEnd; ++osItr) {
+		if ((osItr->time_spec == VAL::E_AT_END) && Planner::TemporalAnalysis::canSkipToEnd(osItr->action->getID())) {
+			continue;
+		}
+
+		list<Planner::FFEvent*>::iterator sortedItr = sortedSoln.begin();
+		const list<Planner::FFEvent*>::iterator sortedEnd = sortedSoln.end();
+
+		for (; sortedItr != sortedEnd; ++sortedItr) {
+			if (osItr->lpTimestamp < (*sortedItr)->lpTimestamp) {
+				sortedSoln.insert(sortedItr, &(*osItr));
+				break;
+			}
+		}
+		if (sortedItr == sortedEnd) {
+			sortedSoln.push_back(&(*osItr));
+		}
+	}
+
+	auto_ptr<Planner::StateHash> visitedStates(Planner::FF::getStateHash());
+
+	const list<Planner::FFEvent*>::const_iterator oldSolnEnd = sortedSoln.end();
+
+	Planner::SearchQueueItem * currSQI = new Planner::SearchQueueItem(&initialState, false);
+	{
+		list<Planner::FFEvent> tEvent;
+		// Planner::FFheader_upToDate = false;
+		// Planner::FFonly_one_successor = true;
+		//Update Time
+		Planner::LPScheduler tryToSchedule(currSQI->state()->getInnerState(), currSQI->plan, tEvent, -1, 
+			currSQI->state()->startEventQueue, 0, currSQI->state()->entriesForAction, 
+			0, 0, &(currSQI->state()->tilComesBefore), Planner::FF::scheduleToMetric);
+		//Check if it is valid
+		if (!tryToSchedule.isSolved()) return list<Planner::FFEvent>();
+	}
+
+	list<Planner::FFEvent*>::const_iterator oldSolnItr = sortedSoln.begin();
+
+	const int lastStep = sortedSoln.size() - 1;
+
+	for (int stepID = 0; oldSolnItr != oldSolnEnd; ++oldSolnItr, ++stepID) {
+
+		// #ifdef ENABLE_DEBUGGING_HOOKS
+		// Globals::remainingActionsInPlan.pop_front();
+		// #endif
+
+		Planner::ActionSegment nextSeg((*oldSolnItr)->action, (*oldSolnItr)->time_spec, 
+			(*oldSolnItr)->divisionID, Planner::RPGHeuristic::emptyIntList);
+
+		// if (Globals::globalVerbosity & 2) {
+		// 	cout << "[" << stepID << "] ";
+		// 	cout.flush();
+		// }
+
+		if (stepID == lastStep) {
+			Planner::FF::scheduleToMetric = true;
+		}
+
+		const auto_ptr<Planner::ParentData> incrementalData(Planner::FF::allowCompressionSafeScheduler ? 
+				0 : Planner::LPScheduler::prime(currSQI->plan, currSQI->state()->getInnerState().temporalConstraints,
+				currSQI->state()->startEventQueue));
+
+		auto_ptr<Planner::SearchQueueItem> succ = auto_ptr<Planner::SearchQueueItem>(new Planner::SearchQueueItem(
+				Planner::FF::applyActionToState(nextSeg, *(currSQI->state()), currSQI->plan), true));
+		succ->heuristicValue.makespan = currSQI->heuristicValue.makespan;
+
+		evaluateStateAndUpdatePlan(succ, nextSeg, *(succ->state()), currSQI->state(), incrementalData.get(), currSQI->plan);
+		Planner::FFEvent::printPlan(succ->plan);
+		delete currSQI;
+		currSQI = succ.release();
+
+	}
+	list<Planner::FFEvent> toReturn(currSQI->plan);
+
+	delete currSQI;
 	return toReturn;
 }
 

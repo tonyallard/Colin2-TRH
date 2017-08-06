@@ -66,6 +66,9 @@ private:
 	list<string> getRelaxedPlanStr(const string & output);
 	map<double, Planner::ActionSegment> getRelaxedPlan(list<string> planStr, 
 		double timestamp);
+	list<Planner::FFEvent> getRelaxedEventList(list<string> planStr, 
+		double timestamp);
+	list<Planner::FFEvent> reprocessPlan(list<Planner::FFEvent> & oldSoln);
 	Planner::SearchQueueItem * applyTILsIfRequired(Planner::SearchQueueItem * currSQI, double timestamp);
 	static bool evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
 		const Planner::ActionSegment & actionToBeApplied,

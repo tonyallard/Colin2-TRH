@@ -218,8 +218,7 @@ private:
     static bool carryOnSearching(const MinimalState & theState,  const list<FFEvent> & plan);
     
     static Solution workingBestSolution;
-    
-    static StateHash* getStateHash();
+
 public:
 
     static void printPlanAsDot(ostream & o, const list<FFEvent> & plan, const TemporalConstraints * cons);
@@ -258,6 +257,7 @@ public:
     static ExtendedMinimalState * applyActionToState(ActionSegment & theAction, const ExtendedMinimalState & parent, const list<FFEvent> & plan);
     static bool checkTemporalSoundness(ExtendedMinimalState & theState, const ActionSegment & actionSeg, int oldTIL = -1, double moveOn = 0.001);
     static void makeJustApplied(map<double, list<pair<int, int> > > & justApplied, double & tilFrom, ExtendedMinimalState & state, const bool & lastIsSpecial);
+    static StateHash* getStateHash();
 };
 
 
