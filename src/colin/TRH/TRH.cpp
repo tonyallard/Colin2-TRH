@@ -7,6 +7,8 @@
 #include <limits>
 #include <random>
 
+#include <fstream> //FIXME: Remove after debugging
+
 #include "../util/Util.h"
 #include "TRH.h"
 #include "PDDLDomain.h"
@@ -67,16 +69,26 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 
 	clock_t begin_time = clock();
 
-	std::shared_ptr<FILE> pipe(popen(buildCommand().c_str(), "r"), pclose);
-	if (!pipe)
-		return std::make_pair(-1.0, -1.0);
-	char buffer[128];
+	// std::shared_ptr<FILE> pipe(popen(buildCommand().c_str(), "r"), pclose);
+	// if (!pipe)
+	// 	return std::make_pair(-1.0, -1.0);
+	// char buffer[128];
 	std::string result = "";
-	while (!feof(pipe.get())) {
-		if (fgets(buffer, 128, pipe.get()) != NULL)
-			// cout << buffer;
-			result += buffer;
-	}
+	// while (!feof(pipe.get())) {
+	// 	if (fgets(buffer, 128, pipe.get()) != NULL)
+	// 		// cout << buffer;
+			// result += buffer;
+	// }
+
+	ifstream testPlan;
+  	testPlan.open("p06.plan");
+  	std::string line;
+  	while ( std::getline (testPlan,line) )
+    {
+      result += line + "\n";
+    }
+  	testPlan.close();
+
 	TRH::TRH::TIME_SPENT_IN_HEURISTIC += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
 	//removeTempState(stateName);
 	int pos = result.find(H_STATES_EVAL_DELIM);
@@ -110,34 +122,40 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 	list<string> relaxedPlanStr = getRelaxedPlanStr(result);
 	if ((relaxedPlanStr.size() != 0) && (hval == 0.0)) {
 		
-		Planner::SearchQueueItem * currSQI = new Planner::SearchQueueItem(&theState, false);
-		currSQI->plan = header;
+		// Planner::SearchQueueItem * currSQI = new Planner::SearchQueueItem(&theState, false);
+		// currSQI->plan = header;
 
-		//Apply actions that were being evaluated
-		//As we have now determined they are OK!
-		if (!now.empty()) {
-			cout << "Adding the action that was being evaluated.." << endl;
-			Planner::FFEvent nowEvent = *now.begin();
-			Planner::ActionSegment action(nowEvent.action, 
-				nowEvent.time_spec, nowEvent.divisionID, Planner::RPGHeuristic::emptyIntList);
-			const auto_ptr<Planner::ParentData> incrementalData(
-					Planner::FF::allowCompressionSafeScheduler ? 0 : Planner::LPScheduler::prime(currSQI->plan, 
-					currSQI->state()->getInnerState().temporalConstraints, currSQI->state()->startEventQueue));
-			auto_ptr<Planner::SearchQueueItem> succ = auto_ptr<Planner::SearchQueueItem>(currSQI);
-			evaluateStateAndUpdatePlan(succ, action,  *(currSQI->state()), currSQI->state(), 
-					incrementalData.get(), currSQI->plan);
-			currSQI = succ.release();
-		}
-
-		cout << "initial plan size: " << header.size() << endl;
-		Planner::FFEvent::printPlan(header);
+		// //Apply actions that were being evaluated
+		// //As we have now determined they are OK!
+		// if (!now.empty()) {
+		// 	cout << "Adding the action that was being evaluated.." << endl;
+		// 	Planner::FFEvent nowEvent = *now.begin();
+		// 	Planner::ActionSegment action(nowEvent.action, 
+		// 		nowEvent.time_spec, nowEvent.divisionID, Planner::RPGHeuristic::emptyIntList);
+		// 	const auto_ptr<Planner::ParentData> incrementalData(
+		// 			Planner::FF::allowCompressionSafeScheduler ? 0 : Planner::LPScheduler::prime(currSQI->plan, 
+		// 			currSQI->state()->getInnerState().temporalConstraints, currSQI->state()->startEventQueue));
+		// 	auto_ptr<Planner::SearchQueueItem> succ = auto_ptr<Planner::SearchQueueItem>(currSQI);
+		// 	evaluateStateAndUpdatePlan(succ, action,  *(currSQI->state()), currSQI->state(), 
+		// 			incrementalData.get(), currSQI->plan);
+		// 	currSQI = succ.release();
+		// }
 
 		list<Planner::FFEvent> testPlan(header);
+		// now.begin()->lpTimestamp = 1.00;
 		testPlan.insert(testPlan.end(), now.begin(), now.end());
 		list<Planner::FFEvent> relaxedPlan = getRelaxedEventList(relaxedPlanStr, timestamp);
 		testPlan.insert(testPlan.end(), relaxedPlan.begin(), relaxedPlan.end());
+		// Planner::FFEvent::printPlan(testPlan);
+		std::list<string> planStr = PDDL::getPlanPrefix(testPlan);
+		std::list<string>::const_iterator planStrItr = planStr.begin();
+		for(; planStrItr != planStr.end(); planStrItr++) {
+			cout << *planStrItr << endl;
+		}
+
+		//FIXME: need to ensure the divisionID is correct
 		list<Planner::FFEvent> plan = reprocessPlan(testPlan);
-		Planner::FFEvent::printPlan(plan);
+		
 
 		// cout << "Adding ends of " << state.startedActions.size() 
 		// 	<< " actions that are executing..." << endl;
@@ -252,14 +270,14 @@ list<string> TRH::getRelaxedPlanStr(const string & output) {
 	int endPos = output.find(H_PLAN_DELIM_STOP);
 	string planSection = output.substr(startPos + H_PLAN_DELIM_START.size(), 
 		endPos-(startPos + H_PLAN_DELIM_START.size()));
-	cout << "Relaxed Plan" << endl;
+	// cout << "Relaxed Plan" << endl;
 	//Iterate through actions
 	std::istringstream iss(planSection);
 	for (std::string line; std::getline(iss, line); ){
 		//Guaranteed to be a double if this is an action
 		string firstFive = line.substr(0, 5);
 		if (Util::isDouble(firstFive.c_str())) {
-			cout << line << endl;
+			// cout << line << endl;
 			relaxedPlanStr.push_back(line);
 		}
 	}
@@ -362,7 +380,7 @@ list<Planner::FFEvent> TRH::getRelaxedEventList(list<string> planStr,
 				//Durative Action
 				double durActEndStart = startTime + duration;
 				Planner::FFEvent end_snap_action = Planner::FFEvent(op, 
-				durActEndStart, durActEndStart);
+				rPlan.size() - 1, durActEndStart, durActEndStart);
 				end_snap_action.lpTimestamp = durActEndStart;
 				rPlan.push_back(end_snap_action);
 			}
@@ -506,6 +524,7 @@ list<Planner::FFEvent> TRH::reprocessPlan(list<Planner::FFEvent> & oldSoln)
 	auto_ptr<Planner::StateHash> visitedStates(Planner::FF::getStateHash());
 
 	const list<Planner::FFEvent*>::const_iterator oldSolnEnd = sortedSoln.end();
+	cout << "Beginning the replay" << endl;
 
 	Planner::SearchQueueItem * currSQI = new Planner::SearchQueueItem(&initialState, false);
 	{
@@ -525,13 +544,27 @@ list<Planner::FFEvent> TRH::reprocessPlan(list<Planner::FFEvent> & oldSoln)
 	const int lastStep = sortedSoln.size() - 1;
 
 	for (int stepID = 0; oldSolnItr != oldSolnEnd; ++oldSolnItr, ++stepID) {
-
+		Planner::FFEvent * eventToApply = *oldSolnItr;
+		cout << eventToApply->lpTimestamp << " " << eventToApply->time_spec << endl;
+		if (eventToApply->lpTimestamp == 5.004) {
+			exit(0);
+		}
 		// #ifdef ENABLE_DEBUGGING_HOOKS
 		// Globals::remainingActionsInPlan.pop_front();
 		// #endif
+		// cout << "Printing Plan..." << endl;
+		// cout << "Applying Action " << eventToApply->action->getID(); //PDDL::getActionName(eventToApply->action->getID());// << endl;
 
-		Planner::ActionSegment nextSeg((*oldSolnItr)->action, (*oldSolnItr)->time_spec, 
-			(*oldSolnItr)->divisionID, Planner::RPGHeuristic::emptyIntList);
+		currSQI = applyTILsIfRequired(currSQI, eventToApply->lpTimestamp);
+		//Update divisionID / nextTIL
+		eventToApply->divisionID = currSQI->state()->getInnerState().nextTIL;
+
+		// cout << "Applying Action " << PDDL::getActionName((*oldSolnItr)->action->getID()) << endl;
+		cout << "DivisionID: " << eventToApply->divisionID << endl;
+
+		Planner::ActionSegment nextSeg(eventToApply->action, eventToApply->time_spec, 
+			eventToApply->divisionID, Planner::RPGHeuristic::emptyIntList);
+		
 
 		// if (Globals::globalVerbosity & 2) {
 		// 	cout << "[" << stepID << "] ";
@@ -652,6 +685,7 @@ bool TRH::evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
 		(prevState ? &prevState->getInnerState().secondMin : 0), 
 		(prevState ? &prevState->getInnerState().secondMax : 0), 
 		&(state.tilComesBefore), Planner::FF::scheduleToMetric);
+
 	//Check if it is valid
 	if (!tryToSchedule.isSolved()) return false;
 
@@ -662,31 +696,35 @@ bool TRH::evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
 
 	if (eventOneDefined) {
 		extraEvent = nowList.back();
+		nowList.pop_back();
 	}
 
-	#ifdef POPF3ANALYSIS
-	#ifndef TOTALORDERSTATES
-	if (actionToBeApplied.second == VAL::E_AT_START) {
-		if (   !RPGBuilder::getRPGDEs(actionToBeApplied.first->getID()).empty()
-			&& TemporalAnalysis::canSkipToEnd(actionToBeApplied.first->getID())) { // if it's a compression-safe temporal action
+	// #ifdef POPF3ANALYSIS
+	// #ifndef TOTALORDERSTATES
+	// if (actionToBeApplied.second == VAL::E_AT_START) {
+	// 	if (   !RPGBuilder::getRPGDEs(actionToBeApplied.first->getID()).empty()
+	// 		&& TemporalAnalysis::canSkipToEnd(actionToBeApplied.first->getID())) { // if it's a compression-safe temporal action
 
-			const int endStepID = state.getInnerState().planLength - 1;
+	// 		const int endStepID = state.getInnerState().planLength - 1;
 
-			state.getEditableInnerState().updateWhenEndOfActionIs(actionToBeApplied.first->getID(), endStepID, extraEventTwo.lpMinTimestamp);
+	// 		state.getEditableInnerState().updateWhenEndOfActionIs(actionToBeApplied.first->getID(), endStepID, extraEventTwo.lpMinTimestamp);
 
-		}
-	}
-	#endif
-	#endif
+	// 	}
+	// }
+	// #endif
+	// #endif
 
 	if (eventOneDefined) {
+		cout << extraEvent.pairWithStep << endl;
 		succ->plan.push_back(extraEvent);
 	}
 
 	if (eventTwoDefined) {
+		cout << extraEventTwo.pairWithStep << endl;
 		succ->plan.push_back(extraEventTwo);
 	}
 
+	cout << extraEvent.lpTimestamp << " " << extraEventTwo.lpTimestamp << endl;
 
 	if (actionToBeApplied.second == VAL::E_AT_START // If it's the start of an action...
 			&& !Planner::RPGBuilder::getRPGDEs(actionToBeApplied.first->getID()).empty() // that is temporal..

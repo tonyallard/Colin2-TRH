@@ -2263,7 +2263,7 @@ void FF::evaluateStateAndUpdatePlan(auto_ptr<SearchQueueItem> & succ, ExtendedMi
     if (eventTwoDefined) {
         succ->plan.push_back(extraEventTwo);
     }
-
+    // FFEvent::printPlan(succ->plan);
 
     if (actID.second == VAL::E_AT_START // If it's the start of an action...
             && !RPGBuilder::getRPGDEs(actID.first->getID()).empty() // that is temporal..
