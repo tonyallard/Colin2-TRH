@@ -546,8 +546,8 @@ list<Planner::FFEvent> TRH::reprocessPlan(list<Planner::FFEvent> & oldSoln)
 	for (int stepID = 0; oldSolnItr != oldSolnEnd; ++oldSolnItr, ++stepID) {
 		Planner::FFEvent * eventToApply = *oldSolnItr;
 		cout << eventToApply->lpTimestamp << " " << eventToApply->time_spec << endl;
-		if (eventToApply->lpTimestamp == 5.004) {
-			exit(0);
+		if (eventToApply->lpTimestamp == 5.003) {
+			// exit(0);
 		}
 		// #ifdef ENABLE_DEBUGGING_HOOKS
 		// Globals::remainingActionsInPlan.pop_front();
@@ -674,29 +674,33 @@ bool TRH::evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
 
 	list<Planner::FFEvent> nowList;
 
-	if (eventOneDefined) nowList.push_back(extraEvent);
-	if (eventTwoDefined) nowList.push_back(extraEventTwo);
+	if (eventOneDefined) nowList.push_back(extraEvent); cout << "In evaluateStateAndUpdatePlan1: " << &nowList.back() << endl;
+	if (eventTwoDefined) nowList.push_back(extraEventTwo); cout << "In evaluateStateAndUpdatePlan2: " << &nowList.back() << endl;
 
 	assert(stepID != -1);
 
 	//Update Time
-	Planner::LPScheduler tryToSchedule(state.getInnerState(), succ->plan, nowList, stepID, 
+	Planner::LPScheduler * tryToSchedule = new Planner::LPScheduler(state.getInnerState(), succ->plan, nowList, stepID, 
 		state.startEventQueue, incrementalData, state.entriesForAction, 
 		(prevState ? &prevState->getInnerState().secondMin : 0), 
 		(prevState ? &prevState->getInnerState().secondMax : 0), 
 		&(state.tilComesBefore), Planner::FF::scheduleToMetric);
 
 	//Check if it is valid
-	if (!tryToSchedule.isSolved()) return false;
+	if (!tryToSchedule->isSolved()) return false;
+
+	delete tryToSchedule;
 
 	if (eventTwoDefined) {
 		extraEventTwo = nowList.back();
+		cout << "In evaluateStateAndUpdatePlan2: " << &extraEventTwo << endl;
 		nowList.pop_back();
 	}
 
 	if (eventOneDefined) {
 		extraEvent = nowList.back();
-		nowList.pop_back();
+		cout << "In evaluateStateAndUpdatePlan1: " << &extraEvent << endl;
+		// nowList.pop_back();
 	}
 
 	// #ifdef POPF3ANALYSIS
@@ -715,13 +719,13 @@ bool TRH::evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
 	// #endif
 
 	if (eventOneDefined) {
-		cout << extraEvent.pairWithStep << endl;
 		succ->plan.push_back(extraEvent);
+		cout << "In evaluateStateAndUpdatePlan1: " << &succ->plan.back() << endl;
 	}
 
 	if (eventTwoDefined) {
-		cout << extraEventTwo.pairWithStep << endl;
 		succ->plan.push_back(extraEventTwo);
+		cout << "In evaluateStateAndUpdatePlan2: " << &succ->plan.back() << endl;
 	}
 
 	cout << extraEvent.lpTimestamp << " " << extraEventTwo.lpTimestamp << endl;
