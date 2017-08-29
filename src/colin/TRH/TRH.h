@@ -63,6 +63,7 @@ private:
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
 		PDDL::PDDLStateFactory pddlFactory, string fileName);
 	void removeTempState(string fileName);
+	list<Planner::FFEvent> getActions(list<Planner::FFEvent> & actionList);
 	list<string> getRelaxedPlanStr(const string & output);
 	map<double, Planner::ActionSegment> getRelaxedPlan(list<string> planStr, 
 		double timestamp);

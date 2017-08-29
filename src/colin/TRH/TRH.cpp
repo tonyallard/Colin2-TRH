@@ -69,25 +69,25 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 
 	clock_t begin_time = clock();
 
-	// std::shared_ptr<FILE> pipe(popen(buildCommand().c_str(), "r"), pclose);
-	// if (!pipe)
-	// 	return std::make_pair(-1.0, -1.0);
-	// char buffer[128];
+	std::shared_ptr<FILE> pipe(popen(buildCommand().c_str(), "r"), pclose);
+	if (!pipe)
+		return std::make_pair(-1.0, -1.0);
+	char buffer[128];
 	std::string result = "";
-	// while (!feof(pipe.get())) {
-	// 	if (fgets(buffer, 128, pipe.get()) != NULL)
-	// 		// cout << buffer;
-			// result += buffer;
-	// }
+	while (!feof(pipe.get())) {
+		if (fgets(buffer, 128, pipe.get()) != NULL)
+			// cout << buffer;
+			result += buffer;
+	}
 
-	ifstream testPlan;
-  	testPlan.open("p06.plan");
-  	std::string line;
-  	while ( std::getline (testPlan,line) )
-    {
-      result += line + "\n";
-    }
-  	testPlan.close();
+	// ifstream testPlan;
+ //  	testPlan.open("p06.plan");
+ //  	std::string line;
+ //  	while ( std::getline (testPlan,line) )
+ //    {
+ //      result += line + "\n";
+ //    }
+ //  	testPlan.close();
 
 	TRH::TRH::TIME_SPENT_IN_HEURISTIC += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
 	//removeTempState(stateName);
@@ -141,20 +141,24 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 		// 	currSQI = succ.release();
 		// }
 
-		list<Planner::FFEvent> testPlan(header);
+		list<Planner::FFEvent> head = getActions(header);
+		list<Planner::FFEvent> nowList = getActions(now);
+		list<Planner::FFEvent> proposedPlan(head);
 		// now.begin()->lpTimestamp = 1.00;
-		testPlan.insert(testPlan.end(), now.begin(), now.end());
+		proposedPlan.insert(proposedPlan.end(), nowList.begin(), nowList.end());
 		list<Planner::FFEvent> relaxedPlan = getRelaxedEventList(relaxedPlanStr, timestamp);
-		testPlan.insert(testPlan.end(), relaxedPlan.begin(), relaxedPlan.end());
+		proposedPlan.insert(proposedPlan.end(), relaxedPlan.begin(), relaxedPlan.end());
 		// Planner::FFEvent::printPlan(testPlan);
-		std::list<string> planStr = PDDL::getPlanPrefix(testPlan);
-		std::list<string>::const_iterator planStrItr = planStr.begin();
-		for(; planStrItr != planStr.end(); planStrItr++) {
-			cout << *planStrItr << endl;
-		}
+		// cout << "Plan to replay:" << endl;
+		// std::list<string> planStr = PDDL::getPlanPrefix(proposedPlan);
+		// std::list<string>::const_iterator planStrItr = planStr.begin();
+		// for(; planStrItr != planStr.end(); planStrItr++) {
+		// 	cout << *planStrItr << endl;
+		// }
 
 		//FIXME: need to ensure the divisionID is correct
-		list<Planner::FFEvent> plan = reprocessPlan(testPlan);
+		list<Planner::FFEvent> plan = reprocessPlan(proposedPlan);
+		Planner::FFEvent::printPlan(plan);
 		
 
 		// cout << "Adding ends of " << state.startedActions.size() 
@@ -263,6 +267,25 @@ string TRH::buildCommand() {
 // 	return relaxedPlanStr;
 // }
 
+/**
+ *
+ * Runs through a list of FFEvent objects and returns
+ * a list of the same objects without any TILs
+ *
+ * Used to remove TILs from a prefix for reprocessing
+ *
+ */
+list<Planner::FFEvent> TRH::getActions(list<Planner::FFEvent> & actionList) {
+	list<Planner::FFEvent> header;
+	list<Planner::FFEvent>::const_iterator actionItr = actionList.begin();
+	for (; actionItr != actionList.end(); actionItr++) {
+		if (actionItr->time_spec != VAL::time_spec::E_AT) {
+			header.push_back(*actionItr);
+		}
+	}
+	return header;
+}
+
 list<string> TRH::getRelaxedPlanStr(const string & output) {
 	list<string> relaxedPlanStr;
 
@@ -369,6 +392,7 @@ list<Planner::FFEvent> TRH::getRelaxedEventList(list<string> planStr,
 			//FIXME: Possibly need to be more thorough here
 			if ((PDDL::isTILAction(actionName, 0.0, 0.0)) && 
 				(duration == EPSILON)){
+				cout << actionName << endl;
 				tilsEncountered++;
 			}
 		} else {
@@ -553,7 +577,8 @@ list<Planner::FFEvent> TRH::reprocessPlan(list<Planner::FFEvent> & oldSoln)
 		// Globals::remainingActionsInPlan.pop_front();
 		// #endif
 		// cout << "Printing Plan..." << endl;
-		// cout << "Applying Action " << eventToApply->action->getID(); //PDDL::getActionName(eventToApply->action->getID());// << endl;
+		// cout << eventToApply->action << endl;
+		cout << "Applying Action " << PDDL::getActionName(eventToApply->action->getID()) << endl;
 
 		currSQI = applyTILsIfRequired(currSQI, eventToApply->lpTimestamp);
 		//Update divisionID / nextTIL
@@ -674,8 +699,8 @@ bool TRH::evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
 
 	list<Planner::FFEvent> nowList;
 
-	if (eventOneDefined) nowList.push_back(extraEvent); cout << "In evaluateStateAndUpdatePlan1: " << &nowList.back() << endl;
-	if (eventTwoDefined) nowList.push_back(extraEventTwo); cout << "In evaluateStateAndUpdatePlan2: " << &nowList.back() << endl;
+	if (eventOneDefined) nowList.push_back(extraEvent);
+	if (eventTwoDefined) nowList.push_back(extraEventTwo);
 
 	assert(stepID != -1);
 
@@ -693,13 +718,11 @@ bool TRH::evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
 
 	if (eventTwoDefined) {
 		extraEventTwo = nowList.back();
-		cout << "In evaluateStateAndUpdatePlan2: " << &extraEventTwo << endl;
 		nowList.pop_back();
 	}
 
 	if (eventOneDefined) {
 		extraEvent = nowList.back();
-		cout << "In evaluateStateAndUpdatePlan1: " << &extraEvent << endl;
 		// nowList.pop_back();
 	}
 
@@ -720,12 +743,10 @@ bool TRH::evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
 
 	if (eventOneDefined) {
 		succ->plan.push_back(extraEvent);
-		cout << "In evaluateStateAndUpdatePlan1: " << &succ->plan.back() << endl;
 	}
 
 	if (eventTwoDefined) {
 		succ->plan.push_back(extraEventTwo);
-		cout << "In evaluateStateAndUpdatePlan2: " << &succ->plan.back() << endl;
 	}
 
 	cout << extraEvent.lpTimestamp << " " << extraEventTwo.lpTimestamp << endl;
