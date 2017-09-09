@@ -24,7 +24,7 @@ namespace TRH {
 
 TRH * TRH::INSTANCE = NULL;
 const char * TRH::H_CMD = "./lib/colin-clp";
-const string TRH::TEMP_FILE_PATH = "";//"/tmp/";
+const string TRH::TEMP_FILE_PATH = "/tmp/";
 const string TRH::TEMP_FILE_PREFIX = "temp";
 const string TRH::TEMP_DOMAIN_SUFFIX = "-domain";
 const string TRH::TEMP_FILE_EXT = ".pddl";
@@ -40,7 +40,7 @@ const string TRH::H_PLAN_DELIM_STOP = "=====Plan Stop=====";
 
 TRH * TRH::getInstance() {
 	if (!INSTANCE) {
-		INSTANCE = new TRH(11);//generateNewInstanceID());
+		INSTANCE = new TRH(generateNewInstanceID());
 	}
 	return INSTANCE;
 }
@@ -76,7 +76,7 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 	}
 
 	TRH::TRH::TIME_SPENT_IN_HEURISTIC += double( clock () - begin_time ) /  CLOCKS_PER_SEC;
-	//removeTempState(stateName);
+	removeTempState(stateName);
 	int pos = result.find(H_STATES_EVAL_DELIM);
 	if (pos != -1) {
 		int posEnd = result.find("\n", pos);
