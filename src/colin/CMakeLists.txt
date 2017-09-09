@@ -22,7 +22,7 @@ find_package(Cgl)
 find_package(OSI)
 
 
-set(CMAKE_CXX_FLAGS "-std=c++0x -pg -ggdb ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
 
 if(STATIC_COLIN)
 set(CMAKE_CXX_LINK_FLAGS "-static ${CMAKE_CXX_LINK_FLAGS}")
