@@ -1580,10 +1580,6 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
     double h = DBL_MAX; 
 
     if (FF::USE_TRH) {
-        vector<double>::const_iterator mtsItr = minTimestamps.begin();
-        for (; mtsItr != minTimestamps.end(); mtsItr++){
-            cout << *mtsItr << ", ";
-        }
         double timeStamp = 0.00;
         if (!minTimestamps.empty()) {
             //FIXME: Need to determine best way to pick the states timestamp
@@ -2218,7 +2214,6 @@ void FF::evaluateStateAndUpdatePlan(auto_ptr<SearchQueueItem> & succ, ExtendedMi
     assert(stepID != -1);
 
     HTrio h1;
-    cout << "Calculating heuristic while adding it to the plan..." << actID.second << endl;
     if (FF::allowCompressionSafeScheduler) {
         h1 = calculateHeuristicAndCompressionSafeSchedule(state, prevState, goals, goalFluents, helpfulActions, succ->plan, nowList, stepID, pddlFactory, justApplied, tilFrom);
     } else {
