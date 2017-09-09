@@ -185,7 +185,6 @@ public:
      *  @param last  The new value to give <code>mostRecentStep</code>
      */
     void setMostRecentStep(const int & last) {
-        std::cout << "Setting most recent step to: " << last << std::endl;
         mostRecentStep = last;
     }
 };
