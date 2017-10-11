@@ -196,8 +196,17 @@ bool isOperand(const Planner::RPGBuilder::Operand & operand) {
 	return false;
 }
 
+/**
+ *
+ * Formats expressions into PDDL. Only basic expressions implemented
+ * FIXME: Only basic expressions implemented
+ */
 std::string getExpressionString(const VAL::expression * exp) {
 	std::ostringstream output;
+   const VAL::plus_expression * plusExp =
+			dynamic_cast<const VAL::plus_expression *>(exp);
+	const VAL::minus_expression * minusExp =
+			dynamic_cast<const VAL::minus_expression *>(exp);
 	const VAL::mul_expression * mulExp =
 			dynamic_cast<const VAL::mul_expression *>(exp);
 	const VAL::div_expression * divExp =
@@ -213,6 +222,12 @@ std::string getExpressionString(const VAL::expression * exp) {
 		output << "(" << getOperatorString(comp->getOp()) << " "
 				<< getExpressionString(comp->getLHS()) << " "
 				<< getExpressionString(comp->getRHS()) << ")";
+	} else if (plusExp) {
+		output << "(* " << getExpressionString(plusExp->getLHS()) << " "
+				<< getExpressionString(plusExp->getRHS()) << ")";
+	} else if (minusExp) {
+		output << "(- " << getExpressionString(minusExp->getLHS()) << " "
+				<< getExpressionString(minusExp->getRHS()) << ")";
 	} else if (mulExp) {
 		output << "(* " << getExpressionString(mulExp->getLHS()) << " "
 				<< getExpressionString(mulExp->getRHS()) << ")";
