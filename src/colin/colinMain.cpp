@@ -30,6 +30,7 @@
 #endif
 
 #include <sys/times.h>
+#include <unistd.h>
 
 #include "TRH.h"
 
