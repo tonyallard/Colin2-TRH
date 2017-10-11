@@ -276,7 +276,6 @@ Planner::SearchQueueItem * TRH::applyTILsIfRequired(Planner::SearchQueueItem * c
 		double timestamp) {
 
 	int numTILs = Planner::RPGBuilder::timedInitialLiteralsVector.size();
-	Planner::SearchQueueItem * toReturn = currSQI;
 	
 	for (int i = currSQI->state()->getInnerState().nextTIL; i < numTILs; i++) {
 
@@ -294,14 +293,14 @@ Planner::SearchQueueItem * TRH::applyTILsIfRequired(Planner::SearchQueueItem * c
 
 			evaluateStateAndUpdatePlan(succ, tempSeg,  *(succ->state()), currSQI->state(), 
 					incrementalData.get(), currSQI->plan);
-			toReturn = succ.release();
+			currSQI = succ.release();
 
 		} else if (til->duration > timestamp) {
 			//It is not yet time for this TIL
-			return toReturn;
+			return currSQI;
 		}
 	}
-	return toReturn;
+	return currSQI;
 }
 
 list<Planner::FFEvent> TRH::reprocessPlan(list<Planner::FFEvent> & oldSoln)
