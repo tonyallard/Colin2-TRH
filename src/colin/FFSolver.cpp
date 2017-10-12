@@ -293,7 +293,7 @@ bool exceedsSimpleMetricBound(const MinimalState & theState, const double & make
 bool FF::carryOnSearching(const MinimalState & theState,  const list<FFEvent> & plan)
 {
     if (!Globals::optimiseSolutionQuality) {
-        workingBestSolution.update(plan, theState.temporalConstraints, evaluateMetric(theState, plan, false));
+        // workingBestSolution.update(plan, theState.temporalConstraints, evaluateMetric(theState, plan, false));
         if (Globals::globalVerbosity & 1) {
             cout << "g"; cout.flush();
         }
@@ -316,7 +316,7 @@ bool FF::carryOnSearching(const MinimalState & theState,  const list<FFEvent> & 
         if (Globals::globalVerbosity & 1) {
             cout << "g"; cout.flush();
         }
-        workingBestSolution.update(plan, theState.temporalConstraints, evaluateMetric(theState, plan, false));
+        // workingBestSolution.update(plan, theState.temporalConstraints, evaluateMetric(theState, plan, false));
 
         cout << endl << "; Plan found with metric " << realMetric << endl;
         cout << "; States evaluated so far: " << RPGHeuristic::statesEvaluated << endl;
@@ -353,7 +353,7 @@ bool FF::carryOnSearching(const MinimalState & theState,  const list<FFEvent> & 
     if (Globals::globalVerbosity & 1) {
         cout << "g"; cout.flush();
     }
-    workingBestSolution.update(plan, theState.temporalConstraints, evaluateMetric(theState, plan, false));
+    // workingBestSolution.update(plan, theState.temporalConstraints, evaluateMetric(theState, plan, false));
 
     return false;
 }
@@ -5473,7 +5473,7 @@ Solution FF::search(bool & reachedGoal)
 		//Save EHC Performance
 		FF::incrementEHCPerformance(EHCSearchStateCount);
 		reachedGoal = true;
-		workingBestSolution.update(initialSQI->plan, initialSQI->state()->getEditableInnerState().temporalConstraints, evaluateMetric(initialState.getInnerState(), list<FFEvent>(), false));
+		// workingBestSolution.update(initialSQI->plan, initialSQI->state()->getEditableInnerState().temporalConstraints, evaluateMetric(initialState.getInnerState(), list<FFEvent>(), false));
 		return workingBestSolution;
 	}
 

@@ -115,8 +115,10 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 		list<Planner::FFEvent> relaxedPlan = getRelaxedEventList(relaxedPlanStr, timestamp);
 		proposedPlan.insert(proposedPlan.end(), relaxedPlan.begin(), relaxedPlan.end());
 
-		list<Planner::FFEvent> plan = reprocessPlan(proposedPlan);
-		Planner::FFEvent::printPlan(plan);
+		std::pair<Planner::MinimalState,
+			list<Planner::FFEvent> > solution = reprocessPlan(proposedPlan);
+		Planner::FF::workingBestSolution.update(solution.second, solution.first.temporalConstraints, 
+			Planner::FF::evaluateMetric(solution.first, list<Planner::FFEvent>(), false));
 	}
 	return std::make_pair (hval, relaxedPlanSize);
 }
@@ -303,7 +305,7 @@ Planner::SearchQueueItem * TRH::applyTILsIfRequired(Planner::SearchQueueItem * c
 	return currSQI;
 }
 
-list<Planner::FFEvent> TRH::reprocessPlan(list<Planner::FFEvent> & oldSoln)
+std::pair<Planner::MinimalState, list<Planner::FFEvent> > TRH::reprocessPlan(list<Planner::FFEvent> & oldSoln)
 {
 	Planner::FF::WAStar = false;
 	set<int> goals;
@@ -378,7 +380,7 @@ list<Planner::FFEvent> TRH::reprocessPlan(list<Planner::FFEvent> & oldSoln)
 	auto_ptr<Planner::StateHash> visitedStates(Planner::FF::getStateHash());
 
 	const list<Planner::FFEvent*>::const_iterator oldSolnEnd = sortedSoln.end();
-	cout << "Beginning the replay" << endl;
+	// cout << "Beginning the replay" << endl;
 
 	Planner::SearchQueueItem * currSQI = new Planner::SearchQueueItem(&initialState, false);
 	{
@@ -388,7 +390,7 @@ list<Planner::FFEvent> TRH::reprocessPlan(list<Planner::FFEvent> & oldSoln)
 			currSQI->state()->startEventQueue, 0, currSQI->state()->entriesForAction, 
 			0, 0, &(currSQI->state()->tilComesBefore), Planner::FF::scheduleToMetric);
 		//Check if it is valid
-		if (!tryToSchedule.isSolved()) return list<Planner::FFEvent>();
+		if (!tryToSchedule.isSolved()) return std::pair<Planner::MinimalState, list<Planner::FFEvent> >();
 	}
 
 	list<Planner::FFEvent*>::const_iterator oldSolnItr = sortedSoln.begin();
@@ -423,7 +425,8 @@ list<Planner::FFEvent> TRH::reprocessPlan(list<Planner::FFEvent> & oldSoln)
 		currSQI = succ.release();
 
 	}
-	list<Planner::FFEvent> toReturn(currSQI->plan);
+	std::pair<Planner::MinimalState, list<Planner::FFEvent> > toReturn(
+		currSQI->state()->getInnerState(), currSQI->plan);
 
 	delete currSQI;
 	return toReturn;

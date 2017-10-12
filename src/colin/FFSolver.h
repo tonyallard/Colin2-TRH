@@ -213,12 +213,8 @@ private:
 //  static bool checkTSTemporalSoundness(RPGHeuristic* const rpg, ExtendedMinimalState & theState, const int & theAction, const VAL::time_spec & ts, const double & incr, int oldTIL=-1);
     static bool precedingActions(ExtendedMinimalState & theState, const ActionSegment & actionSeg, list<ActionSegment> & alsoMustDo, int oldTIL = -1, double moveOn = 0.001);
 
-    static double evaluateMetric(const MinimalState & theState, const list<FFEvent> & plan, const bool printMetric=true);
-
     static bool carryOnSearching(const MinimalState & theState,  const list<FFEvent> & plan);
     
-    static Solution workingBestSolution;
-
 public:
 
     static void printPlanAsDot(ostream & o, const list<FFEvent> & plan, const TemporalConstraints * cons);
@@ -258,6 +254,9 @@ public:
     static bool checkTemporalSoundness(ExtendedMinimalState & theState, const ActionSegment & actionSeg, int oldTIL = -1, double moveOn = 0.001);
     static void makeJustApplied(map<double, list<pair<int, int> > > & justApplied, double & tilFrom, ExtendedMinimalState & state, const bool & lastIsSpecial);
     static StateHash* getStateHash();
+    
+    static double evaluateMetric(const MinimalState & theState, const list<FFEvent> & plan, const bool printMetric=true);
+    static Solution workingBestSolution;
 };
 
 

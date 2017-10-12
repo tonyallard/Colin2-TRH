@@ -5696,7 +5696,7 @@ bool LPScheduler::scheduleToMetric()
     /* For each metric term, the LP column containing its value. */
     vector<int> columnForTerm(termCount);
     
-    if (termCount == 1 && metric->variables.front() < 0) {
+    if ((termCount == 1 && metric->variables.front() < 0) && (lpDebug & 1)){
         cout << "; Warning: metric is just to optimise makespan, so post-hoc optimisation is redundant unless being used as a partial-order lifter\n";
     }
     

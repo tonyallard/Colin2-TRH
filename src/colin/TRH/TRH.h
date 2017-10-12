@@ -69,7 +69,7 @@ private:
 		double timestamp);
 	list<Planner::FFEvent> getRelaxedEventList(list<string> planStr, 
 		double timestamp);
-	list<Planner::FFEvent> reprocessPlan(list<Planner::FFEvent> & oldSoln);
+	std::pair<Planner::MinimalState, list<Planner::FFEvent> > reprocessPlan(list<Planner::FFEvent> & oldSoln);
 	Planner::SearchQueueItem * applyTILsIfRequired(Planner::SearchQueueItem * currSQI, double timestamp);
 	static bool evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
 		const Planner::ActionSegment & actionToBeApplied,
