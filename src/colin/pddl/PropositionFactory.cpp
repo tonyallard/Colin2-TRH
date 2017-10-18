@@ -128,8 +128,10 @@ string PropositionFactory::getGroundedParameter(VAL::pddl_typed_symbol * symbol,
 string PropositionFactory::getParameter(VAL::pddl_typed_symbol * symbol, bool isTemplate, bool showType) {
 	string argName = symbol->getName();
 	transform(argName.begin(), argName.end(), argName.begin(), ::toupper);
+	const VAL::const_symbol * const_symb =
+			dynamic_cast<const VAL::const_symbol *>(symbol);
 	//if this is a variable argument
-	if (isTemplate) {
+	if ((isTemplate) && (!const_symb)) {
 		argName = "?" + argName;
 	}
 	if (showType) {
