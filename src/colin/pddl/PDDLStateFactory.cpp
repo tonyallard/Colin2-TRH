@@ -57,6 +57,7 @@ PDDLState PDDLStateFactory::getDeTILedPDDLState(
 		const Planner::MinimalState & state,
 		const std::list<Planner::FFEvent>& plan, double timestamp,
 		double heuristic, const std::list<PDDL::Proposition> & tilPredicates,
+		const std::list<PDDL::Proposition> & tilGoalPredicates,
 		const std::list<PDDL::Proposition> & tilRequiredObjects,
 		const std::list<PDDL::Proposition> & pendingActionRequiredObjects,
 		const std::set<PDDLObject> & domainObjectSymbolTable) {
@@ -72,6 +73,10 @@ PDDLState PDDLStateFactory::getDeTILedPDDLState(
 
 	std::list<Proposition> propositions = PDDLStateFactory::getPropositions(
 			state, objectSymbolTable);
+	//Add initial proposition for initial TIL
+	if (!tilPredicates.empty()) {
+		propositions.push_back(*tilPredicates.rbegin());
+	}
 	std::list<PNE> pnes = getPNEs(state, objectSymbolTable);
 
 	addRequiredPropositionsForPendingActions(pendingActionRequiredObjects,
@@ -79,7 +84,7 @@ PDDLState PDDLStateFactory::getDeTILedPDDLState(
 	addTILPropositions(tilRequiredObjects, propositions);
 
 	std::list<string> planPrefix = PDDL::getPlanPrefix(plan);
-	PDDLState theState(objectSymbolTable, propositions, tilPredicates, pnes,
+	PDDLState theState(objectSymbolTable, propositions, tilGoalPredicates, pnes,
 			goals, metric, planPrefix, heuristic, timestamp);
 
 	return theState;
