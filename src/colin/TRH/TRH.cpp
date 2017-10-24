@@ -23,7 +23,7 @@
 namespace TRH {
 
 TRH * TRH::INSTANCE = NULL;
-const char * TRH::H_CMD = "./lib/colin-clp";
+const char * TRH::H_CMD = "./lib/popf3-clp";
 const string TRH::TEMP_FILE_PATH = "/tmp/";
 const string TRH::TEMP_FILE_PREFIX = "temp";
 const string TRH::TEMP_DOMAIN_SUFFIX = "-domain";
@@ -55,7 +55,8 @@ int TRH::generateNewInstanceID() {
 
 pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 		std::list<Planner::FFEvent>& header, std::list<Planner::FFEvent> & now, 
-		double timestamp, double heuristic, PDDL::PDDLStateFactory pddlFactory) {
+		double timestamp, double heuristic, list<Planner::ActionSegment> & helpfulActions, 
+		PDDL::PDDLStateFactory pddlFactory) {
 
 	const Planner::MinimalState & state = theState.getInnerState();
 
@@ -119,6 +120,10 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 			list<Planner::FFEvent> > solution = reprocessPlan(proposedPlan);
 		Planner::FF::workingBestSolution.update(solution.second, solution.first.temporalConstraints, 
 			Planner::FF::evaluateMetric(solution.first, list<Planner::FFEvent>(), false));
+	} else {
+		list<Planner::ActionSegment> relaxedPlanActions = getRelaxedPlan(relaxedPlanStr);
+		helpfulActions.insert(helpfulActions.begin(), relaxedPlanActions.begin(), 
+			relaxedPlanActions.end());
 	}
 	return std::make_pair (hval, relaxedPlanSize);
 }
@@ -226,6 +231,34 @@ map<double, Planner::ActionSegment> TRH::getRelaxedPlan(list<string> planStr,
 				Planner::ActionSegment end_snap_action = Planner::ActionSegment(op, 
 					VAL::E_AT_END, 0, Planner::RPGHeuristic::emptyIntList);
 				rPlan.insert(pair<double, Planner::ActionSegment>(startTime + duration, end_snap_action));
+			}
+		}
+	}
+	return rPlan;
+}
+
+list<Planner::ActionSegment> TRH::getRelaxedPlan(list<string> planStr) {
+	list<Planner::ActionSegment> rPlan;
+	// cout << "Helpful Actions" << endl;
+	list<string>::const_iterator planStrItr = planStr.begin();
+	for (; planStrItr != planStr.end(); planStrItr++) {
+		string actionStr = *planStrItr;
+		// cout << actionStr << endl;
+		int actionNameStartPos = actionStr.find("(");
+		int actionNameEndPos = actionStr.find(")") + 1;
+		string actionInstance = actionStr.substr(actionNameStartPos, 
+			actionNameEndPos - actionNameStartPos);
+		Inst::instantiatedOp * op = PDDL::getOperator(actionInstance);
+
+		if (op != 0) {
+			Planner::ActionSegment start_snap_action = Planner::ActionSegment(op, 
+				VAL::E_AT_START, 0, Planner::RPGHeuristic::emptyIntList);
+			rPlan.push_back(start_snap_action);
+			if (!Planner::RPGBuilder::getRPGDEs(op->getID()).empty()) {
+				//Durative Action
+				Planner::ActionSegment end_snap_action = Planner::ActionSegment(op, 
+					VAL::E_AT_END, 0, Planner::RPGHeuristic::emptyIntList);
+				rPlan.push_back(end_snap_action);
 			}
 		}
 	}

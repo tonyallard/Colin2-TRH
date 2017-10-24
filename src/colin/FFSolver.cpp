@@ -45,6 +45,7 @@
 #include "pddl/PDDLStateFactory.h"
 #include "pddl/PDDLDomainFactory.h"
 #include "TRH/TRH.h"
+#include "pddl/PDDLUtils.h" //REmove Me
 
 #include <sys/times.h>
 #include <unistd.h>
@@ -1590,7 +1591,7 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
         }
         //Use TRH Heuristic
         pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState, header, now,
-                timeStamp, 0, pddlFactory);
+                timeStamp, 0, helpfulActions, pddlFactory);
         h = result.first;
         makespanEstimate = result.second;
 
@@ -1710,7 +1711,7 @@ HTrio FF::calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & th
     if (FF::USE_TRH) {
         //Use TRH Heuristic
         pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState, header, 
-                now, theState.timeStamp, 0, pddlFactory);
+                now, theState.timeStamp, 0, helpfulActions, pddlFactory);
         h = result.first;
         makespanEstimate = result.second;
     } else {
