@@ -37,22 +37,6 @@ PDDLStateFactory::PDDLStateFactory(const Planner::MinimalState & initialState,
 	metric = getMetric();
 }
 
-// PDDLState PDDLStateFactory::getPDDLState(const MinimalState & state,
-// 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic) {
-// 	std::set<PDDLObject> objectSymbolTable = this->objectParameterTable;
-
-// 	std::list<Proposition> propositions = PDDLStateFactory::getPropositions(
-// 			state, objectSymbolTable);
-// 	std::list<PNE> pnes = getPNEs(state, objectSymbolTable);
-// 	std::list<TIL> tils = getTILs(state, timestamp, objectSymbolTable);
-// 	std::list<PendingAction> pendingActions = getPendingActions(state,
-// 			timestamp, objectSymbolTable);
-// 	addRequiredPropositionsForPendingActions(pendingActions, propositions);
-// 	std::list<string> planPrefix = getPlanPrefix(plan);
-// 	return PDDLState(objectSymbolTable, propositions, pnes, tils,
-// 			pendingActions, goals, metric, planPrefix, heuristic, timestamp);
-// }
-
 PDDLState PDDLStateFactory::getDeTILedPDDLState(
 		const Planner::MinimalState & state,
 		const std::list<Planner::FFEvent>& plan, double timestamp,
@@ -223,13 +207,13 @@ std::list<PDDL::PNE> PDDLStateFactory::getPNEs(
 		std::set<PDDLObject> & objectSymbolTable) {
 	std::list<PDDL::PNE> pnes;
 	//Cycle through PNEs
-	const int pneCount = state.secondMin.size();
-	for (int i = 0; i < pneCount; i++) {
+	vector<double>::const_iterator pneItr = state.secondMin.begin();
+	for (int i = 0; pneItr != state.secondMin.end(); pneItr++, i++) {
 		Inst::PNE* aPNE = Planner::RPGBuilder::getPNE(i);
 
 		PDDL::extractParameters(aPNE, objectSymbolTable, constants);
 		PDDL::PNE pne = PNEFactory::getInstance()->getPNE(aPNE,
-				state.secondMin[i]);
+				*pneItr);
 		pnes.push_back(pne);
 	}
 

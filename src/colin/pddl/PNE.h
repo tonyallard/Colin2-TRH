@@ -5,14 +5,14 @@
  *      Author: tony
  */
 
-#ifndef COLIN_PDDL_PNE_H_
-#define COLIN_PDDL_PNE_H_
+#ifndef __PDDL_PNE
+#define __PDDL_PNE
 
 #include <list>
 #include <map>
 #include <string>
 
-#include <PDDLObject.h>
+#include "PDDLObject.h"
 
 namespace PDDL {
 
@@ -38,4 +38,4 @@ public:
 
 
 
-#endif /* COLIN_PDDL_PNE_H_ */
+#endif /* __PDDL_PNE */

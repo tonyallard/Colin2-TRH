@@ -570,8 +570,7 @@ bool supported(const PDDL::Proposition * proposition,
 
 bool isTILAction(std::string eventName, int minDur, int maxDur) {
 
-	int found = eventName.substr(0, TIL_ACTION_PREFIX.size()).find(
-				TIL_ACTION_PREFIX);
+	int found = eventName.find(TIL_ACTION_PREFIX);
 	return ((found == 0) && (minDur == 0) && (maxDur == 0));
 }
 

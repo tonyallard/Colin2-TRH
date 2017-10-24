@@ -5,8 +5,8 @@
  *      Author: tony
  */
 
-#ifndef COLIN_TILFACTORY_H_
-#define COLIN_TILFACTORY_H_
+#ifndef __TILFACTORY
+#define __TILFACTORY
 
 #include <string>
 #include <list>
@@ -43,4 +43,4 @@ private:
 
 }
 
-#endif /* COLIN_TILFACTORY_H_ */
+#endif /* __TILFACTORY */
