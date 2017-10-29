@@ -24,7 +24,7 @@ namespace PDDL {
 class PDDLStateFactory {
 public:
 
-	PDDLStateFactory(const Planner::MinimalState & initialState, std::list<std::pair<std::string, std::string> > constants);
+	PDDLStateFactory(const Planner::MinimalState &initialState, std::list<std::pair<std::string, std::string> > constants);
 
 	PDDLState getDeTILedPDDLState(const Planner::MinimalState & state,
 			const std::list<Planner::FFEvent>& plan,

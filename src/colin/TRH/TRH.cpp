@@ -106,8 +106,8 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 		relaxedPlanSize = stoi(relaxedPlanSizeStr);
 		// printf("Relaxed Plan Length: %s\n", relaxedPlanSizeStr.c_str());
 	}
-	list<string> relaxedPlanStr = getRelaxedPlanStr(result);
-	if ((relaxedPlanStr.size() != 0) && (hval == 0.0)) {
+	if (hval == 0.0) {
+		list<string> relaxedPlanStr = getRelaxedPlanStr(result);
 		list<Planner::FFEvent> proposedPlan(getActions(header));
 
 		list<Planner::FFEvent> nowList = getActions(now);
@@ -120,9 +120,10 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 			list<Planner::FFEvent> > solution = reprocessPlan(proposedPlan);
 		Planner::FF::workingBestSolution.update(solution.second, solution.first.temporalConstraints, 
 			Planner::FF::evaluateMetric(solution.first, list<Planner::FFEvent>(), false));
-	} else {
+	} else if (Planner::FF::helpfulActions) {
+		list<string> relaxedPlanStr = getRelaxedPlanStr(result);
 		list<Planner::ActionSegment> relaxedPlanActions = getRelaxedPlan(relaxedPlanStr);
-		helpfulActions.insert(helpfulActions.begin(), relaxedPlanActions.begin(), 
+		helpfulActions.insert(helpfulActions.end(), relaxedPlanActions.begin(), 
 			relaxedPlanActions.end());
 	}
 	return std::make_pair (hval, relaxedPlanSize);

@@ -24,7 +24,7 @@ namespace PDDL {
 
 const std::string PDDLStateFactory::DEFAULT_METRIC_PNE = "total-time";
 
-PDDLStateFactory::PDDLStateFactory(const Planner::MinimalState & initialState,
+PDDLStateFactory::PDDLStateFactory(const Planner::MinimalState &initialState,
 		std::list<std::pair<std::string, std::string> > constants) {
 	this->constants = constants;
 	std::list<PDDL::Proposition> stdPropositions = getPropositions(initialState,
