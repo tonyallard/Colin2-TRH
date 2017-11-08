@@ -177,6 +177,8 @@ public:
     static int STATES_EVALUATED;
     static int STATES_EVALUATED_IN_HEURISTIC;
     static int DEAD_END_COUNT;
+    static int initialState_HeuristicStateEvals;
+    static double initialState_HeuristicCompTime;
     static bool scheduleToMetric;
 
 private:
