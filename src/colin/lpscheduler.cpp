@@ -4488,13 +4488,13 @@ void LPScheduler::initialise()
 
     {
 
-        list<FakeTILAction> & TILs = RPGBuilder::getTILs();
+        list<RPGBuilder::FakeTILAction> & TILs = RPGBuilder::getTILs();
         const int tilCount = TILs.size();
         TILtimestamps = vector<double>(tilCount + 1);
 
         int t = 0;
-        list<FakeTILAction>::iterator tilItr = TILs.begin();
-        const list<FakeTILAction>::iterator tilEnd = TILs.end();
+        list<RPGBuilder::FakeTILAction>::iterator tilItr = TILs.begin();
+        const list<RPGBuilder::FakeTILAction>::iterator tilEnd = TILs.end();
 
         for (; tilItr != tilEnd; ++tilItr, ++t) {
             TILtimestamps[t] = tilItr->duration;

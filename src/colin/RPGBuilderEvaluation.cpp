@@ -6173,7 +6173,7 @@ public:
         if (tilInitialised) return;
 
         tilInitialised = true;
-        list<FakeTILAction> & TILs = RPGBuilder::getTILs();
+        list<RPGBuilder::FakeTILAction> & TILs = RPGBuilder::getTILs();
         tilCount = TILs.size();
         tilEffects = vector<list<int> >(tilCount);
         tilNegativeEffects = vector<list<int> >(tilCount);
@@ -6190,8 +6190,8 @@ public:
         earliestDeadlineRelevancyEnd = vector<EpsilonResolutionTimestamp>(initialUnsatisfiedEndPreconditions->size(), EpsilonResolutionTimestamp::undefined());
 
 
-        list<FakeTILAction>::reverse_iterator tilItr = TILs.rbegin();
-        const list<FakeTILAction>::reverse_iterator tilEnd = TILs.rend();
+        list<RPGBuilder::FakeTILAction>::reverse_iterator tilItr = TILs.rbegin();
+        const list<RPGBuilder::FakeTILAction>::reverse_iterator tilEnd = TILs.rend();
 
         set<int> addedLater;
 
@@ -10271,10 +10271,10 @@ void RPGHeuristic::Private::findApplicableActions(const MinimalState & theState,
     {
 
         const int nextTIL = theState.nextTIL;
-        static list<FakeTILAction> & tilActs = RPGBuilder::getTILs();
-        static const list<FakeTILAction>::iterator tilEnd = tilActs.end();
+        static list<RPGBuilder::FakeTILAction> & tilActs = RPGBuilder::getTILs();
+        static const list<RPGBuilder::FakeTILAction>::iterator tilEnd = tilActs.end();
 
-        list<FakeTILAction>::iterator tilItr = tilActs.begin();
+        list<RPGBuilder::FakeTILAction>::iterator tilItr = tilActs.begin();
 
         int i = 0;
 
@@ -10451,10 +10451,10 @@ bool RPGHeuristic::Private::testApplicability(const MinimalState & theState, con
             if (actID.divisionID < nextTIL) return false;
         }
 
-        static list<FakeTILAction> & tilActs = RPGBuilder::getTILs();
-        static const list<FakeTILAction>::iterator tilEnd = tilActs.end();
+        static list<RPGBuilder::FakeTILAction> & tilActs = RPGBuilder::getTILs();
+        static const list<RPGBuilder::FakeTILAction>::iterator tilEnd = tilActs.end();
 
-        list<FakeTILAction>::iterator tilItr = tilActs.begin();
+        list<RPGBuilder::FakeTILAction>::iterator tilItr = tilActs.begin();
 
         int i = 0;
 
@@ -10571,14 +10571,14 @@ void RPGHeuristic::Private::filterApplicableActions(const MinimalState & theStat
             static const set<int> emptyIntSet;
 
             static bool cachedTILs = false;
-            static vector<FakeTILAction*> tilActs;
+            static vector<RPGBuilder::FakeTILAction*> tilActs;
             if (!cachedTILs) {
                 cachedTILs = true;
-                list<FakeTILAction> & rpgTILs = RPGBuilder::getTILs();
-                tilActs = vector<FakeTILAction*>(rpgTILs.size());
+                list<RPGBuilder::FakeTILAction> & rpgTILs = RPGBuilder::getTILs();
+                tilActs = vector<RPGBuilder::FakeTILAction*>(rpgTILs.size());
 
-                list<FakeTILAction>::iterator rItr = rpgTILs.begin();
-                const list<FakeTILAction>::iterator rEnd = rpgTILs.end();
+                list<RPGBuilder::FakeTILAction>::iterator rItr = rpgTILs.begin();
+                const list<RPGBuilder::FakeTILAction>::iterator rEnd = rpgTILs.end();
 
                 for (int i = 0; rItr != rEnd; ++rItr, ++i) {
                     tilActs[i] = &(*rItr);

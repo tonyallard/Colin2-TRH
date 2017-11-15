@@ -21,7 +21,6 @@
 #include "ExpressionTree.h"
 #include "../TRH/TRH.h"
 
-#include "../FakeTILAction.h"
 #include "../RPGBuilder.h"
 #include "../temporalanalysis.h"
 
@@ -71,7 +70,7 @@ PDDL::PDDLDomain PDDLDomainFactory::getDeTILedDomain(const VAL::domain * domain,
 	std::list<PDDL::Proposition> tilRequiredObjectsParameterised;
 	list<PDDL::Proposition> pendingActionRequiredObjects;
 
-	std::list<TIL> tils = getTILs(state, timestamp, domainObjectSymbolTable);
+	std::list<PDDL::TIL> tils = getTILs(state, domainObjectSymbolTable);
 	bool hasTils = tils.size();
 	if (hasTils) {
 		deTILedActions = getdeTILedActions(tils, tilPredicates, tilGoalPredicates,
@@ -89,7 +88,7 @@ PDDL::PDDLDomain PDDLDomainFactory::getDeTILedDomain(const VAL::domain * domain,
 	list<string> actions = getActions(pendingActions, deTILedActions);
 
 	return PDDLDomain(name, requirements, types, predicates, functions,
-			constants, actions, tilPredicates, tilGoalPredicates, tilRequiredObjects,
+			constants, actions, tils, tilPredicates, tilGoalPredicates, tilRequiredObjects,
 			pendingActionRequiredObjects, domainObjectSymbolTable);
 }
 
@@ -497,7 +496,9 @@ std::list<PDDL::PendingAction> PDDLDomainFactory::getPendingActions(
 
 	for (; saItr != saItrEnd; saItr++) {
 
-		std::string name = PDDL::getActionName(saItr->first);
+		Inst::instantiatedOp* action = Planner::RPGBuilder::getInstantiatedOp(
+			saItr->first);
+		std::string name = PDDL::getOperatorName(action);
 		std::set<PDDLObject> parameters;
 
 		//For each action get its conditions
@@ -655,45 +656,17 @@ std::list<PDDL::Proposition> PDDLDomainFactory::getPendingActionRequiredObjectPr
 }
 
 std::list<PDDL::TIL> PDDLDomainFactory::getTILs(
-		const Planner::MinimalState & state, double timestamp,
-		std::set<PDDLObject> & objectSymbolTable) {
+		const Planner::MinimalState & state, std::set<PDDLObject> & objectSymbolTable) {
 
 	std::list<PDDL::TIL> tils;
-	//Cycle thourgh normal TILs
-	vector<Planner::FakeTILAction*> theTILs = Planner::RPGBuilder::getTILVec();
+	//Cycle thourgh normals TILs
+	vector<Planner::RPGBuilder::FakeTILAction*> theTILs = Planner::RPGBuilder::getTILVec();
+
 	for (int tilItr = state.nextTIL; tilItr < theTILs.size(); tilItr++) {
-		const Planner::FakeTILAction * tilAction = theTILs[tilItr];
+		const Planner::RPGBuilder::FakeTILAction * tilAction = theTILs[tilItr];
 
 		PDDL::extractParameters(tilAction, objectSymbolTable, constants);
-		PDDL::TIL til = PDDL::TILFactory::getInstance()->getTIL(*tilAction, timestamp, constants);
-		tils.push_back(til);
-	}
-
-	//Cycle through strange Pointless TILs
-	map<int, map<Inst::Literal*, Planner::RPGBuilder::pointless_effect, 
-		Planner::LiteralLT> > optTILs = Planner::RPGBuilder::getPointlessTILVec();
-	map<int, map<Inst::Literal*, Planner::RPGBuilder::pointless_effect, 
-		Planner::LiteralLT> >::const_iterator optTILItr = optTILs.begin();
-	for (; optTILItr != optTILs.end(); optTILItr++) {
-		double duration = Planner::RPGBuilder::getAllTimedInitialLiterals()[optTILItr->first]->duration;
-		Planner::LiteralSet addEffects;
-		Planner::LiteralSet delEffects;
-		
-		map<Inst::Literal*, Planner::RPGBuilder::pointless_effect, 
-			Planner::LiteralLT>::const_iterator literalItr = optTILItr->second.begin();
-		for (; literalItr != optTILItr->second.end(); literalItr++) {
-			if ((literalItr->second == Planner::RPGBuilder::pointless_effect::PE_ADDED) ||
-				(literalItr->second == Planner::RPGBuilder::pointless_effect::PE_DELETED_THEN_ADDED)) {
-				addEffects.insert(literalItr->first);
-			} else if ((literalItr->second == Planner::RPGBuilder::pointless_effect::PE_DELETED) ||
-				(literalItr->second == Planner::RPGBuilder::pointless_effect::PE_DELETED_THEN_ADDED)) {
-				delEffects.insert(literalItr->first);
-			}
-		}
-
-		Planner::FakeTILAction tilAction(duration, addEffects, delEffects);
-		PDDL::extractParameters(&tilAction, objectSymbolTable, constants);
-		PDDL::TIL til = PDDL::TILFactory::getInstance()->getTIL(tilAction, timestamp, constants);
+		PDDL::TIL til = PDDL::TILFactory::getInstance()->getTIL(*tilAction, tilItr, constants);
 		tils.push_back(til);
 	}
 	return tils;

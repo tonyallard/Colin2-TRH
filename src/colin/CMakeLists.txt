@@ -13,6 +13,11 @@ include_directories ("${PROJECT_SOURCE_DIR}/TRH")
 
 add_subdirectory(util)
 add_subdirectory(pddl)
+add_subdirectory(kk)
+add_subdirectory(stn)
+add_subdirectory(itc)
+add_subdirectory(executor)
+add_subdirectory(hRelax)
 add_subdirectory(TRH)
 
 find_package(Clp)
@@ -28,7 +33,7 @@ if(STATIC_COLIN)
 set(CMAKE_CXX_LINK_FLAGS "-static ${CMAKE_CXX_LINK_FLAGS}")
 endif(STATIC_COLIN)
 
-include_directories(${val_SOURCE_DIR} ${val_SOURCE_DIR}/parsing ${val_BINARY_DIR} ${PDDL_SOURCE_DIR} ${PDDL_BINARY_DIR} ${TRH_SOURCE_DIR} ${TRH_BINARY_DIR} ${CLP_INCLUDES}/coin ${CBC_INCLUDES}/coin ${CPLEX_INCLUDES} ${CONCERT_INCLUDES}  ${GSL_INCLUDES})
+include_directories(${val_SOURCE_DIR} ${val_SOURCE_DIR}/parsing ${val_BINARY_DIR} ${CLP_INCLUDES}/coin ${CBC_INCLUDES}/coin ${CPLEX_INCLUDES} ${CONCERT_INCLUDES}  ${GSL_INCLUDES})
 
 set(colin_build_srcs
     compressionsafescheduler.cpp
@@ -36,7 +41,6 @@ set(colin_build_srcs
 	HTrio.cpp
     minimalstate.cpp
 	ExtendedMinimalState.cpp
-	SearchQueueItem.cpp
     FFSolver.cpp
     FFEvent.cpp
     globals.cpp

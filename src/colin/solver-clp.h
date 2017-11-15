@@ -29,10 +29,10 @@
 
 #include "solver.h"
 
-#include "OsiSolverInterface.hpp"
-#include "CbcModel.hpp"
+#include <coin/OsiSolverInterface.hpp>
+#include <coin/CbcModel.hpp>
 
-#include "OsiClpSolverInterface.hpp"
+#include <coin/OsiClpSolverInterface.hpp>
 
 
 class MILPSolverCLP : public MILPSolver {

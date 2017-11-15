@@ -45,7 +45,6 @@
 #include "pddl/PDDLStateFactory.h"
 #include "pddl/PDDLDomainFactory.h"
 #include "TRH/TRH.h"
-#include "pddl/PDDLUtils.h" //REmove Me
 
 #include <sys/times.h>
 #include <unistd.h>
@@ -1586,10 +1585,7 @@ HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Extende
     if (FF::USE_TRH) {
         double timeStamp = 0.00;
         if (!minTimestamps.empty()) {
-            //FIXME: Need to determine best way to pick the states timestamp
-            //Should we add 0.001 for epoch or take the timestamp of the
-            //last action?
-            timeStamp = *minTimestamps.rbegin();// + 0.001;
+            timeStamp = *minTimestamps.rbegin();
         }
         //Use TRH Heuristic
         pair<double, int> result = TRH::TRH::getInstance()->getHeuristic(theState, header, now,
@@ -2425,7 +2421,7 @@ bool FF::precedingActions(ExtendedMinimalState & theState, const ActionSegment &
 
     if (!haveTILstamps) {
         haveTILstamps = true;
-        vector<FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
+        vector<RPGBuilder::FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
         tilCount = tilVec.size();
         tilStamps = vector<double>(tilCount);
         tilNegativeEffects = vector<list<int> >(tilCount);
@@ -2609,7 +2605,7 @@ bool FF::checkTemporalSoundness(ExtendedMinimalState & theState, const ActionSeg
 
     if (!haveTILstamps) {
         haveTILstamps = true;
-        vector<FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
+        vector<RPGBuilder::FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
         tilCount = tilVec.size();
         tilStamps = vector<double>(tilCount);
         tilNegativeEffects = vector<list<int> >(tilCount);
@@ -3738,7 +3734,7 @@ void FF::makeJustApplied(map<double, list<pair<int, int> > > & justApplied, doub
 
     if (!haveTILstamps) {
         haveTILstamps = true;
-        vector<FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
+        vector<RPGBuilder::FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
         tilCount = tilVec.size();
         tilStamps = vector<double>(tilCount);
         for (int i = 0; i < tilCount; ++i) {
@@ -5447,8 +5443,8 @@ Solution FF::search(bool & reachedGoal)
     // Initialise the initial state search node and calculate its heuristic. 
     // Why do we calculate the heuristic, well I guess thats how you get 
     // the initial helpful actions from
-    SearchQueueItem * const initialSQI = new SearchQueueItem(&initialState, false);
     {
+		SearchQueueItem * const initialSQI = new SearchQueueItem(&initialState, false);
         list<FFEvent> tEvent;
         FFheader_upToDate = false;
         FFonly_one_successor = true;

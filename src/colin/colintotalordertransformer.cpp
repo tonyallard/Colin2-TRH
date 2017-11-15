@@ -352,7 +352,7 @@ MinimalState * TotalOrderTransformer::applyAction(MinimalState & theStateHidden,
     }
 
     if (!a.first) { // applying a TIL
-        static vector<FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
+        static vector<RPGBuilder::FakeTILAction*> & tilVec = RPGBuilder::getTILVec();
         
         for (; workOn->nextTIL <= a.divisionID; ++(workOn->nextTIL)) {
             

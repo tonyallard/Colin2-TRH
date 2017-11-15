@@ -39,7 +39,7 @@ using std::set;
 using std::map;
 
 #include "minimalstate.h"
-#include "FakeTILAction.h"
+
 #include "instantiation.h"
 
 #include "ptree.h"
@@ -486,6 +486,68 @@ public:
             exit(1);
         }
     };
+
+
+    /**
+     *  Class to represent the 'action' whose application corresponds to a timed initial literal.
+     */
+    class FakeTILAction
+    {
+
+    public:
+        /** The time-stamp of the timed initial literal */
+        const double duration;
+
+        /** The facts added at the specified time */
+        list<Literal*> addEffects;
+
+        /** The facts deleted at the specified time */
+        list<Literal*> delEffects;
+
+
+        /**
+         *   Add the specified add and delete effects to the timed initial literal action.  Is used when
+         *   multiple TILs are found at a given time-stamp.
+         *
+         *   @param adds  Add effects to include in this TIL action
+         *   @param dels  Delete effects to include in this TIL action
+         */
+        void mergeIn(const LiteralSet & adds, const LiteralSet & dels) {
+
+            {
+                LiteralSet::iterator lsItr = adds.begin();
+                const LiteralSet::iterator lsEnd = adds.end();
+
+                for (; lsItr != lsEnd; ++lsItr) {
+                    addEffects.push_back(*lsItr);
+                }
+            }
+
+            {
+                LiteralSet::iterator lsItr = dels.begin();
+                const LiteralSet::iterator lsEnd = dels.end();
+
+                for (; lsItr != lsEnd; ++lsItr) {
+                    delEffects.push_back(*lsItr);
+                }
+            }
+        }
+
+        /**
+         *   Constructor for an action corresponding to a Timed Initial Literal.
+         *
+         *   @param dur  The time at which the timed initial occurs
+         *   @param adds The facts added at time <code>dur</code>
+         *   @param dels The facts deleted at time <code>dur</code>
+         */
+        FakeTILAction(const double & dur, const LiteralSet & adds, const LiteralSet & dels)
+                : duration(dur) {
+            mergeIn(adds, dels);
+        }
+
+    };
+
+
 
 
     class KShotFormula
@@ -970,6 +1032,7 @@ protected:
     static vector<list<int> > mentionedInFluentInvariants;
 
     static list<FakeTILAction> timedInitialLiterals;
+    static vector<FakeTILAction*> timedInitialLiteralsVector;
 
     static list<FakeTILAction> optimisationTimedInitialLiterals;
     static vector<FakeTILAction*> optimisationTimedInitialLiteralsVector;
@@ -1139,7 +1202,7 @@ protected:
     static RPGHeuristic * globalHeuristic;
 
 public:
-    static vector<FakeTILAction*> timedInitialLiteralsVector;
+
 
     static pair<bool, bool> & isStatic(Literal* l);
 
@@ -1189,10 +1252,6 @@ public:
     
     static vector<list<int> > & getInvariantNumerics() {
         return actionsToRPGNumericInvariants;
-    }
-    
-    static vector<list<NumericEffect> > & getActionsToEndNumericEffects() {
-    	return actionsToEndNumericEffects;
     }
 
     static vector<list<int> > & getEndPreNumerics() {
@@ -1262,6 +1321,10 @@ public:
     static vector<list<Literal*> > & getProcessedStartNegativePropositionalPreconditions() {
         return actionsToProcessedStartNegativePreconditions;
     };
+    
+    static vector<list<NumericEffect> > & getActionsToEndNumericEffects() {
+        return actionsToEndNumericEffects;
+    }
 
     /** @return A reference to <code>rpgNumericPreconditions</code>, the preconditions used in the problem, in LNF. */
     static vector<RPGNumericPrecondition> & getNumericPreTable() {
@@ -1383,22 +1446,20 @@ public:
     }
     static void getInitialState(LiteralSet & initialState, vector<double> & initialFluents);
     static void getNonStaticInitialState(LiteralSet & initialState, vector<double> & initialFluents);
-    static int getInstantiatedOpCount() {
-        return instantiatedOps.size();
-    }
-
     static instantiatedOp* getInstantiatedOp(const int & i) {
         return instantiatedOps[i];
     };
-
+    static void addInstantiatedOp(instantiatedOp * op) {
+        instantiatedOps.push_back(op);
+    };
+    static int getInstantiatedOpCount() {
+        return instantiatedOps.size();
+    }
     static vector<pair<bool, bool> > getStaticLiterals() {
     	return staticLiterals;
     };
     static Literal* getLiteral(const int & i) {
         return literals[i];
-    };
-    static int getLiteralCount() {
-    	return literals.size();
     };
     static list<FakeTILAction> & getTILs() {
         return timedInitialLiterals;
@@ -1408,10 +1469,6 @@ public:
     };
     static vector<FakeTILAction*> & getTILVec() {
         return timedInitialLiteralsVector;
-    };
-
-    static map<int, map<Literal*, pointless_effect, LiteralLT> > & getPointlessTILVec() {
-        return pointlessTILEffects;
     };
 
     static void getEffects(instantiatedOp* op, const bool & start, list<Literal*> & add, list<Literal*> & del, list<NumericEffect> & numeric);

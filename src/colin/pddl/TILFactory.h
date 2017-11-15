@@ -13,7 +13,7 @@
 
 #include "TIL.h"
 
-#include "../FakeTILAction.h"
+#include "../RPGBuilder.h"
 
 namespace PDDL {
 
@@ -22,7 +22,7 @@ public:
 
 	static TILFactory * getInstance();
 
-	PDDL::TIL getTIL(Planner::FakeTILAction aTIL, double aTimestamp,
+	PDDL::TIL getTIL(Planner::RPGBuilder::FakeTILAction aTIL, int tilIndex,
 		std::list<std::pair<std::string, std::string> > constants = std::list<
 				std::pair<std::string, std::string> >());
 private:

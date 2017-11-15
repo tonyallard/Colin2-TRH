@@ -81,7 +81,7 @@ void TemporalAnalysis::processTILDeadlines()
 
         RPGBuilder::getInitialState(initialState, initialFluents);
 
-        const vector<FakeTILAction*> & allTILs = RPGBuilder::getTILVec();
+        const vector<RPGBuilder::FakeTILAction*> & allTILs = RPGBuilder::getTILVec();
 
         if (debug) {
             cout << "Number of TIL happenings: " << allTILs.size() << endl;            
@@ -93,7 +93,7 @@ void TemporalAnalysis::processTILDeadlines()
         const int tilCount = allTILs.size();
         
         for (int tilID = 0; tilID < tilCount; ++tilID) {
-            FakeTILAction * const tilItr = allTILs[tilID];
+            RPGBuilder::FakeTILAction * const tilItr = allTILs[tilID];
             
             if (debug) cout << "\tTIL " << tilID << " at " << tilItr->duration << "\n";
 
@@ -587,7 +587,7 @@ void TemporalAnalysis::recogniseHoldThroughoutDeleteAtEndIdiom(LiteralSet & fact
     set<int> exclude;
         
     {
-        const vector<FakeTILAction*> & TILs = RPGBuilder::getAllTimedInitialLiterals();
+        const vector<RPGBuilder::FakeTILAction*> & TILs = RPGBuilder::getAllTimedInitialLiterals();
         
         const int tilCount = TILs.size();
         

@@ -22,14 +22,13 @@
 
 #include "../instantiation.h"
 #include "ptree.h"
-#include "../FakeTILAction.h"
+#include "../RPGBuilder.h"
 #include "../FFEvent.h"
 #include "../FFSolver.h"
 
 namespace PDDL {
 
 const std::string BASE_TYPE_CLASS = "OBJECT";
-const std::string TIL_ACTION_PREFIX = "at-";
 
 //PDDL Type helper functions
 std::string getPDDLTypeString(const VAL::pddl_typed_symbol * type);
@@ -62,7 +61,7 @@ set<PDDLObject> & extractParameters(
 set<PDDLObject> & extractParameters(VAL::simple_effect * prop,
 		set<PDDLObject> & parameters,
 		std::list<std::pair<std::string, std::string> > constants);
-std::set<PDDLObject> & extractParameters(const Planner::FakeTILAction * til,
+std::set<PDDLObject> & extractParameters(const Planner::RPGBuilder::FakeTILAction * til,
 		set<PDDLObject> & parameters,
 		std::list<std::pair<std::string, std::string> > constants);
 set<PDDLObject> & extractParameters(
@@ -73,15 +72,13 @@ std::map<PDDLObject, std::string> generateParameterTable(
 		const std::set<PDDLObject> & parameters);
 
 //Action Helper Functions
-std::list<PDDL::Literal> getActionConditions(int actionID,
-		VAL::time_spec timeQualifier);
-std::list<PDDL::Proposition> getActionEffects(int actionID,
-		VAL::time_spec timeQualifier, bool positive);
-std::string getActionName(int actionNum);
+std::list<PDDL::Literal> getActionConditions(const Planner::FFEvent * action);
+std::list<PDDL::Proposition> getActionEffects(const Planner::FFEvent * action, 
+		bool positive);
+std::string getActionName(const Planner::FFEvent * action);
+std::string getOperatorName(Inst::instantiatedOp* action);
 bool supported(const PDDL::Proposition * proposition,
 		std::list<PDDL::Proposition> * propositions);
-bool isEqual(const Planner::FFEvent * one, const Planner::FFEvent * two);
-bool isTILAction(std::string eventName, int minDur, int maxDur);
 Inst::instantiatedOp * getOperator(std::string actionInstance);
 
 //Basic conversion functions
@@ -91,9 +88,9 @@ PDDL::Proposition getFunction(const VAL::func_decl * func);
 //Plan Helper Functions
 std::list<std::string> getPlanPrefix(const std::list<Planner::FFEvent>& plan);
 bool isAfter(const Planner::FFEvent * event, const Planner::FFEvent * after,
-		std::list<Planner::FFEvent> * plan);
+		const std::list<Planner::FFEvent> & plan);
 bool isBefore(const Planner::FFEvent * event, const Planner::FFEvent * before,
-		std::list<Planner::FFEvent> * plan);
+		const std::list<Planner::FFEvent> & plan);
 
 }
 
