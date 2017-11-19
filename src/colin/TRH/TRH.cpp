@@ -2,6 +2,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 #include <cstdio>
 #include <memory>
 #include <limits>
@@ -34,6 +35,9 @@ const string TRH::TEMP_FILE_EXT = ".pddl";
 double TRH::TIME_SPENT_IN_HEURISTIC = 0.0;
 double TRH::TIME_SPENT_IN_PRINTING_TO_FILE = 0.0;
 double TRH::TIME_SPENT_CONVERTING_PDDL_STATE = 0.0;
+int TRH::STATES_EVALUATED_IN_HEURISTIC = 0;
+int TRH::initialState_HeuristicStateEvals = -1;
+double TRH::initialState_HeuristicCompTime = 0.0;
 
 TRH * TRH::getInstance() {
 	if (!INSTANCE) {
@@ -73,7 +77,18 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 	
 	//Read in the results of the relaxed plan
 	PlannerExecutionReader reader(result, tempProb.first.getTILs());
-	Planner::FF::STATES_EVALUATED_IN_HEURISTIC += reader.getHeuristicStatesEvaluated();
+	TRH::STATES_EVALUATED_IN_HEURISTIC += reader.getHeuristicStatesEvaluated();
+
+	if ((Planner::Globals::globalVerbosity & 1) && (initialState_HeuristicStateEvals < 0)) {
+		//Record details of initial state
+    	TRH::initialState_HeuristicStateEvals = TRH::STATES_EVALUATED_IN_HEURISTIC;
+    	TRH::initialState_HeuristicCompTime = TRH::TRH::TIME_SPENT_IN_HEURISTIC;
+        cout << "#; Initial State - time spent in heuristic: " << std::setprecision(9) 
+        	<< TRH::initialState_HeuristicCompTime << "s." << endl;
+        cout << "#; Initial State - heuristic states evaluated: " 
+        	<< TRH::initialState_HeuristicStateEvals << endl;
+    }
+
 	if (!reader.isSolutionFound()) {
 		return std::make_pair (-1.0,  -1);
 	}

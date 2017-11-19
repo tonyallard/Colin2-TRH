@@ -48,7 +48,6 @@
 
 #include <sys/times.h>
 #include <unistd.h>
-#include <iomanip>
 
 using std::cerr;
 
@@ -96,10 +95,7 @@ bool FF::allowCompressionSafeScheduler = false;
 std::map<int, int> FF::EHC_PERFORMANCE_HISTOGRAM;
 bool FF::USE_TRH = true;
 int FF::STATES_EVALUATED = 0;
-int FF::STATES_EVALUATED_IN_HEURISTIC = 0;
 int FF::DEAD_END_COUNT = 0;
-int FF::initialState_HeuristicStateEvals = 0;
-double FF::initialState_HeuristicCompTime = 0.0;
 
 #ifndef NDEBUG
 list<FFEvent> * FF::benchmarkPlan = 0;
@@ -5457,14 +5453,6 @@ Solution FF::search(bool & reachedGoal)
         initialSQI->heuristicValue = bestHeuristic;
         initialHeuristic = bestHeuristic;
         searchQueue.push_back(initialSQI, 1);
-    }
-
-    //Record details of initial state
-    FF::initialState_HeuristicStateEvals = FF::STATES_EVALUATED_IN_HEURISTIC;
-    FF::initialState_HeuristicCompTime = TRH::TRH::TIME_SPENT_IN_HEURISTIC;
-    if (Globals::globalVerbosity & 1) {
-        cout << "#; Initial State - time spent in heuristic: " << std::setprecision(9) << FF::initialState_HeuristicCompTime << "s." << endl;
-        cout << "#; Initial State - heuristic states evaluated: " << FF::initialState_HeuristicStateEvals << endl;
     }
 
     auto_ptr<StatesToDelete> statesKept(new StatesToDelete());
