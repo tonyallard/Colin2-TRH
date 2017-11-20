@@ -227,6 +227,8 @@ ColinSTNImpl ColinSTNImpl::makeColinSTN(const std::list<Planner::FFEvent> & even
 		Util::triple<const Planner::FFEvent *, double> minConstraint;
 		Util::triple<const Planner::FFEvent *, double> maxConstraint;
 		if (first == initialEvent) {
+			//Remember that the initial event
+			//shouldn't affect execution
 			minConstraint.make_triple(third, 0.0, first);
 		} else {
 			minConstraint.make_triple(third, minCausalLink, first);

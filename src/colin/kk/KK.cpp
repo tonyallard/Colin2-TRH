@@ -89,7 +89,6 @@ std::set<const Planner::FFEvent *> KK::findAllThreateningActions(
 					|| (event->action == causalLink->third->action))) {
 				continue;
 			}
-
 			if (KK::doesEventThreatenCausalLink(event, &causalLink->second)) {
 				threateningActions.insert(event);
 			}
