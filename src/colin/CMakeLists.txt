@@ -55,7 +55,7 @@ set(colin_build_srcs
     solver.cpp)
 
 add_library(ColinCommon STATIC ${colin_build_srcs})
-target_link_libraries(ColinCommon ParsePDDL Inst UTIL PDDL TRH)
+target_link_libraries(ColinCommon ParsePDDL Inst UTIL PDDL KK STN EXECUTOR ITC HRELAX TRH)
 SET_TARGET_PROPERTIES(ColinCommon PROPERTIES COMPILE_FLAGS "-DTOTALORDERSTATES -DPOPF3ANALYSIS")
 
 

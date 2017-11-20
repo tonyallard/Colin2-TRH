@@ -60,6 +60,7 @@ int TRH::generateNewInstanceID() {
 	static std::uniform_int_distribution<int> distribution(0,
 		std::numeric_limits<int>::max());
 	return distribution(generator);
+
 }
 
 pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
@@ -72,7 +73,6 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 	pair<PDDL::PDDLDomain, PDDL::PDDLState> tempProb = 
 		writeStateToFile(state, header, timestamp, heuristic, pddlFactory, stateFileName);
 
-	Planner::FF::STATES_EVALUATED++;
 	string result = runPlanner();
 	
 	//Read in the results of the relaxed plan
@@ -87,6 +87,7 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
         	<< TRH::initialState_HeuristicCompTime << "s." << endl;
         cout << "#; Initial State - heuristic states evaluated: " 
         	<< TRH::initialState_HeuristicStateEvals << endl;
+        cout << std::setprecision(3);
     }
 
 	if (!reader.isSolutionFound()) {
@@ -104,7 +105,6 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 	// exit(0);
 	if (hVal.first == 0.0) {
 		// cout << "Executed Plan" << endl;
-		// Planner::FFEvent::printPlan(proposedPlan);
 		std::pair<Planner::MinimalState, list<Planner::FFEvent> > solution = reprocessPlan(hVal.second);
 		Planner::FF::workingBestSolution.update(solution.second, solution.first.temporalConstraints, 
 			Planner::FF::evaluateMetric(solution.first, list<Planner::FFEvent>(), false));
