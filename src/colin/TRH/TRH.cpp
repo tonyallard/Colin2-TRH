@@ -60,7 +60,6 @@ int TRH::generateNewInstanceID() {
 	static std::uniform_int_distribution<int> distribution(0,
 		std::numeric_limits<int>::max());
 	return distribution(generator);
-
 }
 
 pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
@@ -73,6 +72,7 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 	pair<PDDL::PDDLDomain, PDDL::PDDLState> tempProb = 
 		writeStateToFile(state, header, timestamp, heuristic, pddlFactory, stateFileName);
 
+	Planner::FF::STATES_EVALUATED++;
 	string result = runPlanner();
 	
 	//Read in the results of the relaxed plan

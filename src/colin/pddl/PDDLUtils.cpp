@@ -567,8 +567,7 @@ std::string getActionName(const Planner::FFEvent * action) {
 	} else if (action->time_spec == VAL::time_spec::E_AT) {
 		Planner::RPGBuilder::FakeTILAction * til =
 					Planner::RPGBuilder::getAllTimedInitialLiterals()[action->divisionID];
-		output << "at-" 
-			<< PDDL::TILFactory::getInstance()->getTIL(*til, action->divisionID).getName();
+		output << PDDL::TILFactory::getInstance()->getTIL(*til, action->divisionID).getName();
 	} else {
 		std::cerr << "This case not catered for.";
 		assert(false);		
