@@ -76,7 +76,7 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 	string result = runPlanner();
 	
 	//Read in the results of the relaxed plan
-	PlannerExecutionReader reader(result, tempProb.first.getTILs());
+	PlannerExecutionReader reader(result, tempProb.first.getTILs(), state, timestamp);
 	TRH::STATES_EVALUATED_IN_HEURISTIC += reader.getHeuristicStatesEvaluated();
 
 	if ((Planner::Globals::globalVerbosity & 1) && (initialState_HeuristicStateEvals < 0)) {
@@ -105,6 +105,7 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 	// exit(0);
 	if (hVal.first == 0.0) {
 		// cout << "Executed Plan" << endl;
+		// Planner::FFEvent::printPlan(hVal.second);
 		std::pair<Planner::MinimalState, list<Planner::FFEvent> > solution = reprocessPlan(hVal.second);
 		Planner::FF::workingBestSolution.update(solution.second, solution.first.temporalConstraints, 
 			Planner::FF::evaluateMetric(solution.first, list<Planner::FFEvent>(), false));
@@ -257,8 +258,6 @@ std::pair<Planner::MinimalState, list<Planner::FFEvent> > TRH::reprocessPlan(lis
 
 	for (int stepID = 0; oldSolnItr != oldSolnEnd; ++oldSolnItr, ++stepID) {
 		Planner::FFEvent * eventToApply = *oldSolnItr;
-		// cout << "Applying: " << PDDL::getActionName(eventToApply) << "-" 
-		// 	<< eventToApply->time_spec << endl;
 		Planner::ActionSegment nextSeg;
 		if (eventToApply->time_spec == VAL::time_spec::E_AT) {
 			int oldTIL = currSQI->state()->getEditableInnerState().nextTIL;
@@ -281,7 +280,11 @@ std::pair<Planner::MinimalState, list<Planner::FFEvent> > TRH::reprocessPlan(lis
 				Planner::FF::applyActionToState(nextSeg, *(currSQI->state()), currSQI->plan), true));
 		succ->heuristicValue.makespan = currSQI->heuristicValue.makespan;
 
-		evaluateStateAndUpdatePlan(succ, nextSeg, *(succ->state()), currSQI->state(), incrementalData.get(), currSQI->plan);
+		bool success = evaluateStateAndUpdatePlan(succ, nextSeg, *(succ->state()), currSQI->state(), incrementalData.get(), currSQI->plan);
+		if (!success) {
+			cerr << "Something went wrong replaying plan." << endl;
+			assert(false);
+		}
 		// Planner::FFEvent::printPlan(succ->plan);
 		delete currSQI;
 		currSQI = succ.release();

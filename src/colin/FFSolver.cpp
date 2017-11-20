@@ -42,6 +42,7 @@
 #include <cfloat>
 #include <limits>
 
+#include "pddl/PDDLUtils.h"
 #include "pddl/PDDLStateFactory.h"
 #include "pddl/PDDLDomainFactory.h"
 #include "TRH/TRH.h"

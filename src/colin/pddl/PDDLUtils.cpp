@@ -334,16 +334,13 @@ list<PDDL::Literal> getConditionLiterals(const VAL::goal * goal,
 			literals.insert(literals.end(), tmpLits.begin(), tmpLits.end());
 		}
 	} else if (timedGoal) {
-		if (time_spec != timedGoal->getTime()) {
-			return literals;
+		if ((time_spec == timedGoal->getTime()) || 
+			(timedGoal->getTime() == VAL::time_spec::E_OVER_ALL)) {
+			literals = getConditionLiterals(timedGoal->getGoal(), env, time_spec);
 		}
-		literals = getConditionLiterals(timedGoal->getGoal(), env, time_spec);
 	} else if (simpleGoal) {
 		PDDL::Literal lit = LiteralFactory::getInstance()->getLiteral(simpleGoal, env, false);
 		literals.push_back(lit);
-	} else {
-		cerr << "Something went wrong printing goals. Unhandled Goal." << endl;
-		goal->display(0);
 	}
 	return literals;
 }
@@ -571,7 +568,7 @@ std::string getActionName(const Planner::FFEvent * action) {
 		Planner::RPGBuilder::FakeTILAction * til =
 					Planner::RPGBuilder::getAllTimedInitialLiterals()[action->divisionID];
 		output << "at-" 
-			<< PDDL::TILFactory::getInstance()->getTIL(*til, til->duration).getName();
+			<< PDDL::TILFactory::getInstance()->getTIL(*til, action->divisionID).getName();
 	} else {
 		std::cerr << "This case not catered for.";
 		assert(false);		
