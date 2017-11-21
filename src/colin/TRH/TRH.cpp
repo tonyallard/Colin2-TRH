@@ -87,6 +87,8 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
         	<< TRH::initialState_HeuristicCompTime << "s." << endl;
         cout << "#; Initial State - heuristic states evaluated: " 
         	<< TRH::initialState_HeuristicStateEvals << endl;
+        cout << "#; Initial State - dead ends encountered: " 
+        	<< reader.getDeadEndsEncountered() << endl;
         cout << std::setprecision(3);
     }
 
@@ -283,6 +285,7 @@ std::pair<Planner::MinimalState, list<Planner::FFEvent> > TRH::reprocessPlan(lis
 		bool success = evaluateStateAndUpdatePlan(succ, nextSeg, *(succ->state()), currSQI->state(), incrementalData.get(), currSQI->plan);
 		if (!success) {
 			cerr << "Something went wrong replaying plan." << endl;
+			Planner::FFEvent::printPlan(oldSoln);
 			assert(false);
 		}
 		// Planner::FFEvent::printPlan(succ->plan);
