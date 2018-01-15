@@ -285,8 +285,10 @@ std::pair<Planner::MinimalState, list<Planner::FFEvent> > TRH::reprocessPlan(lis
 		bool success = evaluateStateAndUpdatePlan(succ, nextSeg, *(succ->state()), currSQI->state(), incrementalData.get(), currSQI->plan);
 		if (!success) {
 			cerr << "Something went wrong replaying plan." << endl;
-			Planner::FFEvent::printPlan(oldSoln);
+			std::pair<Planner::MinimalState, list<Planner::FFEvent> > toReturn(
+				currSQI->state()->getInnerState(), oldSoln);
 			assert(false);
+			return toReturn;
 		}
 		// Planner::FFEvent::printPlan(succ->plan);
 		delete currSQI;

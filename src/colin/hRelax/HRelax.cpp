@@ -80,7 +80,7 @@ pair<double, list<Planner::FFEvent> > HRelax::getHeuristic(std::list<Planner::FF
 
 	int itrs = 0;
 	while (!consistent) {
-		cout << "Relaxation Iteration " << ++itrs << endl;
+		// cout << "Relaxation Iteration " << ++itrs << endl;
 		//Determine constraints involved in 
 		//negative cycle
 		ITC::ITC * itc = ITC::ITC::getInstance();
