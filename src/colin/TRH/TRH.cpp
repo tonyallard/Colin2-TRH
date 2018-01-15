@@ -285,6 +285,9 @@ std::pair<Planner::MinimalState, list<Planner::FFEvent> > TRH::reprocessPlan(lis
 		bool success = evaluateStateAndUpdatePlan(succ, nextSeg, *(succ->state()), currSQI->state(), incrementalData.get(), currSQI->plan);
 		if (!success) {
 			cerr << "Something went wrong replaying plan." << endl;
+			//Still accept the original solution. 
+			//Even though Colin couldn't schedule it, it probably is a good plan
+			//This happens in CrewPlanning domain
 			std::pair<Planner::MinimalState, list<Planner::FFEvent> > toReturn(
 				currSQI->state()->getInnerState(), oldSoln);
 			assert(false);
