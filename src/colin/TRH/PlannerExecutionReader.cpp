@@ -27,7 +27,9 @@ PlannerExecutionReader::PlannerExecutionReader(string plannerOutput,
 	if (relaxedPlanSize > 0) {
 		list<string> relaxedPlanStr = getRelaxedPlanStr(plannerOutput);
 		relaxedPlan = getRelaxedPlan(relaxedPlanStr, tils);
-		helpfulActions = getHelpfulActions(relaxedPlan, state, timeStamp);
+		if (Planner::FF::helpfulActions) {
+			helpfulActions = getHelpfulActions(relaxedPlan, state, timeStamp);
+		}
 	}
 }
 
@@ -98,6 +100,7 @@ list<Planner::ActionSegment> PlannerExecutionReader::getHelpfulActions(
 	const list<Planner::FFEvent> & plan,
 	const Planner::MinimalState & state,
 	double timeStamp) {
+
 	list<Planner::ActionSegment> helpfulActions;
 	// cout << "Helpful Actions" << endl;
 	

@@ -5903,7 +5903,7 @@ Solution FF::search(bool & reachedGoal)
 #endif
         }
     }
-
+    FF::helpfulActions = false;
     // Begine BFS search
     while (!searchQueue.empty()) {
 
