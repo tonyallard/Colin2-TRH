@@ -5903,8 +5903,10 @@ Solution FF::search(bool & reachedGoal)
 #endif
         }
     }
+
+    //Turn off HA for BFS
     FF::helpfulActions = false;
-    // Begine BFS search
+    // Begin BFS search
     while (!searchQueue.empty()) {
 
         auto_ptr<SearchQueueItem> currSQI(searchQueue.pop_front());
