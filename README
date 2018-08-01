@@ -1,8 +1,15 @@
-COLIN
------
+COLIN-TRH
+---------
 
-This package contains COLIN, a planner for domains with continuous numeric
-and/or duration dependent effects.  For more details, see the papers:
+This package contains COLIN-TRH, a planner for domains with time windows.  
+For more details, see the papers:
+
+"A TIL-Relaxed Heuristic for Planning with Time Windows", T. Allard, 
+P. Haslum, Ch. Gretton, ICAPS 2018.
+
+It is build upon the COLIN, a planner for domains with continuous numeric
+and/or duration dependent effects.  For more details on this planner, 
+see the papers:
 
 "COLIN: Planning with Continuous Linear Numeric Change", A. J. Coles,
 A. I. Coles, M. Fox and D. Long, JAIR, 2012
@@ -25,6 +32,13 @@ the following should install CLP and the other build pre-requisites:
 sudo apt-get install cmake coinor-libcbc-dev coinor-libclp-dev \
                      coinor-libcoinutils-dev coinor-libcgl-dev \
                      libbz2-dev zlib1g-dev bison flex
+                     
+In order to run COLIN-TRH, you will need a planner to solve the TIL-Relaxed 
+planning problem. This planner must be located at:
+
+./lib/colin-clp
+
+We used the standard COLIN planner for this.
             
 
 Compiling
