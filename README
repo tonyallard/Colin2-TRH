@@ -34,11 +34,11 @@ sudo apt-get install cmake coinor-libcbc-dev coinor-libclp-dev \
                      libbz2-dev zlib1g-dev bison flex
                      
 In order to run COLIN-TRH, you will need a planner to solve the TIL-Relaxed 
-planning problem. This planner must be located at:
+planning problem. Setting the parameters for this planner can be done in:
 
-./lib/colin-clp
+./src/colin/TRH/TRH.cpp
 
-We used the standard COLIN planner for this.
+We used the standard COLIN planner in our experiments.
             
 
 Compiling
