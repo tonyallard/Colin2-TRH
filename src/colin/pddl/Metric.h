@@ -20,6 +20,9 @@ private:
 	std::list<std::string> variables;
 
 public:
+
+	static const Metric * NO_METRIC;
+	
 	Metric(){};
 	Metric(bool minimise, std::list<std::string> variables):minimise(minimise), variables(variables){};
 	friend std::ostream & operator<<(std::ostream & output, const Metric & metric);

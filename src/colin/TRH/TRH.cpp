@@ -68,7 +68,7 @@ int TRH::generateNewInstanceID() {
 pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 		std::list<Planner::FFEvent>& header, std::list<Planner::FFEvent> & now, 
 		double timestamp, double heuristic, list<Planner::ActionSegment> & helpfulActions, 
-		PDDL::PDDLStateFactory pddlFactory) {
+		PDDL::PDDLStateFactory & pddlFactory) {
 
 	const Planner::MinimalState & state = theState.getInnerState();
 
@@ -282,7 +282,7 @@ std::pair<Planner::MinimalState, list<Planner::FFEvent> > TRH::reprocessPlan(lis
 				eventToApply->divisionID, Planner::RPGHeuristic::emptyIntList);
 		}
 		if (stepID == lastStep) {
-			Planner::FF::scheduleToMetric = true;
+			//Planner::FF::scheduleToMetric = true;
 		}
 
 		const auto_ptr<Planner::ParentData> incrementalData(Planner::FF::allowCompressionSafeScheduler ? 
@@ -440,7 +440,7 @@ bool TRH::evaluateStateAndUpdatePlan(auto_ptr<Planner::SearchQueueItem> & succ,
 
 void TRH::writeBadState(const Planner::MinimalState & state,
 		std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
-		PDDL::PDDLStateFactory pddlFactory, int stateNum) {
+		PDDL::PDDLStateFactory & pddlFactory, int stateNum) {
 	
 	ostringstream stateFileName;
 	stateFileName << "BadState" << trhInstanceID << "-" << stateNum;
@@ -451,7 +451,7 @@ void TRH::writeBadState(const Planner::MinimalState & state,
 
 pair<PDDL::PDDLDomain, PDDL::PDDLState> TRH::writeStateToFile(const Planner::MinimalState & state,
 	std::list<Planner::FFEvent>& plan, double timestamp, double heuristic, 
-	PDDL::PDDLStateFactory pddlFactory, const string & filename) {
+	PDDL::PDDLStateFactory & pddlFactory, const string & filename) {
 
 	clock_t begin_time = clock();
 

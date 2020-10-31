@@ -5685,7 +5685,6 @@ bool LPScheduler::scheduleToMetric()
 
     
     const RPGBuilder::Metric * const metric = RPGBuilder::getMetric();
-    
     MILPSolver::Objective newObjective(!metric->minimise);
     
     const int termCount = metric->variables.size();
