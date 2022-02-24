@@ -55,7 +55,10 @@ public:
 	const static string H_PLAN_DELIM_START;
 	const static string H_PLAN_DELIM_STOP;
 	static HRelax * getInstance();
-	pair<double, list<Planner::FFEvent> > getHeuristic(std::list<Planner::FFEvent> & plan);
+	pair<double, list<Planner::FFEvent> > getHeuristic(
+		std::list<Planner::FFEvent> & plan,
+		int relaxedplanLength,
+		bool earlyTermination);
 };
 
 }

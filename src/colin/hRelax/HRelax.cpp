@@ -34,7 +34,10 @@ HRelax * HRelax::getInstance() {
 	return INSTANCE;
 }
 
-pair<double, list<Planner::FFEvent> > HRelax::getHeuristic(std::list<Planner::FFEvent> & plan) {
+pair<double, list<Planner::FFEvent> > HRelax::getHeuristic(
+	std::list<Planner::FFEvent> & plan,
+	int relaxedplanLength,
+	bool earlyTermination) {
 	//Create Dummy Initial Event @ t_0 for STN
 	Planner::FFEvent * initialEvent = createInitialEvent();
 
@@ -66,6 +69,10 @@ pair<double, list<Planner::FFEvent> > HRelax::getHeuristic(std::list<Planner::FF
 	// cout << "Is STN still consistent? " << (consistent > 0 ? "yes" : "no")
 	// 		<< std::endl;
 	if (consistent) {
+		if ((!earlyTermination) && (relaxedplanLength > 0)) {
+			return pair<double, list<Planner::FFEvent> >(EPSILON, plan);
+		}
+
 		//The relaxed plan is a solution to the original problem
 		executePlan(plan, stn, initialEvent);
 		return pair<double, list<Planner::FFEvent> >(0.0, plan);

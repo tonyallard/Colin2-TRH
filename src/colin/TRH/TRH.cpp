@@ -41,6 +41,7 @@ int TRH::CURRENT_SEARCH_DEPTH = 0;
 int TRH::CURRENT_RELAXED_PLAN_LENGTH = 0;
 int TRH::initialState_HeuristicStateEvals = -1;
 double TRH::initialState_HeuristicCompTime = 0.0;
+bool TRH::EARLY_TERMINATION = true;
 
 TRH * TRH::getInstance() {
 	if (!INSTANCE) {
@@ -105,7 +106,10 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 	addRelaxedPlan(proposedPlan, reader.getRelaxedPlan());
 	//Run relaxation heuristic on relaxed plan
 	hRelax::HRelax * relaxationHeuristic = hRelax::HRelax::getInstance();
-	pair<double, list<Planner::FFEvent> > hVal = relaxationHeuristic->getHeuristic(proposedPlan);
+	pair<double, list<Planner::FFEvent> > hVal = relaxationHeuristic->getHeuristic(
+		proposedPlan,
+		reader.getRelaxedPlanLength(),
+		EARLY_TERMINATION);
 	// cout << hVal.first << endl;
 	// exit(0);
 	if (hVal.first == 0.0) {

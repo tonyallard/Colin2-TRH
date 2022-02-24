@@ -82,6 +82,7 @@ public:
     static int CURRENT_RELAXED_PLAN_LENGTH;
     static int initialState_HeuristicStateEvals;
     static double initialState_HeuristicCompTime;
+	static bool EARLY_TERMINATION;
 	
 	pair<double, int> getHeuristic(Planner::ExtendedMinimalState & theState,
 		std::list<Planner::FFEvent>& plan, std::list<Planner::FFEvent> & now,

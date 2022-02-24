@@ -361,6 +361,10 @@ int main(int argc, char * argv[])
                 FF::USE_TRH = false;
                 break;
             }
+            case '4': {
+                TRH::TRH::EARLY_TERMINATION = false;
+                break;
+            }
             #ifdef POPF3ANALYSIS
             case 'n': {
                 Globals::optimiseSolutionQuality = true;
