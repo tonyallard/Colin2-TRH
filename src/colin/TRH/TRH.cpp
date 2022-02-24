@@ -12,7 +12,6 @@
 #include "TRH.h"
 #include "../util/Util.h"
 #include "PlannerExecutionReader.h"
-#include "../hRelax/HRelax.cpp"
 
 #include "PDDLDomainFactory.h"
 #include "Proposition.h"
@@ -53,10 +52,15 @@ TRH * TRH::getInstance() {
 
 TRH::TRH() : 
 	trhInstanceID(generateNewInstanceID()),
-	hCommand(buildCommand()) {
+	hCommand(buildCommand()),
+	relaxationHeuristic(
+		EARLY_TERMINATION,
+		HEURISTIC_MODE) {
+	
 	ostringstream fileName;
 	fileName << TEMP_FILE_PREFIX << trhInstanceID;
 	stateFileName = fileName.str();
+	
 }
 
 int TRH::generateNewInstanceID() {
@@ -106,12 +110,9 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 	proposedPlan.insert(proposedPlan.end(), now.begin(), now.end());
 	addRelaxedPlan(proposedPlan, reader.getRelaxedPlan());
 	//Run relaxation heuristic on relaxed plan
-	hRelax::HRelax * relaxationHeuristic = hRelax::HRelax::getInstance();
-	pair<double, list<Planner::FFEvent> > hVal = relaxationHeuristic->getHeuristic(
+	pair<double, list<Planner::FFEvent> > hVal = relaxationHeuristic.getHeuristic(
 		proposedPlan,
-		reader.getRelaxedPlanLength(),
-		EARLY_TERMINATION,
-		HEURISTIC_MODE);
+		reader.getRelaxedPlanLength());
 	// cout << hVal.first << endl;
 	// exit(0);
 	if (hVal.first == 0.0) {

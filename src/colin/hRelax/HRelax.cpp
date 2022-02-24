@@ -25,20 +25,9 @@ const char HRelax::TIL_STRING_DELIM = '-';
 const string HRelax::H_PLAN_DELIM_START = "=====Plan Start====="; 
 const string HRelax::H_PLAN_DELIM_STOP = "=====Plan Stop=====";
 
-HRelax * HRelax::INSTANCE = NULL;
-
-HRelax * HRelax::getInstance() {
-	if (!INSTANCE) {
-		INSTANCE = new HRelax();
-	}
-	return INSTANCE;
-}
-
 pair<double, list<Planner::FFEvent> > HRelax::getHeuristic(
 	std::list<Planner::FFEvent> & plan,
-	int relaxedplanLength,
-	bool earlyTermination,
-	int heuristicMode) {
+	int relaxedplanLength) {
 	//Create Dummy Initial Event @ t_0 for STN
 	Planner::FFEvent * initialEvent = createInitialEvent();
 
@@ -142,7 +131,7 @@ pair<double, list<Planner::FFEvent> > HRelax::getHeuristic(
 
 
 	//Sum relaxations to calculate h-val
-	double heuristic = heuristicMode ? getHeuristicValue(relaxHist) : itrs;
+	double heuristic = heuristicMode ? itrs : getHeuristicValue(relaxHist);
 	delete initialEvent;
 	return pair<double, list<Planner::FFEvent> >(heuristic, plan);
 }

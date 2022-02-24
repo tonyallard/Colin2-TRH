@@ -17,6 +17,7 @@
 #include "../FFEvent.h"
 #include "../util/Util.h"
 #include "../lpscheduler.h"
+#include "../hRelax/HRelax.h"
 
 using namespace std;
 
@@ -31,23 +32,22 @@ private:
 	static const string H_PLAN_DELIM;
 	static const string TEMP_STATE_PATH;
 	static TRH * INSTANCE;
-
+	
+	hRelax::HRelax relaxationHeuristic;
+	
 	/*Used to ensure unique state files per instance*/
-	const int trhInstanceID;
-	const string hCommand;
+	int trhInstanceID;
+	string hCommand;
 	string stateFileName;
 
 	static int generateNewInstanceID();
 	//Singleton
 	TRH();
-	TRH(TRH const & other):trhInstanceID(other.trhInstanceID), 
-										hCommand(other.hCommand), 
-										stateFileName(other.stateFileName){
+	TRH(TRH const & other){
 
 	}
 	;
 	TRH operator=(TRH const& other) {
-		return TRH(other);
 	}
 	;
 
