@@ -37,7 +37,8 @@ HRelax * HRelax::getInstance() {
 pair<double, list<Planner::FFEvent> > HRelax::getHeuristic(
 	std::list<Planner::FFEvent> & plan,
 	int relaxedplanLength,
-	bool earlyTermination) {
+	bool earlyTermination,
+	int heuristicMode) {
 	//Create Dummy Initial Event @ t_0 for STN
 	Planner::FFEvent * initialEvent = createInitialEvent();
 
@@ -87,7 +88,8 @@ pair<double, list<Planner::FFEvent> > HRelax::getHeuristic(
 
 	int itrs = 0;
 	while (!consistent) {
-		// cout << "Relaxation Iteration " << ++itrs << endl;
+		++itrs;
+		// cout << "Relaxation Iteration " << itrs << endl;
 		//Determine constraints involved in 
 		//negative cycle
 		ITC::ITC * itc = ITC::ITC::getInstance();
@@ -140,7 +142,7 @@ pair<double, list<Planner::FFEvent> > HRelax::getHeuristic(
 
 
 	//Sum relaxations to calculate h-val
-	double heuristic = getHeuristicValue(relaxHist);
+	double heuristic = heuristicMode ? getHeuristicValue(relaxHist) : itrs;
 	delete initialEvent;
 	return pair<double, list<Planner::FFEvent> >(heuristic, plan);
 }

@@ -25,8 +25,7 @@ private:
 
 	//Singleton
 	HRelax() {
-	}
-	;
+	};
 	HRelax(HRelax const & other) {
 	}
 	;
@@ -58,7 +57,8 @@ public:
 	pair<double, list<Planner::FFEvent> > getHeuristic(
 		std::list<Planner::FFEvent> & plan,
 		int relaxedplanLength,
-		bool earlyTermination);
+		bool earlyTermination,
+		int heuristicMode);
 };
 
 }
