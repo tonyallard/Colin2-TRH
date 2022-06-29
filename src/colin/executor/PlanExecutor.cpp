@@ -58,8 +58,8 @@ void PlanExecutor::updateEventTimings(const std::set<Planner::FFEvent *> & plan,
 				break;
 			}
 		}
-		if (d[i][i] < 0) {
-			cerr << "Inconsistent STN found while dispatching." << endl;
+		if (d[i][i] < -stn::ColinSTNImpl::ACCURACY) {
+			cerr << "Inconsistent STN found while dispatching (" << d[i][i] << ")." << endl;
 			exit(-1);
 		}
 		event->lpTimestamp = d[initialEvtIdx][i];
