@@ -570,13 +570,14 @@ std::string getActionName(const Planner::FFEvent * action) {
 	std::ostringstream output;
 	if ((action->time_spec == VAL::time_spec::E_AT_START) ||
 		(action->time_spec == VAL::time_spec::E_AT_END)){
-		output << getOperatorName(action->action);		
+		output << getOperatorName(action->action) << "-" << action->time_spec;		
 	} else if (action->time_spec == VAL::time_spec::E_AT) {
 		Planner::RPGBuilder::FakeTILAction * til =
 					Planner::RPGBuilder::getAllTimedInitialLiterals()[action->divisionID];
-		output << PDDL::TILFactory::getInstance()->getTIL(*til, action->divisionID).getName();
+		output << PDDL::TILFactory::getInstance()->getTIL(*til, action->divisionID).getName()
+			<< "-" << action->time_spec;
 	} else {
-		std::cerr << "This case not catered for.";
+		std::cerr << "This case not catered for: " << action->time_spec;
 		assert(false);		
 	}
 	return output.str();
