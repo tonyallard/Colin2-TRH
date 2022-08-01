@@ -113,6 +113,7 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 	pair<double, list<Planner::FFEvent> > hVal = relaxationHeuristic.getHeuristic(
 		proposedPlan,
 		reader.getRelaxedPlanLength());
+
 	// cout << hVal.first << endl;
 	// exit(0);
 	if (hVal.first == 0.0) {
@@ -128,7 +129,6 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 		helpfulActions.insert(helpfulActions.end(), reader.getHelpfulActions().begin(), 
 			reader.getHelpfulActions().end());
 	}
-
 	double hVal_double = (int)round((hVal.first * 1000));
 	
 	// cout << "hVal_double: " << hVal_double << endl;
@@ -138,19 +138,29 @@ pair<double, int> TRH::getHeuristic(Planner::ExtendedMinimalState & theState,
 
 void TRH::addRelaxedPlan(list<Planner::FFEvent> & proposedPlan, list<Planner::FFEvent> & relaxedPlan) {
 	list<Planner::FFEvent>::iterator rPlanItr = relaxedPlan.begin();
-	for (; rPlanItr != relaxedPlan.end(); rPlanItr++) {
+	//Original position -> pair <event, newPosition>
+	map<int, std::pair<Planner::FFEvent *, int> > pairedWithStepMap;
+
+	for (int i = 0; rPlanItr != relaxedPlan.end(); rPlanItr++, i++) {
 		Planner::FFEvent event = *rPlanItr;
 		if (event.pairWithStep >= 0) {
 			if (event.time_spec == VAL::time_spec::E_AT_START){
-				event.pairWithStep = proposedPlan.size() + 1;
+				int newStep = proposedPlan.size();
+				proposedPlan.push_back(event);
+				pair<Planner::FFEvent *, int> newPos = std::make_pair(&proposedPlan.back(), newStep);
+				pairedWithStepMap[i] = newPos;
 			} else if (event.time_spec == VAL::time_spec::E_AT_END) {
-				event.pairWithStep = proposedPlan.size() - 1;
+				pair<Planner::FFEvent *, int> startPos = pairedWithStepMap.at(event.pairWithStep);
+				startPos.first->pairWithStep = proposedPlan.size();
+				event.pairWithStep = startPos.second;
+				proposedPlan.push_back(event);
 			} else {
 				std::cerr << "This case not catered for.";
 				assert(false);
 			}
+		} else {
+			proposedPlan.push_back(event);
 		}
-		proposedPlan.push_back(event);
 	}
 }
 
