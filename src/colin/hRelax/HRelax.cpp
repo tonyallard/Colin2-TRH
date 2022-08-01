@@ -47,8 +47,6 @@ pair<double, list<Planner::FFEvent> > HRelax::getHeuristic(
 	
 	// Check consistency --> should be 'yes' or we have a problem
 	bool consistent = stn.isConsistent(initialEvent);
-	// cout << stn << endl;
-	
 	// cout << "Is STN consistent? " << (consistent ? "yes" : "no") << std::endl;
 	if (!consistent) {
 		cerr << "Error: Initial STN not consistent. Something in the relaxed plan is wrong!"
@@ -59,7 +57,8 @@ pair<double, list<Planner::FFEvent> > HRelax::getHeuristic(
 	//Re-tighten TIL constraint
 	// cout << "There are " << tilEvents.size() << " TIL actions." << std::endl;
 	reAddTemporalConstraintsToTIL(stn, plan, initialEvent);
-
+	// cout << stn << endl;	
+	
 	// Re-check consistency --> if yes then heuristic is 0
 	consistent = stn.isConsistent(initialEvent);
 	// cout << "Is STN still consistent? " << (consistent > 0 ? "yes" : "no")

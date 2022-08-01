@@ -32,7 +32,7 @@ void PlanExecutor::updateEventTimings(const std::set<Planner::FFEvent *> & plan,
 		for (int i = 0; i < stn.size(); i++) {
 			for (int j = 0; j < stn.size(); j++) {
 				if (d[i][k] + d[k][j] < d[i][j]) {
-					d[i][j] = d[i][k]+d[k][j];
+					d[i][j] = d[i][k] + d[k][j];
         			//p[i][j] = p[k][j];
 	  			}
 			}
