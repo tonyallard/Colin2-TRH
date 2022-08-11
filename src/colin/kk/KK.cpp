@@ -219,7 +219,7 @@ const Planner::FFEvent * KK::findMinimumSupportingAction(
 	std::list<PDDL::Proposition> effects = 
 		PDDL::getActionEffects(initialAction, condition->isPositive());
 	if (PDDL::supported(condition->getProposition(), &effects)) {
-			return initialAction;
+		return initialAction;
 	}
 	return NULL; //Nothing supported this event...
 }
