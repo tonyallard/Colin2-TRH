@@ -10,6 +10,8 @@
 #include "../solver-clp.h"
 #include "../stn/ColinSTNImpl.h"
 
+#include "PDDLUtils.h"
+
 using namespace hRelax;
 using namespace std;
 
@@ -217,9 +219,15 @@ void TemporalConflictRelaxation::addRelaxableConstraints(
 		// 		&& (conflict->first->time_spec != VAL::time_spec::E_AT)) { //Ignore precedence between a TIL and the next action
 		// 	relaxableConstraints.insert(conflict);
 		// }
-		if ((conflict->first->action == conflict->third->action) &&
-			(conflict->third->pairWithStep - conflict->first->pairWithStep == 1)) {
-			relaxableConstraints.insert(conflict);
+		if (conflict->first->action == conflict->third->action) {
+			std::list<Planner::FFEvent>::const_iterator startItr = plan.begin();
+			std::list<Planner::FFEvent>::const_iterator endItr = plan.begin();
+			std::advance(startItr, conflict->third->pairWithStep);
+			std::advance(endItr, conflict->first->pairWithStep);
+			if (((&*startItr) == conflict->first) && 
+				((&*endItr) == conflict->third)) {
+					relaxableConstraints.insert(conflict);
+			}
 		}
 	}
 }
