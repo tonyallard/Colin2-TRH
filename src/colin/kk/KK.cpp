@@ -192,19 +192,18 @@ const Planner::FFEvent * KK::findMinimumSupportingAction(
 		const Planner::FFEvent * initialAction) {
 
 	list<Planner::FFEvent>::const_reverse_iterator eventItr = plan.rbegin();
-
+	const Planner::FFEvent * support = NULL;
 	//Advance to where the event is
 	std::advance(eventItr, plan.size() - indexOfEvent - 1);
 	eventItr++; //begin with immediately preceeding event
 	for (; eventItr != plan.rend(); eventItr++) {
 		const Planner::FFEvent * event = &(*eventItr);
-		
 		//check if the event adds support for the condition
 		std::list<PDDL::Proposition> effects = 
 			PDDL::getActionEffects(event, condition->isPositive());
 		if (PDDL::supported(condition->getProposition(), &effects)) {
-			return event;
-			break;
+			support = event;
+			//break;
 		}
 
 		//Check if the event removes support for the condition
@@ -212,16 +211,18 @@ const Planner::FFEvent * KK::findMinimumSupportingAction(
 				event, !condition->isPositive());
 		if (PDDL::supported(condition->getProposition(), &effects)) {
 			//If it does, then we have a problem
-			return NULL;
-		}
+			return support;
+		}		
 	}
 	//Check if support is in the initial state
-	std::list<PDDL::Proposition> effects = 
-		PDDL::getActionEffects(initialAction, condition->isPositive());
-	if (PDDL::supported(condition->getProposition(), &effects)) {
-		return initialAction;
+	if (support == NULL) {
+		std::list<PDDL::Proposition> effects = 
+			PDDL::getActionEffects(initialAction, condition->isPositive());
+		if (PDDL::supported(condition->getProposition(), &effects)) {
+			return initialAction;
+		}
 	}
-	return NULL; //Nothing supported this event...
+	return support; //Nothing supported this event...
 }
 
 void KK::printValidationStructure(
