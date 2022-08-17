@@ -360,9 +360,10 @@ std::ostream & operator<<(std::ostream & output,
 }
 
 std::ostream & operator<<(std::ostream & output,
-				const Util::triple<const Planner::FFEvent *, double> & edge) {
+	const Util::triple<const Planner::FFEvent *, double> & edge) {
 	output << PDDL::getActionName(edge.first)
 		<< "--[" << edge.second << "]-->"
 		<< PDDL::getActionName(edge.third);
+	return output;
 }
 }
