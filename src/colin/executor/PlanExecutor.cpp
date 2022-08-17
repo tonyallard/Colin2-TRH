@@ -62,7 +62,10 @@ void PlanExecutor::updateEventTimings(const std::set<Planner::FFEvent *> & plan,
 			cerr << "Inconsistent STN found while dispatching (" << d[i][i] << ")." << endl;
 			exit(-1);
 		}
-		event->lpTimestamp = d[initialEvtIdx][i];
+		event->lpTimestamp =  d[i][initialEvtIdx] != 0 ? -d[i][initialEvtIdx] : d[i][initialEvtIdx];
+		event->lpMinTimestamp = -d[i][initialEvtIdx];
+		event->lpMaxTimestamp = d[initialEvtIdx][i];
+		
 	}
 }
 
